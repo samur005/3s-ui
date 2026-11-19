@@ -1,21 +1,17 @@
-# <img src="frontend/public/assets/favicon.svg" width="44" height="44" align="texttop" alt=""> 2S-UI
-[English](README.md) · [فارسی](README.fa.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [Русский](README.ru.md)
+# <img src="frontend/public/assets/favicon.svg" width="44" height="44" align="texttop" alt=""> 3S-UI
+[English](README.md) · [Русский](README.ru.md)
 
-2S-UI — открытая панель управления [sing-box](https://github.com/SagerNet/sing-box). Она даёт простой многоязычный интерфейс для развёртывания, настройки и мониторинга самых разных прокси- и VPN-протоколов — от одного VPS до конфигурации из нескольких узлов.
+3S-UI — открытая панель управления [sing-box](https://github.com/SagerNet/sing-box). Она даёт простой многоязычный интерфейс для развёртывания, настройки и мониторинга самых разных прокси- и VPN-протоколов — от одного VPS до конфигурации из нескольких узлов.
 
-2S-UI вырос из форка s-ui: фронтенд переписан целиком, а сверху добавлено множество возможностей, делающих работу с панелью удобнее.
+Фронтенд 3S-UI переписан целиком, а сверху добавлено множество возможностей, делающих работу с панелью удобнее.
 
-![](https://img.shields.io/github/v/release/shenaba/2s-ui.svg)
-[![Docker Pulls](https://img.shields.io/docker/pulls/shenaba/2s-ui.svg)](https://hub.docker.com/r/shenaba/2s-ui)
-[![Go Report Card](https://goreportcard.com/badge/github.com/shenaba/2s-ui)](https://goreportcard.com/report/github.com/shenaba/2s-ui)
-[![Downloads](https://img.shields.io/github/downloads/shenaba/2s-ui/total.svg)](https://github.com/shenaba/2s-ui/releases)
+![](https://img.shields.io/github/v/release/samur005/3s-ui.svg)
+[![Docker Pulls](https://img.shields.io/docker/pulls/samur005/3s-ui.svg)](https://hub.docker.com/r/samur005/3s-ui)
+[![Go Report Card](https://goreportcard.com/badge/github.com/samur005/3s-ui)](https://goreportcard.com/report/github.com/samur005/3s-ui)
+[![Downloads](https://img.shields.io/github/downloads/samur005/3s-ui/total.svg)](https://github.com/samur005/3s-ui/releases)
 [![License](https://img.shields.io/badge/license-GPL%20V3-blue.svg?longCache=true)](https://www.gnu.org/licenses/gpl-3.0.en.html)
 
 > **Отказ от ответственности:** Этот проект предназначен только для личного обучения и общения. Пожалуйста, не используйте его в незаконных целях и не используйте его в производственной среде.
-
-<a href="https://nowpayments.io/donation/shenaba" target="_blank" rel="noreferrer noopener">
-  <img src="https://nowpayments.io/images/embeds/donation-button-white.svg" alt="Crypto donation button by NOWPayments">
-</a>
 
 ## Возможности
 
@@ -90,7 +86,7 @@ Linux включают его только на amd64, arm64, armv7 и 386. На
 
 ## Документация API
 
-[Wiki с документацией API](https://github.com/shenaba/2s-ui/wiki/API-Documentation)
+[Wiki с документацией API](https://github.com/samur005/3s-ui/wiki/API-Documentation)
 
 ## Параметры установки по умолчанию
 
@@ -105,14 +101,14 @@ Linux включают его только на amd64, arm64, armv7 и 386. На
 ### Linux/macOS
 
 ```sh
-bash <(curl -Ls https://raw.githubusercontent.com/shenaba/2s-ui/main/install.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/samur005/3s-ui/main/install.sh)
 ```
 
 Язык следует `$LANG`, либо укажите `en`, `fa`, `ru`, `vi`, `zhcn` или
 `zhtw`:
 
 ```sh
-SUI_LANG=ru bash <(curl -Ls https://raw.githubusercontent.com/shenaba/2s-ui/main/install.sh)
+S3UI_LANG=ru bash <(curl -Ls https://raw.githubusercontent.com/samur005/3s-ui/main/install.sh)
 ```
 
 ### Alpine Linux
@@ -122,12 +118,12 @@ SUI_LANG=ru bash <(curl -Ls https://raw.githubusercontent.com/shenaba/2s-ui/main
 
 ```sh
 apk add bash curl
-bash <(curl -Ls https://raw.githubusercontent.com/shenaba/2s-ui/main/install.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/samur005/3s-ui/main/install.sh)
 ```
 
 ### Windows
 
-1. Скачайте последний релиз для Windows с [GitHub Releases](https://github.com/shenaba/2s-ui/releases/latest)
+1. Скачайте последний релиз для Windows с [GitHub Releases](https://github.com/samur005/3s-ui/releases/latest)
 2. Распакуйте ZIP-файл
 3. Запустите `install-windows.bat` от имени администратора
 4. Следуйте указаниям мастера установки
@@ -136,8 +132,8 @@ bash <(curl -Ls https://raw.githubusercontent.com/shenaba/2s-ui/main/install.sh)
 ### Docker
 
 ```shell
-mkdir 2s-ui && cd 2s-ui
-wget -q https://raw.githubusercontent.com/shenaba/2s-ui/main/docker-compose.yml
+mkdir 3s-ui && cd 3s-ui
+wget -q https://raw.githubusercontent.com/samur005/3s-ui/main/docker-compose.yml
 docker compose up -d
 ```
 
@@ -153,20 +149,20 @@ curl -fsSL https://get.docker.com | sh
 Обычный `docker run`:
 
 ```shell
-mkdir 2s-ui && cd 2s-ui
+mkdir 3s-ui && cd 3s-ui
 docker run -itd \
     -p 2095:2095 -p 2096:2096 -p 443:443 \
     -v $PWD/db/:/app/db/ \
     -v $PWD/cert/:/root/cert/ \
-    --name s-ui --restart=unless-stopped \
-    ghcr.io/shenaba/2s-ui:latest
+    --name 3s-ui --restart=unless-stopped \
+    ghcr.io/samur005/3s-ui:latest
 ```
 
 Сборка собственного образа:
 
 ```shell
-git clone https://github.com/shenaba/2s-ui
-docker build -t 2s-ui .
+git clone https://github.com/samur005/3s-ui
+docker build -t 3s-ui .
 ```
 
 </details>
@@ -177,23 +173,23 @@ docker build -t 2s-ui .
 **Конкретная версия.** Добавьте версию в конец команды установки. Например, `v1.5.5`:
 
 ```sh
-VERSION=v1.5.5 && bash <(curl -Ls https://raw.githubusercontent.com/shenaba/2s-ui/$VERSION/install.sh) $VERSION
+VERSION=v1.5.5 && bash <(curl -Ls https://raw.githubusercontent.com/samur005/3s-ui/$VERSION/install.sh) $VERSION
 ```
 
 **Ручная установка — Linux/macOS**
 
-1. Получите последнюю версию 2S-UI для вашей ОС/архитектуры с GitHub: [https://github.com/shenaba/2s-ui/releases/latest](https://github.com/shenaba/2s-ui/releases/latest)
-2. **НЕОБЯЗАТЕЛЬНО** Получите последнюю версию `s-ui.sh` [https://raw.githubusercontent.com/shenaba/2s-ui/main/s-ui.sh](https://raw.githubusercontent.com/shenaba/2s-ui/main/s-ui.sh)
-3. **НЕОБЯЗАТЕЛЬНО** Скопируйте `s-ui.sh` в `/usr/bin/s-ui` и выполните `chmod +x /usr/bin/s-ui`.
-4. Распакуйте файл s-ui tar.gz в выбранный каталог и перейдите в каталог, куда вы распаковали файл tar.gz.
+1. Получите последнюю версию 3S-UI для вашей ОС/архитектуры с GitHub: [https://github.com/samur005/3s-ui/releases/latest](https://github.com/samur005/3s-ui/releases/latest)
+2. **НЕОБЯЗАТЕЛЬНО** Получите последнюю версию `3s-ui.sh` [https://raw.githubusercontent.com/samur005/3s-ui/main/3s-ui.sh](https://raw.githubusercontent.com/samur005/3s-ui/main/3s-ui.sh)
+3. **НЕОБЯЗАТЕЛЬНО** Скопируйте `3s-ui.sh` в `/usr/bin/3s-ui` и выполните `chmod +x /usr/bin/3s-ui`.
+4. Распакуйте файл 3s-ui tar.gz в выбранный каталог и перейдите в каталог, куда вы распаковали файл tar.gz.
 5. Скопируйте файлы *.service в /etc/systemd/system/ и выполните `systemctl daemon-reload`.
-6. Включите автозапуск и запустите службу 2S-UI с помощью `systemctl enable s-ui --now`
+6. Включите автозапуск и запустите службу 3S-UI с помощью `systemctl enable 3s-ui --now`
 7. Запустите службу sing-box с помощью `systemctl enable sing-box --now`
 
 **Ручная установка — Windows**
 
-1. Получите последнюю версию для Windows с GitHub: [https://github.com/shenaba/2s-ui/releases/latest](https://github.com/shenaba/2s-ui/releases/latest)
-2. Скачайте подходящий пакет для Windows (например, `s-ui-windows-amd64.zip`)
+1. Получите последнюю версию для Windows с GitHub: [https://github.com/samur005/3s-ui/releases/latest](https://github.com/samur005/3s-ui/releases/latest)
+2. Скачайте подходящий пакет для Windows (например, `3s-ui-windows-amd64.zip`)
 3. Распакуйте ZIP-файл в выбранный каталог
 4. Запустите `install-windows.bat` от имени администратора
 5. Следуйте указаниям мастера установки
@@ -204,13 +200,13 @@ VERSION=v1.5.5 && bash <(curl -Ls https://raw.githubusercontent.com/shenaba/2s-u
 ```sh
 sudo -i
 
-systemctl disable s-ui  --now
+systemctl disable 3s-ui  --now
 
 rm -f /etc/systemd/system/sing-box.service
 systemctl daemon-reload
 
-rm -fr /usr/local/s-ui
-rm /usr/bin/s-ui
+rm -fr /usr/local/3s-ui
+rm /usr/bin/3s-ui
 ```
 
 **Удаление — OpenRC (Alpine)**
@@ -218,12 +214,12 @@ rm /usr/bin/s-ui
 ```sh
 sudo -i
 
-rc-service s-ui stop
-rc-update del s-ui default
-rm -f /etc/init.d/s-ui
+rc-service 3s-ui stop
+rc-update del 3s-ui default
+rm -f /etc/init.d/3s-ui
 
-rm -fr /usr/local/s-ui
-rm /usr/bin/s-ui
+rm -fr /usr/local/3s-ui
+rm /usr/bin/3s-ui
 ```
 
 </details>
@@ -243,7 +239,7 @@ rm /usr/bin/s-ui
 
 ## Кластер из нескольких узлов
 
-Одна панель может управлять остальными. Добавьте удалённый экземпляр 2S-UI на
+Одна панель может управлять остальными. Добавьте удалённый экземпляр 3S-UI на
 странице **Узлы** (Nodes), указав его адрес и API-токен, и главная панель будет:
 
 - **Следить за ним** — heartbeat раз в 5 секунд сообщает по каждому узлу: в сети,
@@ -256,7 +252,7 @@ rm /usr/bin/s-ui
 - **Собирать его серверы в одну подписку** — одна ссылка подписки содержит и серверы
   главной панели, и серверы всех привязанных узлов.
 
-Узел — это просто другой экземпляр 2S-UI, работающий через API v2 (заголовок `Token`):
+Узел — это просто другой экземпляр 3S-UI, работающий через API v2 (заголовок `Token`):
 никакого агента ставить не нужно, а единственная настройка на стороне узла — создать
 этот API-токен в его собственной панели, так что уже существующие панели можно принять
 как есть. Входящие, принятые с узла, становятся на главной панели репликами только для
@@ -285,7 +281,7 @@ rm /usr/bin/s-ui
 выбранным доменом — переносить пути к файлам вручную больше не нужно.
 
 **🔐 Автоматические сертификаты (ACME / Let's Encrypt) — рекомендуется.** Введите
-домен, укажите e-mail и нажмите «выпустить»: 2S-UI получит и будет автоматически
+домен, укажите e-mail и нажмите «выпустить»: 3S-UI получит и будет автоматически
 продлевать бесплатный сертификат Let's Encrypt, после чего панель будет доступна по
 адресу `https://<your-domain>:2095/app`. Требуется, чтобы TCP-порт **80** был доступен
 из интернета (HTTP-01 challenge). ACME работает только на Linux и скрыт в Windows.
@@ -308,7 +304,7 @@ acme.sh (а также `socat`, необходимый для standalone-про�
 > `docker-compose.yml` или добавьте `-p 80:80` в `docker run`. Сертификаты хранятся в
 > `/root/cert/<домен>/` под именами `fullchain.pem` / `privkey.pem` и сохраняются при
 > перезапусках (том в команде Docker выше как раз монтирует этот путь). Если домен/порт
-> настроены неправильно, 2S-UI переключается на HTTP.
+> настроены неправильно, 3S-UI переключается на HTTP.
 
 </details>
 
@@ -316,7 +312,7 @@ acme.sh (а также `socat`, необходимый для standalone-про�
   <summary>Собственный сертификат</summary>
 
 Сертификаты, которыми вы управляете сами — Cloudflare origin CA, корпоративный CA,
-результат работы certbot — регистрируются на той же вкладке. 2S-UI проверяет, что файлы
+результат работы certbot — регистрируются на той же вкладке. 3S-UI проверяет, что файлы
 читаются, что ключ соответствует сертификату и что сертификат действительно покрывает
 домен; после этого домен становится доступен для выбора на вкладках «Интерфейс» и
 «Подписка», как любой другой. Зарегистрированные сертификаты попадают в резервные копии
@@ -340,8 +336,8 @@ certbot certonly --standalone --register-unsafely-without-email --non-interactiv
 <details>
   <summary>За обратным прокси</summary>
 
-Включите **TLS терминируется обратным прокси**, и 2S-UI сам напишет vhost:
-`/etc/nginx/conf.d/s-ui-proxy-<домен>.conf`, направленный на панель и с нужными
+Включите **TLS терминируется обратным прокси**, и 3S-UI сам напишет vhost:
+`/etc/nginx/conf.d/3s-ui-proxy-<домен>.conf`, направленный на панель и с нужными
 заголовками проксирования, проверит его через `nginx -t`, перезагрузит nginx и откатит
 изменения, вернув собственное сообщение об ошибке nginx, если что-то не получится.
 Сервер подписок может стоять за тем же прокси.
@@ -392,7 +388,7 @@ certbot certonly --standalone --register-unsafely-without-email --non-interactiv
 - **Двухфакторная аутентификация** — TOTP, совместима с любым приложением-аутентификатором.
   Включается по значку щита на странице **Администраторы**. Секрет сохраняется только
   после того, как проверен код из него, поэтому брошенная привязка не оставит вас снаружи;
-  если утерян сам аутентификатор, `sui admin -disable-2fa` на хосте его отключит.
+  если утерян сам аутентификатор, `3sui admin -disable-2fa` на хосте его отключит.
 - **Сброс сессий** — смена пароля или имени пользователя отзывает все выданные до этого
   сессии, включая открытые WebSocket-соединения.
 
@@ -405,13 +401,13 @@ certbot certonly --standalone --register-unsafely-without-email --non-interactiv
   <summary>Сборка и запуск из исходников</summary>
 
 ```shell
-git clone https://github.com/shenaba/2s-ui
-cd 2s-ui
-./runSUI.sh
+git clone https://github.com/samur005/3s-ui
+cd 3s-ui
+./run3sui.sh
 ```
 
 `build.sh` собирает фронтенд, копирует его в `web/html/` для `//go:embed` и собирает
-бинарник с нужными build tags; `runSUI.sh` поверх этого сразу его запускает. Ручная
+бинарник с нужными build tags; `run3sui.sh` поверх этого сразу его запускает. Ручная
 сборка требует тех же тегов — см. [CONTRIBUTING.md](CONTRIBUTING.md).
 
 </details>
@@ -421,20 +417,17 @@ cd 2s-ui
 
 | Переменная     |                      Тип                       | По умолчанию  |
 | -------------- | :--------------------------------------------: | :------------ |
-| SUI_LOG_LEVEL  | `"debug"` \| `"info"` \| `"warn"` \| `"error"` | `"info"`      |
-| SUI_DEBUG      |                   `boolean`                    | `false`       |
-| SUI_DB_FOLDER  |                    `string`                    | `"db"`        |
-| SUI_BIN_FOLDER |                    `string`                    | `"bin"`       |
+| S3UI_LOG_LEVEL  | `"debug"` \| `"info"` \| `"warn"` \| `"error"` | `"info"`      |
+| S3UI_DEBUG      |                   `boolean`                    | `false`       |
+| S3UI_DB_FOLDER  |                    `string`                    | `"db"`        |
+| S3UI_BIN_FOLDER |                    `string`                    | `"bin"`       |
 
-`SUI_BIN_FOLDER` читается только при миграции базы данных со старой схемы, где
+`S3UI_BIN_FOLDER` читается только при миграции базы данных со старой схемы, где
 sing-box запускался отдельным процессом; сейчас sing-box встроен в бинарник, и
 каталога `bin/` во время работы не существует.
 
 </details>
 
-## Особая благодарность
+---
 
-- [@alireza0](https://github.com/alireza0)
-
-## Звёзды со временем
-[![Star History Chart](https://api.star-history.com/svg?repos=shenaba/2s-ui&type=Date)](https://star-history.com/#shenaba/2s-ui&Date)
+Основан на s-ui / 2S-UI, лицензия GPL-3.0.

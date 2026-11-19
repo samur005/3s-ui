@@ -1,21 +1,17 @@
-# <img src="frontend/public/assets/favicon.svg" width="44" height="44" align="texttop" alt=""> 2S-UI
-[English](README.md) · [فارسی](README.fa.md) · [Tiếng Việt](README.vi.md) · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [Русский](README.ru.md)
+# <img src="frontend/public/assets/favicon.svg" width="44" height="44" align="texttop" alt=""> 3S-UI
+[English](README.md) · [Русский](README.ru.md)
 
-2S-UI is an open-source management panel for [sing-box](https://github.com/SagerNet/sing-box). It gives you a clean, multilingual interface for deploying, configuring and monitoring a wide range of proxy and VPN protocols — from a single VPS to a multi-node deployment.
+3S-UI is an open-source management panel for [sing-box](https://github.com/SagerNet/sing-box). It gives you a clean, multilingual interface for deploying, configuring and monitoring a wide range of proxy and VPN protocols — from a single VPS to a multi-node deployment.
 
-2S-UI began as a fork of s-ui. The frontend is rewritten in full, with a range of features added on top to make the panel nicer to use.
+The 3S-UI frontend is rewritten in full, with a range of features added on top to make the panel nicer to use.
 
-![](https://img.shields.io/github/v/release/shenaba/2s-ui.svg)
-[![Docker Pulls](https://img.shields.io/docker/pulls/shenaba/2s-ui.svg)](https://hub.docker.com/r/shenaba/2s-ui)
-[![Go Report Card](https://goreportcard.com/badge/github.com/shenaba/2s-ui)](https://goreportcard.com/report/github.com/shenaba/2s-ui)
-[![Downloads](https://img.shields.io/github/downloads/shenaba/2s-ui/total.svg)](https://github.com/shenaba/2s-ui/releases)
+![](https://img.shields.io/github/v/release/samur005/3s-ui.svg)
+[![Docker Pulls](https://img.shields.io/docker/pulls/samur005/3s-ui.svg)](https://hub.docker.com/r/samur005/3s-ui)
+[![Go Report Card](https://goreportcard.com/badge/github.com/samur005/3s-ui)](https://goreportcard.com/report/github.com/samur005/3s-ui)
+[![Downloads](https://img.shields.io/github/downloads/samur005/3s-ui/total.svg)](https://github.com/samur005/3s-ui/releases)
 [![License](https://img.shields.io/badge/license-GPL%20V3-blue.svg?longCache=true)](https://www.gnu.org/licenses/gpl-3.0.en.html)
 
 > **Disclaimer:** This project is only for personal learning and communication, please do not use it for illegal purposes, please do not use it in a production environment
-
-<a href="https://nowpayments.io/donation/shenaba" target="_blank" rel="noreferrer noopener">
-  <img src="https://nowpayments.io/images/embeds/donation-button-white.svg" alt="Crypto donation button by NOWPayments">
-</a>
 
 ## Features
 
@@ -88,7 +84,7 @@ English · Farsi · Vietnamese · Chinese (Simplified) · Chinese (Traditional) 
 
 ## API Documentation
 
-[API-Documentation Wiki](https://github.com/shenaba/2s-ui/wiki/API-Documentation)
+[API-Documentation Wiki](https://github.com/samur005/3s-ui/wiki/API-Documentation)
 
 ## Default Installation Information
 
@@ -103,14 +99,14 @@ English · Farsi · Vietnamese · Chinese (Simplified) · Chinese (Traditional) 
 ### Linux/macOS
 
 ```sh
-bash <(curl -Ls https://raw.githubusercontent.com/shenaba/2s-ui/main/install.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/samur005/3s-ui/main/install.sh)
 ```
 
 The language follows `$LANG`, or pass `en`, `fa`, `ru`, `vi`, `zhcn` or
 `zhtw`:
 
 ```sh
-SUI_LANG=zhcn bash <(curl -Ls https://raw.githubusercontent.com/shenaba/2s-ui/main/install.sh)
+S3UI_LANG=zhcn bash <(curl -Ls https://raw.githubusercontent.com/samur005/3s-ui/main/install.sh)
 ```
 
 ### Alpine Linux
@@ -120,12 +116,12 @@ detects Alpine and sets the panel up as an OpenRC service:
 
 ```sh
 apk add bash curl
-bash <(curl -Ls https://raw.githubusercontent.com/shenaba/2s-ui/main/install.sh)
+bash <(curl -Ls https://raw.githubusercontent.com/samur005/3s-ui/main/install.sh)
 ```
 
 ### Windows
 
-1. Download the latest Windows release from [GitHub Releases](https://github.com/shenaba/2s-ui/releases/latest)
+1. Download the latest Windows release from [GitHub Releases](https://github.com/samur005/3s-ui/releases/latest)
 2. Extract the ZIP file
 3. Run `install-windows.bat` as Administrator
 4. Follow the installation wizard
@@ -134,8 +130,8 @@ bash <(curl -Ls https://raw.githubusercontent.com/shenaba/2s-ui/main/install.sh)
 ### Docker
 
 ```shell
-mkdir 2s-ui && cd 2s-ui
-wget -q https://raw.githubusercontent.com/shenaba/2s-ui/main/docker-compose.yml
+mkdir 3s-ui && cd 3s-ui
+wget -q https://raw.githubusercontent.com/samur005/3s-ui/main/docker-compose.yml
 docker compose up -d
 ```
 
@@ -151,20 +147,20 @@ curl -fsSL https://get.docker.com | sh
 Plain `docker run`:
 
 ```shell
-mkdir 2s-ui && cd 2s-ui
+mkdir 3s-ui && cd 3s-ui
 docker run -itd \
     -p 2095:2095 -p 2096:2096 -p 443:443 \
     -v $PWD/db/:/app/db/ \
     -v $PWD/cert/:/root/cert/ \
-    --name s-ui --restart=unless-stopped \
-    ghcr.io/shenaba/2s-ui:latest
+    --name 3s-ui --restart=unless-stopped \
+    ghcr.io/samur005/3s-ui:latest
 ```
 
 Build your own image:
 
 ```shell
-git clone https://github.com/shenaba/2s-ui
-docker build -t 2s-ui .
+git clone https://github.com/samur005/3s-ui
+docker build -t 3s-ui .
 ```
 
 </details>
@@ -175,23 +171,23 @@ docker build -t 2s-ui .
 **A specific version.** Add the version to the end of the installation command. e.g. `v1.5.5`:
 
 ```sh
-VERSION=v1.5.5 && bash <(curl -Ls https://raw.githubusercontent.com/shenaba/2s-ui/$VERSION/install.sh) $VERSION
+VERSION=v1.5.5 && bash <(curl -Ls https://raw.githubusercontent.com/samur005/3s-ui/$VERSION/install.sh) $VERSION
 ```
 
 **Manual installation — Linux/macOS**
 
-1. Get the latest version of 2S-UI based on your OS/Architecture from GitHub: [https://github.com/shenaba/2s-ui/releases/latest](https://github.com/shenaba/2s-ui/releases/latest)
-2. **OPTIONAL** Get the latest version of `s-ui.sh` [https://raw.githubusercontent.com/shenaba/2s-ui/main/s-ui.sh](https://raw.githubusercontent.com/shenaba/2s-ui/main/s-ui.sh)
-3. **OPTIONAL** Copy `s-ui.sh` to `/usr/bin/s-ui` and run `chmod +x /usr/bin/s-ui`.
-4. Extract s-ui tar.gz file to a directory of your choice and navigate to the directory where you extracted the tar.gz file.
+1. Get the latest version of 3S-UI based on your OS/Architecture from GitHub: [https://github.com/samur005/3s-ui/releases/latest](https://github.com/samur005/3s-ui/releases/latest)
+2. **OPTIONAL** Get the latest version of `3s-ui.sh` [https://raw.githubusercontent.com/samur005/3s-ui/main/3s-ui.sh](https://raw.githubusercontent.com/samur005/3s-ui/main/3s-ui.sh)
+3. **OPTIONAL** Copy `3s-ui.sh` to `/usr/bin/3s-ui` and run `chmod +x /usr/bin/3s-ui`.
+4. Extract 3s-ui tar.gz file to a directory of your choice and navigate to the directory where you extracted the tar.gz file.
 5. Copy *.service files to /etc/systemd/system/ and run `systemctl daemon-reload`.
-6. Enable autostart and start 2S-UI service using `systemctl enable s-ui --now`
+6. Enable autostart and start 3S-UI service using `systemctl enable 3s-ui --now`
 7. Start sing-box service using `systemctl enable sing-box --now`
 
 **Manual installation — Windows**
 
-1. Get the latest Windows version from GitHub: [https://github.com/shenaba/2s-ui/releases/latest](https://github.com/shenaba/2s-ui/releases/latest)
-2. Download the appropriate Windows package (e.g., `s-ui-windows-amd64.zip`)
+1. Get the latest Windows version from GitHub: [https://github.com/samur005/3s-ui/releases/latest](https://github.com/samur005/3s-ui/releases/latest)
+2. Download the appropriate Windows package (e.g., `3s-ui-windows-amd64.zip`)
 3. Extract the ZIP file to a directory of your choice
 4. Run `install-windows.bat` as Administrator
 5. Follow the installation wizard
@@ -202,13 +198,13 @@ VERSION=v1.5.5 && bash <(curl -Ls https://raw.githubusercontent.com/shenaba/2s-u
 ```sh
 sudo -i
 
-systemctl disable s-ui  --now
+systemctl disable 3s-ui  --now
 
 rm -f /etc/systemd/system/sing-box.service
 systemctl daemon-reload
 
-rm -fr /usr/local/s-ui
-rm /usr/bin/s-ui
+rm -fr /usr/local/3s-ui
+rm /usr/bin/3s-ui
 ```
 
 **Uninstall — OpenRC (Alpine)**
@@ -216,12 +212,12 @@ rm /usr/bin/s-ui
 ```sh
 sudo -i
 
-rc-service s-ui stop
-rc-update del s-ui default
-rm -f /etc/init.d/s-ui
+rc-service 3s-ui stop
+rc-update del 3s-ui default
+rm -f /etc/init.d/3s-ui
 
-rm -fr /usr/local/s-ui
-rm /usr/bin/s-ui
+rm -fr /usr/local/3s-ui
+rm /usr/bin/3s-ui
 ```
 
 </details>
@@ -241,7 +237,7 @@ binary, then replaces it and restarts. No SSH.
 
 ## Multi-Node Cluster
 
-One panel can manage the others. Add a remote 2S-UI instance on the **Nodes**
+One panel can manage the others. Add a remote 3S-UI instance on the **Nodes**
 page with its address and an API token, and the master will:
 
 - **Monitor it** — a 5-second heartbeat reports each node as online, offline, or
@@ -253,7 +249,7 @@ page with its address and an API token, and the master will:
 - **Fold its servers into one subscription** — a client's subscription link
   carries the master's servers and every bound node's servers together.
 
-A node is just another 2S-UI instance talking over the v2 API (`Token` header):
+A node is just another 3S-UI instance talking over the v2 API (`Token` header):
 no agent to install, and the only node-side setup is creating that API token in
 its own panel, so existing panels can be adopted as they are. Inbounds adopted
 from a node become read-only replicas on the master — edit them on the node they
@@ -282,7 +278,7 @@ Panel and subscription service each pick their own domain, and the certificate
 paths follow the domain you select — no file paths to copy around.
 
 **🔐 Automatic certificates (ACME / Let's Encrypt) — recommended.** Enter a
-domain, add an email, and press issue: 2S-UI obtains and auto-renews a free
+domain, add an email, and press issue: 3S-UI obtains and auto-renews a free
 Let's Encrypt certificate, and the panel becomes reachable at
 `https://<your-domain>:2095/app`. Requires TCP port **80** reachable from the
 internet (HTTP-01 challenge). ACME is Linux-only and is hidden on Windows.
@@ -290,7 +286,7 @@ internet (HTTP-01 challenge). ACME is Linux-only and is hidden on Windows.
 <details>
   <summary>How issuance works, and the Docker port-80 caveat</summary>
 
-Issuance runs through **acme.sh**, which 2S-UI installs for you on first use
+Issuance runs through **acme.sh**, which 3S-UI installs for you on first use
 (along with `socat`, needed for standalone validation) and registers for
 automatic renewal via acme.sh's own cron entry — there is nothing for you to
 schedule.
@@ -305,7 +301,7 @@ certificate; no restart needed.
 > `docker-compose.yml`, or add `-p 80:80` to `docker run`. Certificates are
 > stored under `/root/cert/<domain>/` as `fullchain.pem` / `privkey.pem` and
 > survive restarts (the Docker volume above maps that path out). If the
-> domain/port is misconfigured, 2S-UI falls back to HTTP.
+> domain/port is misconfigured, 3S-UI falls back to HTTP.
 
 </details>
 
@@ -313,7 +309,7 @@ certificate; no restart needed.
   <summary>Bring your own certificate</summary>
 
 Certificates you manage yourself — a Cloudflare origin CA, a corporate CA,
-certbot output — can be registered in the same tab. 2S-UI verifies the files are
+certbot output — can be registered in the same tab. 3S-UI verifies the files are
 readable, that the key matches the certificate, and that the certificate really
 covers the domain; the domain then becomes selectable on the Interface and
 Subscription tabs like any other. Registered certificates are included in
@@ -337,8 +333,8 @@ Then register the resulting `fullchain.pem` / `privkey.pem` under
 <details>
   <summary>Behind a reverse proxy</summary>
 
-Turn on **TLS terminated by a reverse proxy** and 2S-UI writes the vhost for
-you: `/etc/nginx/conf.d/s-ui-proxy-<domain>.conf`, pointed at the panel with the
+Turn on **TLS terminated by a reverse proxy** and 3S-UI writes the vhost for
+you: `/etc/nginx/conf.d/3s-ui-proxy-<domain>.conf`, pointed at the panel with the
 right forwarding headers, checked with `nginx -t`, reloaded, and rolled back
 with nginx's own error message if anything fails. The subscription server can
 sit behind the same proxy.
@@ -393,7 +389,7 @@ Three things guard the login, all on by default:
 - **Two-factor authentication** — TOTP, compatible with any authenticator
   app. Enable it from the shield icon on the **Admins** page. The secret is
   stored only once a code from it has been verified, so an abandoned enrolment
-  cannot lock you out; if the authenticator itself is lost, `sui admin
+  cannot lock you out; if the authenticator itself is lost, `3sui admin
   -disable-2fa` on the host turns it off.
 - **Session invalidation** — changing a password or username retires every
   session issued before it, including open WebSocket connections.
@@ -407,13 +403,13 @@ conventions, testing, and the pull request process.
   <summary>Building and running from source</summary>
 
 ```shell
-git clone https://github.com/shenaba/2s-ui
-cd 2s-ui
-./runSUI.sh
+git clone https://github.com/samur005/3s-ui
+cd 3s-ui
+./run3sui.sh
 ```
 
 `build.sh` builds the frontend, copies it into `web/html/` for `//go:embed`,
-and builds the binary with the required build tags; `runSUI.sh` runs it on top
+and builds the binary with the required build tags; `run3sui.sh` runs it on top
 of that. Building by hand needs those same tags — see
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -424,20 +420,17 @@ of that. Building by hand needs those same tags — see
 
 | Variable       |                      Type                      | Default       |
 | -------------- | :--------------------------------------------: | :------------ |
-| SUI_LOG_LEVEL  | `"debug"` \| `"info"` \| `"warn"` \| `"error"` | `"info"`      |
-| SUI_DEBUG      |                   `boolean`                    | `false`       |
-| SUI_DB_FOLDER  |                    `string`                    | `"db"`        |
-| SUI_BIN_FOLDER |                    `string`                    | `"bin"`       |
+| S3UI_LOG_LEVEL  | `"debug"` \| `"info"` \| `"warn"` \| `"error"` | `"info"`      |
+| S3UI_DEBUG      |                   `boolean`                    | `false`       |
+| S3UI_DB_FOLDER  |                    `string`                    | `"db"`        |
+| S3UI_BIN_FOLDER |                    `string`                    | `"bin"`       |
 
-`SUI_BIN_FOLDER` is only read while migrating a database from the old
+`S3UI_BIN_FOLDER` is only read while migrating a database from the old
 subprocess-based layout; sing-box is embedded in the binary and there is no
 `bin/` folder at runtime.
 
 </details>
 
-## Special Thanks
+---
 
-- [@alireza0](https://github.com/alireza0)
-
-## Stargazers over Time
-[![Star History Chart](https://api.star-history.com/svg?repos=shenaba/2s-ui&type=Date)](https://star-history.com/#shenaba/2s-ui&Date)
+Based on s-ui / 2S-UI, licensed GPL-3.0.
