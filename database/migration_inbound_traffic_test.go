@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/shenaba/2s-ui/database/model"
+	"github.com/samur005/3s-ui/database/model"
 )
 
 // The inbounds list used to show a sum over the stats table. The counters that

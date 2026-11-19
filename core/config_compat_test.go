@@ -87,7 +87,7 @@ func writePEM(t *testing.T, path, blockType string, der []byte) {
 
 // TestConfigCompat starts a box for each config in testdata/configs and reports
 // the deprecation notes it triggers. It guards the sing-box upgrade: configs
-// s-ui's UI can produce must keep starting, and any new deprecation shows up in
+// 3s-ui's UI can produce must keep starting, and any new deprecation shows up in
 // the test log so it can be migrated before release.
 func TestConfigCompat(t *testing.T) {
 	certPath, keyPath := writeTestCert(t)

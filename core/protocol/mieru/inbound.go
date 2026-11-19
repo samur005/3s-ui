@@ -11,7 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/shenaba/2s-ui/core/usersession"
+	"github.com/samur005/3s-ui/core/usersession"
 
 	"github.com/sagernet/sing-box/adapter"
 	"github.com/sagernet/sing-box/adapter/inbound"
@@ -508,7 +508,7 @@ func placeholderUser() *mierupb.User {
 	_, _ = rand.Read(raw[:])
 	secret := hex.EncodeToString(raw[:])
 	return &mierupb.User{
-		Name:     proto.String("2s-ui-placeholder-" + secret[:8]),
+		Name:     proto.String("3s-ui-placeholder-" + secret[:8]),
 		Password: proto.String(secret),
 	}
 }

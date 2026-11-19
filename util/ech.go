@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/shenaba/2s-ui/logger"
+	"github.com/samur005/3s-ui/logger"
 )
 
 // echConfigPemType is the block sing-box writes for an ECH config; its key goes

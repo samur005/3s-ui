@@ -199,7 +199,7 @@ export default {
     coreVersion: "Core",
     desc: "Description",
     emptyTitle: "No nodes yet",
-    emptyDesc: "Add another 2S-UI panel to monitor it from here.",
+    emptyDesc: "Add another 3S-UI panel to monitor it from here.",
     status: {
       online: "Online",
       offline: "Offline",

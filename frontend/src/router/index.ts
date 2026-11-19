@@ -89,14 +89,14 @@ const router = createRouter({
   routes,
 })
 
-const DEFAULT_TITLE = '2S-UI'
+const DEFAULT_TITLE = '3S-UI'
 let loadLive: LiveSub | null = null
 
 // Chunk names carry a content hash and build.sh wipes web/html before copying, so
 // after an in-place upgrade an already-open tab asks for chunks the server no longer
 // has. Reload once to pick up the new index.html; the flag keeps a genuinely
 // unreachable server from turning that into a reload loop.
-const RELOADED_KEY = '2sui-chunk-reload'
+const RELOADED_KEY = '3sui-chunk-reload'
 
 router.onError((err, to) => {
   if (!/dynamically imported module|Importing a module script failed|Failed to fetch/i.test(String(err))) return

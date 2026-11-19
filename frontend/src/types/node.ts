@@ -1,4 +1,4 @@
-// A managed node: another 2s-ui panel this one monitors over its apiv2.
+// A managed node: another 3s-ui panel this one monitors over its apiv2.
 // Connection config lives in the DB; live status (NodeStatus) is an in-memory
 // snapshot on the server, delivered as `nodesStatus` in api/load responses.
 

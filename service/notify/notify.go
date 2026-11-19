@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/util/common"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/util/common"
 )
 
 // sendTimeout caps every outbound call. Long enough for a slow Telegram edge,

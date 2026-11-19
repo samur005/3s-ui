@@ -7,8 +7,8 @@ import (
 	"syscall"
 	_ "time/tzdata"
 
-	"github.com/shenaba/2s-ui/app"
-	"github.com/shenaba/2s-ui/cmd"
+	"github.com/samur005/3s-ui/app"
+	"github.com/samur005/3s-ui/cmd"
 )
 
 func runApp() {

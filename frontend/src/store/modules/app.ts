@@ -4,7 +4,7 @@ import { i18n, intlLocale } from '@/locales'
 export type Theme = 'dark' | 'light' | 'system'
 export type ResolvedTheme = 'dark' | 'light'
 
-const THEME_KEY = '2sui-theme'
+const THEME_KEY = '3sui-theme'
 const RTL_LOCALES = new Set(['fa'])
 
 const darkMedia = window.matchMedia('(prefers-color-scheme: dark)')

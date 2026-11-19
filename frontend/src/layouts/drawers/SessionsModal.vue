@@ -160,7 +160,7 @@ type Uncut = {
 // operator is looking for, and rendering all of them every 5s is the cost.
 const MAX_ROWS = 300
 const REFRESH_MS = 5000
-const AUTO_KEY = '2sui-sessions-auto'
+const AUTO_KEY = '3sui-sessions-auto'
 
 const loading = ref(false)
 const loaded = ref(false)

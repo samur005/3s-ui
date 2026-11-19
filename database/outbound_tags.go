@@ -3,7 +3,7 @@ package database
 import (
 	"encoding/json"
 
-	"github.com/shenaba/2s-ui/database/model"
+	"github.com/samur005/3s-ui/database/model"
 
 	"gorm.io/gorm"
 )

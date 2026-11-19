@@ -4,8 +4,8 @@ release/
 backup/
 bin/
 db/
-sui
-2s-ui
+3sui
+3s-ui
 web/html
 main
 tmp
@@ -23,10 +23,10 @@ tmp
 # Windows build artifacts
 *.exe
 *.zip
-s-ui-windows/
-sui-*.exe
-sui-*.zip
-windows/sui-*.exe
+3s-ui-windows/
+3sui-*.exe
+3sui-*.zip
+windows/3sui-*.exe
 
 # Editor directories and files
 .idea

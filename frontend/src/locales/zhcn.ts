@@ -197,7 +197,7 @@ export default {
     coreVersion: "内核",
     desc: "备注",
     emptyTitle: "还没有节点",
-    emptyDesc: "添加另一台 2S-UI 面板,在这里集中监控。",
+    emptyDesc: "添加另一台 3S-UI 面板,在这里集中监控。",
     status: {
       online: "在线",
       offline: "离线",

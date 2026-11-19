@@ -4,7 +4,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/shenaba/2s-ui/database"
+	"github.com/samur005/3s-ui/database"
 )
 
 // The config cache keys on lastUpdateSeq, not on lastUpdate. Both move on every

@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/shenaba/2s-ui/database/model"
-	"github.com/shenaba/2s-ui/service"
+	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/service"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"

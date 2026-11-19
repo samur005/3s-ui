@@ -28,18 +28,18 @@ func panelTLS() *Tls {
 			"server_name": "vpn.example.com",
 			"alpn": ["h2"],
 			"min_version": "1.2",
-			"certificate_path": "/etc/s-ui/cert.pem",
-			"key_path": "/etc/s-ui/key.pem",
-			"client_certificate_path": ["/etc/s-ui/client-ca.pem"]
+			"certificate_path": "/etc/3s-ui/cert.pem",
+			"key_path": "/etc/3s-ui/key.pem",
+			"client_certificate_path": ["/etc/3s-ui/client-ca.pem"]
 		}`),
 		Client: json.RawMessage(`{
 			"enabled": true,
 			"server_name": "vpn.example.com",
 			"insecure": true,
 			"utls": {"enabled": true, "fingerprint": "chrome"},
-			"certificate_path": "/etc/s-ui/ca.pem",
-			"client_certificate_path": "/etc/s-ui/client.pem",
-			"client_key_path": "/etc/s-ui/client.key"
+			"certificate_path": "/etc/3s-ui/ca.pem",
+			"client_certificate_path": "/etc/3s-ui/client.pem",
+			"client_key_path": "/etc/3s-ui/client.key"
 		}`),
 	}
 }
@@ -51,7 +51,7 @@ func TestProjectEndpointTLSOpenVPNServer(t *testing.T) {
 	}
 	got := decode(t, projected)
 
-	if got["certificate_path"] != "/etc/s-ui/cert.pem" || got["key_path"] != "/etc/s-ui/key.pem" {
+	if got["certificate_path"] != "/etc/3s-ui/cert.pem" || got["key_path"] != "/etc/3s-ui/key.pem" {
 		t.Errorf("certificate and key must carry over, got %v", got)
 	}
 	if got["version_min"] != "1.2" {
@@ -75,10 +75,10 @@ func TestProjectEndpointTLSOpenVPNClient(t *testing.T) {
 	if got["server_name"] != "vpn.example.com" {
 		t.Errorf("server_name must carry over, got %v", got)
 	}
-	if got["certificate_path"] != "/etc/s-ui/ca.pem" {
+	if got["certificate_path"] != "/etc/3s-ui/ca.pem" {
 		t.Errorf("the CA path must carry over, got %v", got)
 	}
-	if got["client_certificate_path"] != "/etc/s-ui/client.pem" || got["client_key_path"] != "/etc/s-ui/client.key" {
+	if got["client_certificate_path"] != "/etc/3s-ui/client.pem" || got["client_key_path"] != "/etc/3s-ui/client.key" {
 		t.Errorf("client credentials must carry over, got %v", got)
 	}
 	// OpenVPN has no insecure switch and no use for a utls fingerprint.
@@ -97,7 +97,7 @@ func TestProjectEndpointTLSOpenConnect(t *testing.T) {
 	}
 	got := decode(t, projected)
 
-	if got["certificate_authority_path"] != "/etc/s-ui/ca.pem" {
+	if got["certificate_authority_path"] != "/etc/3s-ui/ca.pem" {
 		t.Errorf("certificate_path should become certificate_authority_path, got %v", got)
 	}
 	if _, ok := got["certificate_path"]; ok {

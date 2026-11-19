@@ -25,7 +25,7 @@ func TestOpenDBTightensPermissions(t *testing.T) {
 		t.Fatalf("pre-create: %v", err)
 	}
 
-	dbPath := filepath.Join(dir, "s-ui.db")
+	dbPath := filepath.Join(dir, "3s-ui.db")
 	if err := InitDB(dbPath); err != nil {
 		t.Fatalf("InitDB: %v", err)
 	}
@@ -44,7 +44,7 @@ func TestOpenDBTightensPermissions(t *testing.T) {
 	}
 
 	// The sidecars hold the same pages as the database itself.
-	for _, name := range []string{"s-ui.db", "s-ui.db-wal", "s-ui.db-shm"} {
+	for _, name := range []string{"3s-ui.db", "3s-ui.db-wal", "3s-ui.db-shm"} {
 		info, err := os.Stat(filepath.Join(dir, name))
 		if err != nil {
 			if os.IsNotExist(err) {

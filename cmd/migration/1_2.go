@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/shenaba/2s-ui/database/model"
+	"github.com/samur005/3s-ui/database/model"
 
 	"gorm.io/gorm"
 )
@@ -19,7 +19,7 @@ type InboundData struct {
 }
 
 func moveJsonToDb(db *gorm.DB) error {
-	binFolderPath := os.Getenv("SUI_BIN_FOLDER")
+	binFolderPath := os.Getenv("S3UI_BIN_FOLDER")
 	if binFolderPath == "" {
 		binFolderPath = "bin"
 	}

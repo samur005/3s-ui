@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/service"
-	"github.com/shenaba/2s-ui/service/notify"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/service"
+	"github.com/samur005/3s-ui/service/notify"
 )
 
 // NotifyBackupJob uploads a database backup to Telegram on a schedule.
@@ -36,7 +36,7 @@ func (j *NotifyBackupJob) Run() {
 		logger.Warning("notify: backup export failed: ", err)
 		return
 	}
-	name := fmt.Sprintf("2s-ui-%s.db", time.Now().Format("20060102-150405"))
+	name := fmt.Sprintf("3s-ui-%s.db", time.Now().Format("20060102-150405"))
 	if err := notify.SendBackup(name, data, notify.Host()); err != nil {
 		logger.Warning("notify: backup upload failed: ", err)
 	}

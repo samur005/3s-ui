@@ -3,8 +3,8 @@ package cronjob
 import (
 	"time"
 
-	"github.com/shenaba/2s-ui/service"
-	"github.com/shenaba/2s-ui/service/notify"
+	"github.com/samur005/3s-ui/service"
+	"github.com/samur005/3s-ui/service/notify"
 )
 
 // cpuSampleWindow is how long the job watches the CPU before deciding.

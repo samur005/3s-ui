@@ -197,7 +197,7 @@ export default {
     coreVersion: "核心",
     desc: "備註",
     emptyTitle: "還沒有節點",
-    emptyDesc: "新增另一台 2S-UI 面板,在這裡集中監控。",
+    emptyDesc: "新增另一台 3S-UI 面板,在這裡集中監控。",
     status: {
       online: "線上",
       offline: "離線",

@@ -22,7 +22,7 @@ export function resolveColor(el: HTMLElement, c: string): string {
  * 导致个别图表没跟着容器缩放而溢出卡片。由布局发生变化的一方(如 Home 的卡片开关)显式调用
  * 此函数，广播一次重排事件，通知所有在用图表重新测量尺寸。
  */
-const RELAYOUT_EVENT = 'sui:chart-relayout'
+const RELAYOUT_EVENT = '3sui:chart-relayout'
 export function requestChartRelayout() {
   window.dispatchEvent(new Event(RELAYOUT_EVENT))
 }

@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/database/model"
-	"github.com/shenaba/2s-ui/util"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/util"
 )
 
 // newCredentialsDB gives the test its own database with one admin account.
@@ -136,4 +136,3 @@ func TestDeleteTokenChecksOwnership(t *testing.T) {
 		t.Error("deleting a token that is already gone must report it")
 	}
 }
-

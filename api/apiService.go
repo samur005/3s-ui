@@ -10,14 +10,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/shenaba/2s-ui/config"
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/database/model"
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/service"
-	"github.com/shenaba/2s-ui/service/notify"
-	"github.com/shenaba/2s-ui/util"
-	"github.com/shenaba/2s-ui/util/common"
+	"github.com/samur005/3s-ui/config"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/service"
+	"github.com/samur005/3s-ui/service/notify"
+	"github.com/samur005/3s-ui/util"
+	"github.com/samur005/3s-ui/util/common"
 
 	"github.com/gin-gonic/gin"
 )
@@ -41,7 +41,7 @@ type ApiService struct {
 	service.LoginGuardService
 }
 
-const twoFaIssuer = "2s-ui"
+const twoFaIssuer = "3s-ui"
 
 func (a *ApiService) UpdateInfo(c *gin.Context) {
 	canUpdate, reason := a.UpdateService.CanSelfUpdate()
@@ -368,7 +368,7 @@ func (a *ApiService) GetDb(c *gin.Context) {
 		return
 	}
 	c.Header("Content-Type", "application/octet-stream")
-	c.Header("Content-Disposition", "attachment; filename=s-ui_"+time.Now().Format("20060102-150405")+".db")
+	c.Header("Content-Disposition", "attachment; filename=3s-ui_"+time.Now().Format("20060102-150405")+".db")
 	c.Writer.Write(db)
 }
 
@@ -512,7 +512,7 @@ func (a *ApiService) TwoFaSetup(c *gin.Context) {
 	}
 
 	// The host goes in the account name so a phone enrolled against several
-	// panels shows which is which -- they would otherwise all read "2s-ui: admin".
+	// panels shows which is which -- they would otherwise all read "3s-ui: admin".
 	account := loginUser
 	if host := getHostname(c); host != "" {
 		account += "@" + host

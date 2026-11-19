@@ -10,7 +10,7 @@
       "stream_receive_window": "8mb",
       "connection_receive_window": "16mb",
       "max_concurrent_streams": 64,
-      "headers": {"User-Agent": "s-ui"}
+      "headers": {"User-Agent": "3s-ui"}
     },
     {
       "tag": "over-h3",

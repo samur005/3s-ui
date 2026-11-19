@@ -3,7 +3,7 @@ package migration
 import (
 	"encoding/json"
 
-	"github.com/shenaba/2s-ui/util"
+	"github.com/samur005/3s-ui/util"
 
 	"gorm.io/gorm"
 )

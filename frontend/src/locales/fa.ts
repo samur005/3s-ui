@@ -197,7 +197,7 @@ export default {
     coreVersion: "هسته",
     desc: "توضیحات",
     emptyTitle: "هنوز نودی نیست",
-    emptyDesc: "یک پنل 2S-UI دیگر اضافه کنید تا از اینجا پایش شود.",
+    emptyDesc: "یک پنل 3S-UI دیگر اضافه کنید تا از اینجا پایش شود.",
     status: {
       online: "آنلاین",
       offline: "آفلاین",

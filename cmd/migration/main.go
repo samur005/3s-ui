@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/shenaba/2s-ui/config"
-	"github.com/shenaba/2s-ui/util"
+	"github.com/samur005/3s-ui/config"
+	"github.com/samur005/3s-ui/util"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -28,13 +28,13 @@ func versionBefore(a, b string) bool {
 // MigrateDb applies the one-off data repairs older releases left pending and
 // stamps the database with the running version. Callers must run it before the
 // panel opens the database: the repairs below assume the pre-AutoMigrate
-// schema, exactly as `sui migrate` has always seen it.
+// schema, exactly as `3sui migrate` has always seen it.
 //
 // It reports failures instead of killing the process, because the panel now
 // calls it on every start-up: a data repair that cannot be applied must not
 // keep the panel from booting. Panics become errors for the same reason — the
 // gates below parse whatever version string the database happens to hold.
-// Progress goes to stdout because `sui migrate` is a CLI command whose entire
+// Progress goes to stdout because `3sui migrate` is a CLI command whose entire
 // output this is.
 func MigrateDb() error {
 	return migrateDb(os.Stdout)
@@ -43,9 +43,9 @@ func MigrateDb() error {
 // MigrateDbQuietly is MigrateDb with the progress lines discarded. The panel
 // calls it on every start-up, where the answer is almost always "already up to
 // date"; printing that would add three lines of untimestamped, unlevelled text
-// to stdout on every restart, on a channel SUI_LOG_LEVEL cannot turn down.
+// to stdout on every restart, on a channel S3UI_LOG_LEVEL cannot turn down.
 // Discarded rather than routed to logger: only app.Init initialises logger, so
-// the same call from `sui migrate` would dereference a nil handle.
+// the same call from `3sui migrate` would dereference a nil handle.
 func MigrateDbQuietly() error {
 	return migrateDb(io.Discard)
 }
@@ -119,8 +119,8 @@ func migrateDb(out io.Writer) (err error) {
 		}
 	}
 
-	// 2s-ui version line: both upstream migrations below first ship with
-	// 2s-ui 1.5.4, and our users' dbVersion follows 2s-ui releases (1.4.2 ..
+	// 3s-ui version line: both upstream migrations below first ship with
+	// 3s-ui 1.5.4, and our users' dbVersion follows 3s-ui releases (1.4.2 ..
 	// 1.5.3), NOT upstream's. Gate on 1.5.4, not the upstream version numbers,
 	// or every existing install would skip them. Both are idempotent.
 

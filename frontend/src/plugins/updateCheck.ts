@@ -1,7 +1,7 @@
 // 面板新版本检查:浏览器直连 GitHub releases API(CORS 开放),面板服务器无需出网。
 // 每次调用都直查,不做缓存;网络失败/访问不了 GitHub 时静默返回 null,不打扰使用。
-const RELEASE_API = 'https://api.github.com/repos/shenaba/2s-ui/releases/latest'
-export const RELEASE_URL = 'https://github.com/shenaba/2s-ui/releases/latest'
+const RELEASE_API = 'https://api.github.com/repos/samur005/3s-ui/releases/latest'
+export const RELEASE_URL = 'https://github.com/samur005/3s-ui/releases/latest'
 
 export const latestRelease = async (): Promise<string | null> => {
   try {

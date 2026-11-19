@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/service"
-	"github.com/shenaba/2s-ui/sub"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/service"
+	"github.com/samur005/3s-ui/sub"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"

@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/database/model"
-	"github.com/shenaba/2s-ui/util"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/util"
 
 	"github.com/sagernet/sing-box/common/tls"
 	C "github.com/sagernet/sing-box/constant"

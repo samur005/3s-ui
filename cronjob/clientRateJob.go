@@ -1,6 +1,6 @@
 package cronjob
 
-import "github.com/shenaba/2s-ui/service"
+import "github.com/samur005/3s-ui/service"
 
 // ClientRateJob samples per-client throughput on a shorter tick than the stats
 // flush, which stays at 10s for the database's sake. Sampling reads the core's

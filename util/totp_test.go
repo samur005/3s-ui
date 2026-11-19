@@ -170,11 +170,11 @@ func TestGenerateTOTPSecret(t *testing.T) {
 // parameter read it from there, and without it every panel enrols under the
 // bare account name.
 func TestTOTPKeyURI(t *testing.T) {
-	uri := TOTPKeyURI("ABCD", "admin", "2S-UI")
-	if !strings.HasPrefix(uri, "otpauth://totp/2S-UI:admin?") {
+	uri := TOTPKeyURI("ABCD", "admin", "3S-UI")
+	if !strings.HasPrefix(uri, "otpauth://totp/3S-UI:admin?") {
 		t.Errorf("unexpected label: %q", uri)
 	}
-	if !strings.Contains(uri, "secret=ABCD") || !strings.Contains(uri, "issuer=2S-UI") {
+	if !strings.Contains(uri, "secret=ABCD") || !strings.Contains(uri, "issuer=3S-UI") {
 		t.Errorf("missing parameters: %q", uri)
 	}
 }

@@ -46,7 +46,7 @@ const en = {
   copied: 'Copied ✓',
   linksHint: 'Copy a link and paste it into your client app, or import the subscription URL directly.',
   noLinks: 'No config links available.',
-  poweredBy: 'Powered by 2s-ui',
+  poweredBy: 'Powered by 3s-ui',
 }
 
 type Messages = typeof en
@@ -76,7 +76,7 @@ const MESSAGES: Record<Lang, Messages> = {
     copied: 'کپی شد ✓',
     linksHint: 'یک لینک را کپی کنید و در برنامه کلاینت خود وارد کنید، یا آدرس اشتراک را مستقیماً وارد کنید.',
     noLinks: 'هیچ لینک پیکربندی‌ای موجود نیست.',
-    poweredBy: 'قدرت‌گرفته از 2s-ui',
+    poweredBy: 'قدرت‌گرفته از 3s-ui',
   },
   vi: {
     subscription: 'Gói đăng ký',
@@ -99,7 +99,7 @@ const MESSAGES: Record<Lang, Messages> = {
     copied: 'Đã sao chép ✓',
     linksHint: 'Sao chép một liên kết và dán vào ứng dụng, hoặc nhập trực tiếp địa chỉ gói đăng ký.',
     noLinks: 'Không có liên kết cấu hình nào.',
-    poweredBy: 'Được cung cấp bởi 2s-ui',
+    poweredBy: 'Được cung cấp bởi 3s-ui',
   },
   zhHans: {
     subscription: '订阅',
@@ -122,7 +122,7 @@ const MESSAGES: Record<Lang, Messages> = {
     copied: '已复制 ✓',
     linksHint: '复制链接后粘贴到客户端，或直接导入订阅地址。',
     noLinks: '暂无可用的配置链接。',
-    poweredBy: '由 2s-ui 驱动',
+    poweredBy: '由 3s-ui 驱动',
   },
   zhHant: {
     subscription: '訂閱',
@@ -145,7 +145,7 @@ const MESSAGES: Record<Lang, Messages> = {
     copied: '已複製 ✓',
     linksHint: '複製連結後貼到用戶端，或直接匯入訂閱網址。',
     noLinks: '目前沒有可用的設定連結。',
-    poweredBy: '由 2s-ui 驅動',
+    poweredBy: '由 3s-ui 驅動',
   },
   ru: {
     subscription: 'Подписка',
@@ -168,11 +168,11 @@ const MESSAGES: Record<Lang, Messages> = {
     copied: 'Скопировано ✓',
     linksHint: 'Скопируйте ссылку и вставьте её в приложение-клиент или импортируйте адрес подписки целиком.',
     noLinks: 'Нет доступных ссылок конфигурации.',
-    poweredBy: 'Работает на 2s-ui',
+    poweredBy: 'Работает на 3s-ui',
   },
 }
 
-const STORAGE_KEY = '2sui-sub-lang'
+const STORAGE_KEY = '3sui-sub-lang'
 
 // matchLang accepts both the panel's own keys (zhHans) and BCP 47 tags
 // (zh-CN, zh-Hant-HK, ru-RU), so ?lang= takes whatever an operator is likely

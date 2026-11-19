@@ -1,14 +1,14 @@
 package core
 
 import (
-	suiAnytls "github.com/shenaba/2s-ui/core/protocol/anytls"
-	suiHysteria "github.com/shenaba/2s-ui/core/protocol/hysteria"
-	suiHysteria2 "github.com/shenaba/2s-ui/core/protocol/hysteria2"
-	suiMieru "github.com/shenaba/2s-ui/core/protocol/mieru"
-	suiTrojan "github.com/shenaba/2s-ui/core/protocol/trojan"
-	suiTuic "github.com/shenaba/2s-ui/core/protocol/tuic"
-	suiVless "github.com/shenaba/2s-ui/core/protocol/vless"
-	suiVmess "github.com/shenaba/2s-ui/core/protocol/vmess"
+	s3uiAnytls "github.com/samur005/3s-ui/core/protocol/anytls"
+	s3uiHysteria "github.com/samur005/3s-ui/core/protocol/hysteria"
+	s3uiHysteria2 "github.com/samur005/3s-ui/core/protocol/hysteria2"
+	s3uiMieru "github.com/samur005/3s-ui/core/protocol/mieru"
+	s3uiTrojan "github.com/samur005/3s-ui/core/protocol/trojan"
+	s3uiTuic "github.com/samur005/3s-ui/core/protocol/tuic"
+	s3uiVless "github.com/samur005/3s-ui/core/protocol/vless"
+	s3uiVmess "github.com/samur005/3s-ui/core/protocol/vmess"
 
 	"github.com/sagernet/sing-box/option"
 	"github.com/sagernet/sing-box/protocol/shadowsocks"
@@ -30,35 +30,35 @@ func (c *Core) UpdateInboundUsers(config []byte) (bool, error) {
 	}
 	switch options := inboundConfig.Options.(type) {
 	case *option.VLESSInboundOptions:
-		if in, ok := inb.(*suiVless.Inbound); ok {
+		if in, ok := inb.(*s3uiVless.Inbound); ok {
 			return true, in.UpdateUsers(options.Users)
 		}
 	case *option.VMessInboundOptions:
-		if in, ok := inb.(*suiVmess.Inbound); ok {
+		if in, ok := inb.(*s3uiVmess.Inbound); ok {
 			return true, in.UpdateUsers(options.Users)
 		}
 	case *option.TrojanInboundOptions:
-		if in, ok := inb.(*suiTrojan.Inbound); ok {
+		if in, ok := inb.(*s3uiTrojan.Inbound); ok {
 			return true, in.UpdateUsers(options.Users)
 		}
 	case *option.TUICInboundOptions:
-		if in, ok := inb.(*suiTuic.Inbound); ok {
+		if in, ok := inb.(*s3uiTuic.Inbound); ok {
 			return true, in.UpdateUsers(options.Users)
 		}
 	case *option.HysteriaInboundOptions:
-		if in, ok := inb.(*suiHysteria.Inbound); ok {
+		if in, ok := inb.(*s3uiHysteria.Inbound); ok {
 			return true, in.UpdateUsers(options.Users)
 		}
 	case *option.Hysteria2InboundOptions:
-		if in, ok := inb.(*suiHysteria2.Inbound); ok {
+		if in, ok := inb.(*s3uiHysteria2.Inbound); ok {
 			return true, in.UpdateUsers(options.Users)
 		}
 	case *option.AnyTLSInboundOptions:
-		if in, ok := inb.(*suiAnytls.Inbound); ok {
+		if in, ok := inb.(*s3uiAnytls.Inbound); ok {
 			return true, in.UpdateUsers(options.Users)
 		}
-	case *suiMieru.InboundOptions:
-		if in, ok := inb.(*suiMieru.Inbound); ok {
+	case *s3uiMieru.InboundOptions:
+		if in, ok := inb.(*s3uiMieru.Inbound); ok {
 			return true, in.UpdateUsers(options.Users)
 		}
 	case *option.ShadowsocksInboundOptions:

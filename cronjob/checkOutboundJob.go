@@ -1,9 +1,9 @@
 package cronjob
 
 import (
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/service"
-	"github.com/shenaba/2s-ui/service/notify"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/service"
+	"github.com/samur005/3s-ui/service/notify"
 )
 
 // CheckOutboundJob reports outbounds that stop being reachable, and reports

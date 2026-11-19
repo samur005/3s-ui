@@ -10,7 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/shenaba/2s-ui/core/proxyheader"
+	"github.com/samur005/3s-ui/core/proxyheader"
 
 	"github.com/gofrs/uuid/v5"
 	"github.com/sagernet/sing-box/adapter"

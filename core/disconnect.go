@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"slices"
 
-	"github.com/shenaba/2s-ui/core/usersession"
+	"github.com/samur005/3s-ui/core/usersession"
 
 	"github.com/sagernet/sing-box/adapter"
 	C "github.com/sagernet/sing-box/constant"

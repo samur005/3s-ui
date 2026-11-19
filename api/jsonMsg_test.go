@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/shenaba/2s-ui/logger"
+	"github.com/samur005/3s-ui/logger"
 
 	"github.com/gin-gonic/gin"
 	"github.com/op/go-logging"

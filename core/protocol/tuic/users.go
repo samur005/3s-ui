@@ -1,8 +1,8 @@
 package tuic
 
 import (
-	"github.com/shenaba/2s-ui/core/quicgrace"
-	"github.com/shenaba/2s-ui/core/usersession"
+	"github.com/samur005/3s-ui/core/quicgrace"
+	"github.com/samur005/3s-ui/core/usersession"
 
 	"github.com/sagernet/sing-box/adapter"
 	"github.com/sagernet/sing-box/common/tls"

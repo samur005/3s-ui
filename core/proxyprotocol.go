@@ -3,7 +3,7 @@ package core
 import (
 	"sync"
 
-	"github.com/shenaba/2s-ui/core/proxyheader"
+	"github.com/samur005/3s-ui/core/proxyheader"
 
 	"github.com/sagernet/sing-box/adapter"
 	C "github.com/sagernet/sing-box/constant"

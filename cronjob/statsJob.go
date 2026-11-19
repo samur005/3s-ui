@@ -3,8 +3,8 @@ package cronjob
 import (
 	"sync"
 
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/service"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/service"
 )
 
 type StatsJob struct {

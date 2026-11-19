@@ -7,8 +7,8 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/middleware"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/middleware"
 )
 
 func loginEngine(t *testing.T) *gin.Engine {
@@ -28,7 +28,7 @@ func loginEngine(t *testing.T) *gin.Engine {
 	engine := gin.New()
 	store := cookie.NewStore([]byte("test-secret-not-used-anywhere-else"))
 	store.Options(BaseSessionOptions(0))
-	engine.Use(sessions.Sessions("s-ui", store))
+	engine.Use(sessions.Sessions("3s-ui", store))
 
 	apiv2 := NewAPIv2Handler(engine.Group("/apiv2"))
 	NewAPIHandler(engine.Group("/api", middleware.SameOrigin(middleware.Options{})), apiv2)

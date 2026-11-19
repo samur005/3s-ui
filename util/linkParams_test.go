@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/shenaba/2s-ui/database/model"
+	"github.com/samur005/3s-ui/database/model"
 )
 
 // mport and alpn go into the query unescaped, and neither value is necessarily

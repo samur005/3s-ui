@@ -7,11 +7,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/database/model"
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/service"
-	"github.com/shenaba/2s-ui/service/notify"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/service"
+	"github.com/samur005/3s-ui/service/notify"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
@@ -121,7 +121,7 @@ func onMessage(ctx context.Context, b *bot.Bot, msg *models.Message) {
 
 	switch cmd {
 	case "start", "help", "menu":
-		reply(ctx, b, chatID, "2S-UI\n"+service.StatusDigest(botLang()), mainMenu())
+		reply(ctx, b, chatID, "3S-UI\n"+service.StatusDigest(botLang()), mainMenu())
 	case "status":
 		reply(ctx, b, chatID, service.StatusDigest(botLang()), mainMenu())
 	case "nodes":
@@ -308,7 +308,7 @@ func sendBackup(ctx context.Context, b *bot.Bot, chatID int64) {
 		reply(ctx, b, chatID, t("backup.failed", p("detail", err.Error())), mainMenu())
 		return
 	}
-	name := "2s-ui-" + notify.Host() + ".db"
+	name := "3s-ui-" + notify.Host() + ".db"
 	if _, err := b.SendDocument(ctx, &bot.SendDocumentParams{
 		// bytes, not strings.NewReader(string(data)): the export is already a
 		// []byte and a database is tens of megabytes, so the conversion was a

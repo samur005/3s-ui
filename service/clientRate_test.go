@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shenaba/2s-ui/core"
+	"github.com/samur005/3s-ui/core"
 
 	"github.com/sagernet/sing-box/adapter"
 )

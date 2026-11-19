@@ -1,5 +1,5 @@
 #!/bin/sh
-# Build a static, drop-in `sui` binary for TESTING on a Linux server.
+# Build a static, drop-in `3sui` binary for TESTING on a Linux server.
 #
 # It mirrors the official release build (static musl) but DROPS the naive /
 # cronet outbound, which avoids a very heavy toolchain. The result is a single
@@ -24,6 +24,6 @@ export CGO_ENABLED=1 GOOS=linux GOARCH
 
 go build -ldflags="-w -s -checklinkname=0 -linkmode external -extldflags '-static'" \
   -tags "with_quic,with_grpc,with_utls,with_acme,with_gvisor,badlinkname,tfogo_checklinkname0,with_tailscale" \
-  -o sui main.go
+  -o 3sui main.go
 
-echo "Built ./sui (GOARCH=$GOARCH). Copy it to /usr/local/s-ui/sui on the server and restart s-ui."
+echo "Built ./3sui (GOARCH=$GOARCH). Copy it to /usr/local/3s-ui/3sui on the server and restart 3s-ui."

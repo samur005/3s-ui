@@ -3,8 +3,8 @@ package naive
 import (
 	"net/http"
 
-	"github.com/shenaba/2s-ui/core/proxyheader"
-	"github.com/shenaba/2s-ui/core/transport"
+	"github.com/samur005/3s-ui/core/proxyheader"
+	"github.com/samur005/3s-ui/core/transport"
 
 	upstream "github.com/sagernet/sing-box/protocol/naive"
 	// The HTTP/3 server: it installs itself on the upstream package.

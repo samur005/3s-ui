@@ -15,8 +15,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/service"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/service"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"

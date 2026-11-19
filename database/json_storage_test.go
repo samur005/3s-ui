@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/shenaba/2s-ui/database/model"
+	"github.com/samur005/3s-ui/database/model"
 )
 
 // A client row written by the sqlite3 shell stores its JSON as TEXT, which

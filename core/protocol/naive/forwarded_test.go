@@ -5,8 +5,8 @@ import (
 	"net/netip"
 	"testing"
 
-	"github.com/shenaba/2s-ui/core/proxyheader"
-	"github.com/shenaba/2s-ui/core/transport"
+	"github.com/samur005/3s-ui/core/proxyheader"
+	"github.com/samur005/3s-ui/core/transport"
 
 	"github.com/sagernet/sing/common/logger"
 )

@@ -1,11 +1,11 @@
 #!/sbin/openrc-run
 
-description="s-ui Service"
-command="/usr/local/s-ui/sui"
-directory="/usr/local/s-ui"
-pidfile="/run/s-ui.pid"
-output_log="/var/log/s-ui.log"
-error_log="/var/log/s-ui.log"
+description="3s-ui Service"
+command="/usr/local/3s-ui/3sui"
+directory="/usr/local/3s-ui"
+pidfile="/run/3s-ui.pid"
+output_log="/var/log/3s-ui.log"
+error_log="/var/log/3s-ui.log"
 supervisor=supervise-daemon
 respawn_delay=10
 

@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/shenaba/2s-ui/config"
+	"github.com/samur005/3s-ui/config"
 )
 
 func TestVersionBefore(t *testing.T) {

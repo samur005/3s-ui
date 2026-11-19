@@ -3,7 +3,7 @@ package core
 import (
 	"encoding/json"
 
-	"github.com/shenaba/2s-ui/logger"
+	"github.com/samur005/3s-ui/logger"
 
 	"github.com/sagernet/sing-box/adapter"
 	C "github.com/sagernet/sing-box/constant"

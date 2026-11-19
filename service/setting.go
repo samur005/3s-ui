@@ -10,13 +10,13 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/shenaba/2s-ui/config"
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/database/model"
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/service/notify"
-	"github.com/shenaba/2s-ui/util"
-	"github.com/shenaba/2s-ui/util/common"
+	"github.com/samur005/3s-ui/config"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/service/notify"
+	"github.com/samur005/3s-ui/util"
+	"github.com/samur005/3s-ui/util/common"
 
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
@@ -471,7 +471,7 @@ func (s *SettingService) GetWebAcmeEmail() (string, error) {
 }
 
 // GetWebURI 返回面板对外地址的手工覆盖值(空表示未设置,由调用方自行推断)。
-// 反代场景下面板推断不出对外地址,只能靠它,参见 sui uri 与前端 restartApp。
+// 反代场景下面板推断不出对外地址,只能靠它,参见 3sui uri 与前端 restartApp。
 func (s *SettingService) GetWebURI() (string, error) {
 	return s.getString("webURI")
 }
@@ -765,7 +765,7 @@ func (s *SettingService) GetFinalSubURI(host string) (string, error) {
 	// 订阅自身跑明文,对外由 nginx 在 443 说 https,链接里既不能是 http 也不能带订阅
 	// 自身的内网端口;其后才是 acme 模式,或证书/私钥【任一】非空即尝试 TLS。早先这里
 	// 要求两者都填,只填一个时 sub 服务已经在跑 https,本函数生成的订阅链接却还是
-	// http——而这是真正发给客户端的地址。判定与 sui uri 同源。
+	// http——而这是真正发给客户端的地址。判定与 3sui uri 同源。
 	subNginx := runtime.GOOS != "windows" && (*allSetting)["subNginx"] == "true"
 	protocol := "http"
 	if subNginx || (*allSetting)["subCertMode"] == "acme" ||
@@ -918,7 +918,7 @@ func (s *SettingService) Save(tx *gorm.DB, data json.RawMessage) error {
 
 		// 域名会进 nginx 的 server_name、Host 校验和证书目录名,通配符在这些位置全都
 		// 不成立——DomainValidator 按 Host 逐字比对,「*.example.com」永远匹配不上,
-		// 面板会整个 403,而 sui setting 没有改域名的 flag,只能重置或改库才能救回。
+		// 面板会整个 403,而 3sui setting 没有改域名的 flag,只能重置或改库才能救回。
 		if (key == "webDomain" || key == "subDomain") && strings.Contains(obj, "*") {
 			return common.NewErrorf("%s 不能是通配符域名: %q;请填一个具体的主机名(通配符证书对具体主机名同样生效)", key, obj)
 		}

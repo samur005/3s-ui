@@ -69,7 +69,7 @@ func TestKeypairOfUnknownTypeFails(t *testing.T) {
 	}
 }
 
-// The drawers used to send the literal string '' for an empty server name.
+// The drawers used to send the literal string ” for an empty server name.
 // An ECH config whose public name is not a domain is skipped by Go's client
 // (crypto/tls pickECHConfig), and a self-signed certificate for "" is valid for
 // no name, so both are refused instead of generated.

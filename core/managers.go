@@ -743,7 +743,7 @@ func (m *outboundManager) fallbackForLast(it adapter.Outbound) (adapter.Outbound
 }
 
 // dependents names the outbounds and endpoints that depend on tag. It scans
-// rather than keeping an index, as upstream s-ui does: an index has to be kept
+// rather than keeping an index, as upstream 3s-ui does: an index has to be kept
 // in step on every add, replace and drop, and the one this used to keep did
 // not count endpoints at all. A panel has tens of outbounds, not thousands.
 func (m *outboundManager) dependents(tag string) []string {

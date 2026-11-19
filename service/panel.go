@@ -6,7 +6,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/shenaba/2s-ui/logger"
+	"github.com/samur005/3s-ui/logger"
 )
 
 type PanelService struct {

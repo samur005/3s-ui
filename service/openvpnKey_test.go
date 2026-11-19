@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/shenaba/2s-ui/core"
-	"github.com/shenaba/2s-ui/logger"
+	"github.com/samur005/3s-ui/core"
+	"github.com/samur005/3s-ui/logger"
 
 	"github.com/op/go-logging"
 	"github.com/sagernet/sing-box/option"
@@ -70,7 +70,7 @@ func TestGenerateOpenVPNStaticKey(t *testing.T) {
 // static_key is a thing the endpoint accepts at all. The format itself is the
 // test above, against what `openvpn --genkey secret` writes.
 func TestGeneratedOpenVPNStaticKeyBuildsAnEndpoint(t *testing.T) {
-	// Building a box logs through the s-ui logger, which panics uninitialised.
+	// Building a box logs through the 3s-ui logger, which panics uninitialised.
 	logger.InitLogger(logging.CRITICAL)
 
 	var server ServerService

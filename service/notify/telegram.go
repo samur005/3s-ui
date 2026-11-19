@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/util/common"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/util/common"
 )
 
 const defaultTelegramAPI = "https://api.telegram.org"

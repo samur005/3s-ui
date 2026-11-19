@@ -19,9 +19,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/shenaba/2s-ui/config"
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/util"
+	"github.com/samur005/3s-ui/config"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/util"
 )
 
 // Self-update runs on Linux only. Bare-metal installs restart through a
@@ -32,10 +32,10 @@ import (
 // image's version. On Windows a running .exe cannot be replaced, so the panel
 // keeps the "new version" chip as a plain link there.
 const (
-	releaseAPIURL = "https://api.github.com/repos/shenaba/2s-ui/releases/latest"
-	releaseDLBase = "https://github.com/shenaba/2s-ui/releases/download"
+	releaseAPIURL = "https://api.github.com/repos/samur005/3s-ui/releases/latest"
+	releaseDLBase = "https://github.com/samur005/3s-ui/releases/download"
 	checksumsName = "SHA256SUMS"
-	serviceUnit   = "s-ui"
+	serviceUnit   = "3s-ui"
 )
 
 type UpdatePhase string
@@ -205,7 +205,7 @@ func (s *UpdateService) run() {
 		s.fail("unsupported architecture", err)
 		return
 	}
-	assetName := fmt.Sprintf("s-ui-linux-%s.tar.gz", plat)
+	assetName := fmt.Sprintf("3s-ui-linux-%s.tar.gz", plat)
 	tarURL := fmt.Sprintf("%s/%s/%s", releaseDLBase, tag, assetName)
 	sumURL := fmt.Sprintf("%s/%s/%s", releaseDLBase, tag, checksumsName)
 
@@ -219,7 +219,7 @@ func (s *UpdateService) run() {
 	}
 	installDir := filepath.Dir(exe)
 
-	work, err := os.MkdirTemp("", "sui-update-")
+	work, err := os.MkdirTemp("", "3sui-update-")
 	if err != nil {
 		s.fail("cannot create temp dir", err)
 		return
@@ -266,7 +266,7 @@ func (s *UpdateService) run() {
 		s.fail("extract failed", err)
 		return
 	}
-	newBin := filepath.Join(stageDir, "s-ui", "sui")
+	newBin := filepath.Join(stageDir, "3s-ui", "3sui")
 	if _, err := os.Stat(newBin); err != nil {
 		s.fail("binary not found in archive", err)
 		return
@@ -276,7 +276,7 @@ func (s *UpdateService) run() {
 		return
 	}
 	// A wrong-arch or corrupt binary must never reach systemd, or the unit would
-	// crash-loop with no way back. `sui -v` prints the version and exits, so a
+	// crash-loop with no way back. `3sui -v` prints the version and exits, so a
 	// clean exit proves the binary at least runs on this host.
 	if err := smokeTest(newBin); err != nil {
 		s.fail("new binary failed to run", err)
@@ -291,7 +291,7 @@ func (s *UpdateService) run() {
 		return
 	}
 	// Best-effort refresh of the bundled management script; never fatal.
-	copyIfExists(filepath.Join(stageDir, "s-ui", "s-ui.sh"), filepath.Join(installDir, "s-ui.sh"))
+	copyIfExists(filepath.Join(stageDir, "3s-ui", "3s-ui.sh"), filepath.Join(installDir, "3s-ui.sh"))
 
 	// 6) Restart. In Docker there is no systemd: after a short delay (so the
 	// frontend can observe the "restarting" phase) the process re-execs the
@@ -311,7 +311,7 @@ func (s *UpdateService) run() {
 		return
 	}
 	if err := detachedRestart(); err != nil {
-		s.fail("installed, but automatic restart failed; run: systemctl restart s-ui", err)
+		s.fail("installed, but automatic restart failed; run: systemctl restart 3s-ui", err)
 		return
 	}
 	// systemd will terminate us shortly; leave the status at "restarting".
@@ -529,7 +529,7 @@ func swapBinary(newBin, curBin string) error {
 	backup := curBin + ".bak"
 	_ = os.Remove(backup)
 	// Keep the previous binary so a broken update can be reverted by hand:
-	//   mv sui.bak sui && systemctl restart s-ui
+	//   mv 3sui.bak 3sui && systemctl restart 3s-ui
 	if err := copyFile(curBin, backup, 0o755); err != nil {
 		return fmt.Errorf("backup failed: %w", err)
 	}
@@ -570,9 +570,9 @@ func copyIfExists(src, dst string) {
 }
 
 func detachedRestart() error {
-	unit := fmt.Sprintf("s-ui-selfupdate-%d", time.Now().Unix())
-	// A transient systemd service runs under PID 1, outside s-ui.service's
-	// cgroup, so `systemctl restart s-ui` (which kills our cgroup) cannot kill
+	unit := fmt.Sprintf("3s-ui-selfupdate-%d", time.Now().Unix())
+	// A transient systemd service runs under PID 1, outside 3s-ui.service's
+	// cgroup, so `systemctl restart 3s-ui` (which kills our cgroup) cannot kill
 	// it. The short sleep lets the HTTP response flush before we go down.
 	cmd := exec.Command(
 		"systemd-run",

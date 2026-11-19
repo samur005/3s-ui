@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/database/model"
-	"github.com/shenaba/2s-ui/util"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/util"
 
 	"gopkg.in/yaml.v3"
 )
@@ -20,7 +20,7 @@ import (
 // cleanup fails to remove a file that is still open.
 func setupSubDB(t *testing.T) {
 	t.Helper()
-	if err := database.InitDB(filepath.Join(t.TempDir(), "s-ui.db")); err != nil {
+	if err := database.InitDB(filepath.Join(t.TempDir(), "3s-ui.db")); err != nil {
 		t.Fatalf("InitDB: %v", err)
 	}
 	t.Cleanup(func() {

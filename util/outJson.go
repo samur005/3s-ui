@@ -5,9 +5,9 @@ import (
 	"net/netip"
 	"strings"
 
-	"github.com/shenaba/2s-ui/util/common"
+	"github.com/samur005/3s-ui/util/common"
 
-	"github.com/shenaba/2s-ui/database/model"
+	"github.com/samur005/3s-ui/database/model"
 )
 
 // Fill Inbound's out_json

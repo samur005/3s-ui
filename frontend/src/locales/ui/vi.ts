@@ -351,7 +351,7 @@ export default {
   activity: "Hoạt động",
   activitySub: "Sự kiện hệ thống & khách gần đây",
   nodeNew: "Node mới",
-  nodeSub: "Kết nối bảng 2S-UI khác",
+  nodeSub: "Kết nối bảng 3S-UI khác",
   nodesTile: "Node",
   nodesTileSub: "Tổng quan các bảng được quản lý",
   view: "Xem",

@@ -16,11 +16,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/shenaba/2s-ui/config"
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/database/model"
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/util/common"
+	"github.com/samur005/3s-ui/config"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/util/common"
 
 	"github.com/sagernet/sing-box/common/tls"
 	"github.com/shirou/gopsutil/v4/cpu"
@@ -288,7 +288,7 @@ func (s *ServerService) GenKeypair(keyType string, options string) ([]string, er
 // generateECHKeyPair refuses a public name that is not a domain rather than
 // generating a config no client would use: Go's TLS client (pickECHConfig)
 // skips any ECH config whose public_name fails this same check, and the drawers
-// used to send the literal string '' when the server name was empty.
+// used to send the literal string ” when the server name was empty.
 func (s *ServerService) generateECHKeyPair(serverName string) ([]string, error) {
 	// A pasted name often carries a stray space, which no domain contains.
 	serverName = strings.TrimSpace(serverName)

@@ -6,8 +6,8 @@ import (
 	"os"
 	"runtime/debug"
 
-	"github.com/shenaba/2s-ui/cmd/migration"
-	"github.com/shenaba/2s-ui/config"
+	"github.com/samur005/3s-ui/cmd/migration"
+	"github.com/samur005/3s-ui/config"
 )
 
 func ParseCmd() {
@@ -70,7 +70,7 @@ func ParseCmd() {
 
 	flag.Parse()
 	if showVersion {
-		fmt.Println("S-UI Panel\t", config.GetVersion())
+		fmt.Println("3S-UI Panel\t", config.GetVersion())
 		info, ok := debug.ReadBuildInfo()
 		if ok {
 			for _, dep := range info.Deps {

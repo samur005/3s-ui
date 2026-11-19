@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/shenaba/2s-ui/util/common"
+	"github.com/samur005/3s-ui/util/common"
 
 	sb "github.com/sagernet/sing-box"
 	_ "github.com/sagernet/sing-box/experimental/clashapi"

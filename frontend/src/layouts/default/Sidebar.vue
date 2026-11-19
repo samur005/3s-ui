@@ -34,7 +34,7 @@
 
     <div class="sidebar-foot">
       <a
-        href="https://github.com/shenaba/2s-ui"
+        href="https://github.com/samur005/3s-ui"
         target="_blank"
         rel="noreferrer"
         class="gh-link"

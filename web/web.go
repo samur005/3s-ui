@@ -14,13 +14,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/shenaba/2s-ui/api"
-	"github.com/shenaba/2s-ui/config"
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/middleware"
-	"github.com/shenaba/2s-ui/network"
-	"github.com/shenaba/2s-ui/service"
-	"github.com/shenaba/2s-ui/util/common"
+	"github.com/samur005/3s-ui/api"
+	"github.com/samur005/3s-ui/config"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/middleware"
+	"github.com/samur005/3s-ui/network"
+	"github.com/samur005/3s-ui/service"
+	"github.com/samur005/3s-ui/util/common"
 
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-contrib/sessions"
@@ -98,7 +98,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 	assetsBasePath := base_url + "assets/"
 
 	store := cookie.NewStore(secret)
-	engine.Use(sessions.Sessions("s-ui", store))
+	engine.Use(sessions.Sessions("3s-ui", store))
 
 	// The panel is an admin surface: nothing may frame it, guess its
 	// content types, or learn panel URLs from a Referer. A page the
@@ -153,7 +153,7 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 	// the check is allowed to believe; refusing to build the router over one of
 	// them would turn a settings row a caller can write through api/save --
 	// webNginx is stored verbatim, so `strconv.ParseBool` can fail on it -- into
-	// a panel that will not boot, with no `sui setting` flag to undo it. The
+	// a panel that will not boot, with no `3sui setting` flag to undo it. The
 	// defaults are the strict reading: nothing in front, so the Host header is
 	// taken at face value, and a port nothing can match.
 	//

@@ -20,7 +20,7 @@
 // closing the listener sends each of them a CONNECTION_CLOSE before the
 // transport goes away. No upstream code is copied or reached into.
 //
-// Ported from upstream s-ui (#1278), without the half that closes one client's
+// Ported from upstream 3s-ui (#1278), without the half that closes one client's
 // session by its source address. That address is not an identity for a QUIC
 // session -- quic-go rewrites it on a NAT rebind, and the port is recycled to
 // someone else once the session ends -- which is exactly why core/usersession

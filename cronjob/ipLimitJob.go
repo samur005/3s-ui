@@ -3,7 +3,7 @@ package cronjob
 import (
 	"sync"
 
-	"github.com/shenaba/2s-ui/service"
+	"github.com/samur005/3s-ui/service"
 )
 
 type IpLimitJob struct {

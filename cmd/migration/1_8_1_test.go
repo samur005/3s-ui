@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/shenaba/2s-ui/database/model"
+	"github.com/samur005/3s-ui/database/model"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -51,7 +51,7 @@ func TestTo1_8_1BackfillsSnell(t *testing.T) {
 	if err := db.Create(&model.Client{
 		Name: "alice", Group: "user",
 		Inbounds: json.RawMessage(`[]`), Links: json.RawMessage(`[]`),
-		Config:   json.RawMessage(`{"vless":{"name":"alice","uuid":"u"}}`),
+		Config: json.RawMessage(`{"vless":{"name":"alice","uuid":"u"}}`),
 	}).Error; err != nil {
 		t.Fatalf("seed client: %v", err)
 	}
@@ -86,7 +86,7 @@ func TestTo1_8_1KeepsAnExistingKey(t *testing.T) {
 	if err := db.Create(&model.Client{
 		Name: "bob", Group: "user",
 		Inbounds: json.RawMessage(`[]`), Links: json.RawMessage(`[]`),
-		Config:   json.RawMessage(`{"snell":{"name":"bob","userkey":"keep-me"}}`),
+		Config: json.RawMessage(`{"snell":{"name":"bob","userkey":"keep-me"}}`),
 	}).Error; err != nil {
 		t.Fatalf("seed client: %v", err)
 	}
@@ -117,7 +117,7 @@ func TestTo1_8_1SkipsUnreadableConfig(t *testing.T) {
 	if err := db.Create(&model.Client{
 		Name: "broken", Group: "user",
 		Inbounds: json.RawMessage(`[]`), Links: json.RawMessage(`[]`),
-		Config:   json.RawMessage(`not json`),
+		Config: json.RawMessage(`not json`),
 	}).Error; err != nil {
 		t.Fatalf("seed client: %v", err)
 	}
@@ -144,7 +144,7 @@ func TestTo1_8_1HandlesNullConfig(t *testing.T) {
 	if err := db.Create(&model.Client{
 		Name: "nully", Group: "user",
 		Inbounds: json.RawMessage(`[]`), Links: json.RawMessage(`[]`),
-		Config:   json.RawMessage(`null`),
+		Config: json.RawMessage(`null`),
 	}).Error; err != nil {
 		t.Fatalf("seed client: %v", err)
 	}

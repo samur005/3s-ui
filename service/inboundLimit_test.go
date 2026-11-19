@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/database/model"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/database/model"
 )
 
 // Per-inbound traffic caps (#289), against a real database and a real core.

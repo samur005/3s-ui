@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/shenaba/2s-ui/util/common"
+	"github.com/samur005/3s-ui/util/common"
 
 	utls "github.com/refraction-networking/utls"
 )

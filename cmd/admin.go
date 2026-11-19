@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/shenaba/2s-ui/config"
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/service"
+	"github.com/samur005/3s-ui/config"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/service"
 )
 
 // resetAdmin puts the first account back to admin/admin.
@@ -38,7 +38,7 @@ func resetAdmin(assumeYes bool) {
 		return
 	}
 	fmt.Println("reset admin credentials success")
-	fmt.Println("Change them now: s-ui admin -username <user> -password <pass>")
+	fmt.Println("Change them now: 3s-ui admin -username <user> -password <pass>")
 }
 
 // disableAdminTwoFa is the only way back in once the second factor cannot be
@@ -120,5 +120,5 @@ func showAdmin() {
 	fmt.Println("First admin credentials:")
 	fmt.Println("\tUsername:\t", username)
 	fmt.Println("\tPassword:\t <hashed, not recoverable>")
-	fmt.Println("To set a new password, run: s-ui admin -username <user> -password <pass>")
+	fmt.Println("To set a new password, run: 3s-ui admin -username <user> -password <pass>")
 }

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/database/model"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/database/model"
 )
 
 // Every writer that edits a whole client, crossed with every schedule shape a

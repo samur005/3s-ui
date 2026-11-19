@@ -351,7 +351,7 @@ export default {
   activity: "动态",
   activitySub: "近期系统与客户端事件",
   nodeNew: "新建节点",
-  nodeSub: "接入另一台 2S-UI 面板",
+  nodeSub: "接入另一台 3S-UI 面板",
   nodesTile: "节点",
   nodesTileSub: "托管面板一览",
   view: "查看",

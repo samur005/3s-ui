@@ -1,4 +1,4 @@
-# PowerShell script for building S-UI on Windows
+# PowerShell script for building 3S-UI on Windows
 param(
     [string]$Architecture = "amd64",
     [switch]$NoCGO,
@@ -15,7 +15,7 @@ if ($Help) {
     exit 0
 }
 
-Write-Host "Building S-UI for Windows ($Architecture)..." -ForegroundColor Green
+Write-Host "Building 3S-UI for Windows ($Architecture)..." -ForegroundColor Green
 
 # Check if Go is installed
 try {
@@ -107,7 +107,7 @@ if ($NoCGO) {
 }
 
 # Build command
-$buildCmd = "go build -ldflags `"-w -s`" -tags `"with_quic,with_grpc,with_utls,with_acme,with_gvisor,with_tailscale`" -o sui.exe main.go"
+$buildCmd = "go build -ldflags `"-w -s`" -tags `"with_quic,with_grpc,with_utls,with_acme,with_gvisor,with_tailscale`" -o 3sui.exe main.go"
 
 try {
     Invoke-Expression $buildCmd
@@ -137,11 +137,11 @@ try {
 }
 
 Write-Host "Build completed successfully!" -ForegroundColor Green
-Write-Host "Output: sui.exe" -ForegroundColor Green
+Write-Host "Output: 3sui.exe" -ForegroundColor Green
 
 # Show file info
-if (Test-Path "sui.exe") {
-    $fileInfo = Get-Item "sui.exe"
+if (Test-Path "3sui.exe") {
+    $fileInfo = Get-Item "3sui.exe"
     Write-Host "File size: $([math]::Round($fileInfo.Length / 1MB, 2)) MB" -ForegroundColor Cyan
     Write-Host "Created: $($fileInfo.CreationTime)" -ForegroundColor Cyan
 }

@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/database/model"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/database/model"
 )
 
 func at(y int, m time.Month, d, h, min int) time.Time {

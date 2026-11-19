@@ -197,7 +197,7 @@ export default {
     coreVersion: "Lõi",
     desc: "Ghi chú",
     emptyTitle: "Chưa có node nào",
-    emptyDesc: "Thêm một bảng 2S-UI khác để giám sát tại đây.",
+    emptyDesc: "Thêm một bảng 3S-UI khác để giám sát tại đây.",
     status: {
       online: "Trực tuyến",
       offline: "Ngoại tuyến",

@@ -11,7 +11,7 @@
         <div style="font-size: 34px; font-weight: 800; letter-spacing: -.03em; line-height: 1.12; max-width: 420px;">{{ $t('ui.heroTitle') }}</div>
         <div style="font-size: 15px; color: rgba(255,255,255,.65); margin-top: 16px; max-width: 400px; line-height: 1.6;">{{ $t('ui.heroDesc') }}</div>
       </div>
-      <div style="position: relative; font-size: 12.5px; color: rgba(255,255,255,.4);">sing-box · © {{ new Date().getFullYear() }} 2S-UI</div>
+      <div style="position: relative; font-size: 12.5px; color: rgba(255,255,255,.4);">sing-box · © {{ new Date().getFullYear() }} 3S-UI</div>
     </div>
 
     <!-- form side -->
@@ -99,7 +99,7 @@ const login = async () => {
     code: code.value,
   })
   if (response.success) {
-    localStorage.setItem('2sui-user', username.value)
+    localStorage.setItem('3sui-user', username.value)
     setTimeout(() => {
       loading.value = false
       router.push('/')

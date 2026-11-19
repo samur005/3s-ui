@@ -198,7 +198,7 @@ export default {
     coreVersion: "Ядро",
     desc: "Описание",
     emptyTitle: "Пока нет узлов",
-    emptyDesc: "Добавьте другую панель 2S-UI, чтобы наблюдать за ней отсюда.",
+    emptyDesc: "Добавьте другую панель 3S-UI, чтобы наблюдать за ней отсюда.",
     status: {
       online: "В сети",
       offline: "Не в сети",

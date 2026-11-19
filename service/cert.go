@@ -7,10 +7,10 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/database/model"
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/util/common"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/util/common"
 
 	"gorm.io/gorm/clause"
 )
@@ -195,7 +195,7 @@ func (c *CertService) HasManual(domain string) bool {
 // 证书」时补一条。设置里的 webCertFile/webKeyFile 不动，面板照旧读它启动——这一步
 // 只是让那份证书在新页面上看得见、可管理，不改变任何现有行为。
 //
-// 不放在 cmd/migration 里：那套迁移只在 `sui migrate` 和导入备份时跑，正常启动
+// 不放在 cmd/migration 里：那套迁移只在 `3sui migrate` 和导入备份时跑，正常启动
 // 根本不经过，挂在那儿等于对绝大多数升级用户没生效。
 //
 // 成本控制：正常启动在 HasManual（索引 COUNT）就短路了；acme.sh 家目录的全量扫描

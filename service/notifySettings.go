@@ -4,10 +4,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/database/model"
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/service/notify"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/service/notify"
 )
 
 // NotifyThresholds are the knobs the event sources need, as opposed to the

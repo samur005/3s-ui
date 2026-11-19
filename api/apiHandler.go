@@ -3,7 +3,7 @@ package api
 import (
 	"strings"
 
-	"github.com/shenaba/2s-ui/util/common"
+	"github.com/samur005/3s-ui/util/common"
 
 	"github.com/gin-gonic/gin"
 )

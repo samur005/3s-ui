@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/database/model"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/database/model"
 )
 
 const testWireguard = `{"type":"wireguard","tag":"wg","address":["10.9.0.1/32"],"private_key":"yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk=","peers":[]}`

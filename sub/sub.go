@@ -10,12 +10,12 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/shenaba/2s-ui/config"
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/middleware"
-	"github.com/shenaba/2s-ui/network"
-	"github.com/shenaba/2s-ui/service"
-	"github.com/shenaba/2s-ui/util/common"
+	"github.com/samur005/3s-ui/config"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/middleware"
+	"github.com/samur005/3s-ui/network"
+	"github.com/samur005/3s-ui/service"
+	"github.com/samur005/3s-ui/util/common"
 
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"

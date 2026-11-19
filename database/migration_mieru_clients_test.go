@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/shenaba/2s-ui/database/jsonsql"
-	"github.com/shenaba/2s-ui/database/model"
+	"github.com/samur005/3s-ui/database/jsonsql"
+	"github.com/samur005/3s-ui/database/model"
 )
 
 // A client from before mieru has no mieru block, and without one it is left

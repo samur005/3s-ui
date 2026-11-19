@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/shenaba/2s-ui/service/notify"
+	"github.com/samur005/3s-ui/service/notify"
 )
 
 var placeholder = regexp.MustCompile(`\{[a-zA-Z]+\}`)

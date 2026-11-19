@@ -168,7 +168,7 @@ const closeChangesModal = () => {
 // idea who you are" and disables nothing. Locking every row would be worse:
 // with one admin it makes 2FA unreachable, and unlike the mismatch case there
 // is nothing on screen to explain it.
-const currentUser = localStorage.getItem('2sui-user') ?? ''
+const currentUser = localStorage.getItem('3sui-user') ?? ''
 const twoFaModal = ref({
   visible: false,
   enabled: false,

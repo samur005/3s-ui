@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/shenaba/2s-ui/core"
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/database/model"
-	"github.com/shenaba/2s-ui/util/common"
+	"github.com/samur005/3s-ui/core"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/util/common"
 )
 
 // SessionsResult is a live-connections listing. Errors names the nodes that

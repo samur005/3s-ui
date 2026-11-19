@@ -1,4 +1,4 @@
-name: Release 2S-UI
+name: Release 3S-UI
 
 on:
   workflow_dispatch:
@@ -14,8 +14,8 @@ on:
       - '**.go'
       - 'go.mod'
       - 'go.sum'
-      - 's-ui.service'
-      - 's-ui.openrc'
+      - '3s-ui.service'
+      - '3s-ui.openrc'
 
 # Merging several PRs in a row queues one full matrix per push, and only the last
 # one builds the tree that ships. github.ref already separates a release run
@@ -214,29 +214,29 @@ jobs:
           echo "go mod download failed after 5 attempts" >&2
           exit 1
 
-      - name: Build 2s-ui
+      - name: Build 3s-ui
         run: |
           set -e
           BUILD_TAGS="with_quic,with_grpc,with_utls,with_acme,with_gvisor,badlinkname,tfogo_checklinkname0,with_tailscale,with_cloudflared,with_openconnect,with_openvpn,with_usbip"
           [ "${{ matrix.naive }}" = "true" ] && BUILD_TAGS="${BUILD_TAGS},with_naive_outbound,with_musl"
-          go build -ldflags="-w -s -checklinkname=0 -linkmode external -extldflags '-static'" -tags "$BUILD_TAGS" -o sui main.go
-          file sui
-          ldd sui 2>/dev/null || echo "Static binary confirmed"
+          go build -ldflags="-w -s -checklinkname=0 -linkmode external -extldflags '-static'" -tags "$BUILD_TAGS" -o 3sui main.go
+          file 3sui
+          ldd 3sui 2>/dev/null || echo "Static binary confirmed"
 
-          mkdir s-ui
-          cp sui s-ui/
-          cp s-ui.service s-ui/
-          cp s-ui.openrc s-ui/
-          cp s-ui.sh s-ui/
+          mkdir 3s-ui
+          cp 3sui 3s-ui/
+          cp 3s-ui.service 3s-ui/
+          cp 3s-ui.openrc 3s-ui/
+          cp 3s-ui.sh 3s-ui/
 
       - name: Package
-        run: tar -zcvf s-ui-linux-${{ matrix.platform }}.tar.gz s-ui
+        run: tar -zcvf 3s-ui-linux-${{ matrix.platform }}.tar.gz 3s-ui
 
       - name: Upload artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: s-ui-linux-${{ matrix.platform }}
-          path: ./s-ui-linux-${{ matrix.platform }}.tar.gz
+          name: 3s-ui-linux-${{ matrix.platform }}
+          path: ./3s-ui-linux-${{ matrix.platform }}.tar.gz
           retention-days: 30
 
       - name: Upload to Release
@@ -246,8 +246,8 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref_name }}
-          file: s-ui-linux-${{ matrix.platform }}.tar.gz
-          asset_name: s-ui-linux-${{ matrix.platform }}.tar.gz
+          file: 3s-ui-linux-${{ matrix.platform }}.tar.gz
+          asset_name: 3s-ui-linux-${{ matrix.platform }}.tar.gz
           prerelease: true
           overwrite: true
 
@@ -263,11 +263,11 @@ jobs:
       - name: Download all release tarballs
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
-          pattern: s-ui-linux-*
+          pattern: 3s-ui-linux-*
           merge-multiple: true
 
       - name: Generate SHA256SUMS
-        run: sha256sum s-ui-linux-*.tar.gz | tee SHA256SUMS
+        run: sha256sum 3s-ui-linux-*.tar.gz | tee SHA256SUMS
 
       - name: Upload SHA256SUMS to Release
         uses: svenstaro/upload-release-action@29e53e917877a24fad85510ded594ab3c9ca12de # 2.11.5

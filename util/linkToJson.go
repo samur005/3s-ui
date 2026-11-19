@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/shenaba/2s-ui/util/common"
+	"github.com/samur005/3s-ui/util/common"
 )
 
 func GetOutbound(uri string, i int) (*map[string]interface{}, string, error) {

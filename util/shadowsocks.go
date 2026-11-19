@@ -10,7 +10,7 @@ package util
 // "shadowsocks" — including 2022-blake3-aes-256-gcm and -chacha20-poly1305,
 // which need the full 32 bytes.
 //
-// Upstream s-ui routes those two to a third key, "shadowsocks32", that no
+// Upstream 3s-ui routes those two to a third key, "shadowsocks32", that no
 // client config contains; the lookup then yields "" and the inbound ends up
 // with an empty user list. Keep the two-key mapping.
 func ShadowsocksClientConfigKey(method string) string {

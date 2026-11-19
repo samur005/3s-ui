@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/database/model"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/database/model"
 )
 
 // The tests in this file pin the panel API side of the anti-probing

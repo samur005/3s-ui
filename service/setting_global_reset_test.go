@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shenaba/2s-ui/database"
+	"github.com/samur005/3s-ui/database"
 )
 
 func newSettingDB(t *testing.T) {
@@ -35,7 +35,6 @@ func saveSettings(t *testing.T, body string) error {
 	}
 	return tx.Commit().Error
 }
-
 
 // A bad spec used to be stored and only logged at the next panel start, after
 // which the reset silently never ran.

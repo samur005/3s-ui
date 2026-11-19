@@ -351,7 +351,7 @@ export default {
   activity: "Активность",
   activitySub: "Недавние события системы и клиентов",
   nodeNew: "Новый узел",
-  nodeSub: "Подключите другую панель 2S-UI",
+  nodeSub: "Подключите другую панель 3S-UI",
   nodesTile: "Узлы",
   nodesTileSub: "Обзор управляемых панелей",
   view: "Просмотр",

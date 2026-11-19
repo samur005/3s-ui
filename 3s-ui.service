@@ -1,12 +1,12 @@
 [Unit]
-Description=s-ui Service
+Description=3s-ui Service
 After=network.target
 Wants=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/usr/local/s-ui/
-ExecStart=/usr/local/s-ui/sui
+WorkingDirectory=/usr/local/3s-ui/
+ExecStart=/usr/local/3s-ui/3sui
 Restart=on-failure
 RestartSec=10s
 

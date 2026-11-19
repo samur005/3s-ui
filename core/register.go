@@ -1,15 +1,15 @@
 package core
 
 import (
-	suiAnytls "github.com/shenaba/2s-ui/core/protocol/anytls"
-	suiHysteria "github.com/shenaba/2s-ui/core/protocol/hysteria"
-	suiHysteria2 "github.com/shenaba/2s-ui/core/protocol/hysteria2"
-	suiMieru "github.com/shenaba/2s-ui/core/protocol/mieru"
-	suiNaive "github.com/shenaba/2s-ui/core/protocol/naive"
-	suiTrojan "github.com/shenaba/2s-ui/core/protocol/trojan"
-	suiTuic "github.com/shenaba/2s-ui/core/protocol/tuic"
-	suiVless "github.com/shenaba/2s-ui/core/protocol/vless"
-	suiVmess "github.com/shenaba/2s-ui/core/protocol/vmess"
+	s3uiAnytls "github.com/samur005/3s-ui/core/protocol/anytls"
+	s3uiHysteria "github.com/samur005/3s-ui/core/protocol/hysteria"
+	s3uiHysteria2 "github.com/samur005/3s-ui/core/protocol/hysteria2"
+	s3uiMieru "github.com/samur005/3s-ui/core/protocol/mieru"
+	s3uiNaive "github.com/samur005/3s-ui/core/protocol/naive"
+	s3uiTrojan "github.com/samur005/3s-ui/core/protocol/trojan"
+	s3uiTuic "github.com/samur005/3s-ui/core/protocol/tuic"
+	s3uiVless "github.com/samur005/3s-ui/core/protocol/vless"
+	s3uiVmess "github.com/samur005/3s-ui/core/protocol/vmess"
 
 	sbCertificate "github.com/sagernet/sing-box/adapter/certificate"
 	"github.com/sagernet/sing-box/adapter/endpoint"
@@ -69,17 +69,17 @@ func InboundRegistry() *inbound.Registry {
 
 	shadowsocks.RegisterInbound(registry)
 	snell.RegisterInbound(registry)
-	suiVmess.RegisterInbound(registry)
-	suiTrojan.RegisterInbound(registry)
-	suiNaive.RegisterInbound(registry)
+	s3uiVmess.RegisterInbound(registry)
+	s3uiTrojan.RegisterInbound(registry)
+	s3uiNaive.RegisterInbound(registry)
 	shadowtls.RegisterInbound(registry)
-	suiVless.RegisterInbound(registry)
-	suiAnytls.RegisterInbound(registry)
-	suiMieru.RegisterInbound(registry)
+	s3uiVless.RegisterInbound(registry)
+	s3uiAnytls.RegisterInbound(registry)
+	s3uiMieru.RegisterInbound(registry)
 
-	suiHysteria.RegisterInbound(registry)
-	suiTuic.RegisterInbound(registry)
-	suiHysteria2.RegisterInbound(registry)
+	s3uiHysteria.RegisterInbound(registry)
+	s3uiTuic.RegisterInbound(registry)
+	s3uiHysteria2.RegisterInbound(registry)
 
 	registerCloudflaredInbound(registry)
 

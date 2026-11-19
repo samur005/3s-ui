@@ -176,7 +176,7 @@ type Tokens struct {
 	User   *User  `json:"user" gorm:"foreignKey:UserId;references:Id"`
 }
 
-// Node is another 2s-ui panel managed by this one over its apiv2 (Token
+// Node is another 3s-ui panel managed by this one over its apiv2 (Token
 // header). Only connection config and the last observed transition live in
 // the DB — live status is kept in an in-memory snapshot (service/node.go).
 type Node struct {

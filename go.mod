@@ -1,4 +1,4 @@
-module github.com/shenaba/2s-ui
+module github.com/samur005/3s-ui
 
 go 1.27.3
 

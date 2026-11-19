@@ -8,8 +8,8 @@ import { EntityRow } from '@/components/ui/EntityCard.vue'
 // as a panel setting: it is a diagnostic choice for whoever is looking, and the
 // scheduled outbound probe has its own (notifyOutboundUrl). Module-level, so
 // the Outbounds and Endpoints pages share one choice.
-const TEST_URL_ON_KEY = '2sui-urltest-on'
-const TEST_URL_KEY = '2sui-urltest-url'
+const TEST_URL_ON_KEY = '3sui-urltest-on'
+const TEST_URL_KEY = '3sui-urltest-url'
 
 const readStored = (key: string): string | null => {
   try { return localStorage.getItem(key) } catch { return null }

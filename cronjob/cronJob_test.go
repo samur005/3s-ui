@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shenaba/2s-ui/service"
+	"github.com/samur005/3s-ui/service"
 
 	"github.com/robfig/cron/v3"
 )

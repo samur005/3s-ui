@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shenaba/2s-ui/core"
+	"github.com/samur005/3s-ui/core"
 )
 
 func addr(t *testing.T, s string) netip.Addr {

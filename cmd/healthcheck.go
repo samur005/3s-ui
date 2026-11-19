@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/shenaba/2s-ui/config"
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/service"
+	"github.com/samur005/3s-ui/config"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/service"
 )
 
 // healthCheckTimeout is per dial. A container health check runs on a schedule

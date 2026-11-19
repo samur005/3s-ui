@@ -5,10 +5,10 @@ import (
 	"net/netip"
 	"sync"
 
-	"github.com/shenaba/2s-ui/core/proxyheader"
-	"github.com/shenaba/2s-ui/database/model"
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/util/common"
+	"github.com/samur005/3s-ui/core/proxyheader"
+	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/util/common"
 )
 
 var applyProxyProtocolMu sync.Mutex

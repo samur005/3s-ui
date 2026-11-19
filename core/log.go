@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	suiLog "github.com/shenaba/2s-ui/logger"
+	s3uiLog "github.com/samur005/3s-ui/logger"
 
 	"github.com/sagernet/sing-box/log"
 	"github.com/sagernet/sing/common"
@@ -23,15 +23,15 @@ func (p PlatformWriter) DisableColors() bool {
 func (p PlatformWriter) WriteMessage(level log.Level, message string) {
 	switch level {
 	case log.LevelInfo:
-		suiLog.Info(message)
+		s3uiLog.Info(message)
 	case log.LevelWarn:
-		suiLog.Warning(message)
+		s3uiLog.Warning(message)
 	case log.LevelPanic:
 	case log.LevelFatal:
 	case log.LevelError:
-		suiLog.Error(message)
+		s3uiLog.Error(message)
 	default:
-		suiLog.Debug(message)
+		s3uiLog.Debug(message)
 	}
 }
 
@@ -188,15 +188,15 @@ func (l *observableLogger) Log(ctx context.Context, level log.Level, args []any)
 	msg := F.ToString(args...)
 	switch level {
 	case log.LevelInfo:
-		suiLog.Info(l.tag, msg)
+		s3uiLog.Info(l.tag, msg)
 	case log.LevelWarn:
-		suiLog.Warning(l.tag, msg)
+		s3uiLog.Warning(l.tag, msg)
 	case log.LevelPanic:
 	case log.LevelFatal:
 	case log.LevelError:
-		suiLog.Error(l.tag, msg)
+		s3uiLog.Error(l.tag, msg)
 	default:
-		suiLog.Debug(l.tag, msg)
+		s3uiLog.Debug(l.tag, msg)
 	}
 	if (l.filePath != "" || l.writer != os.Stderr) && l.writer != nil {
 		message := l.formatter.Format(ctx, level, l.tag, msg, time.Now())

@@ -12,7 +12,7 @@ export const TILES = [
   { id: 'activity', k: 'activity' },
 ]
 
-export const TILES_KEY = '2sui-tiles'
+export const TILES_KEY = '3sui-tiles'
 
 export function defaultTiles(): Record<string, boolean> {
   return Object.fromEntries(TILES.map((t) => [t.id, true]))

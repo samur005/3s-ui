@@ -3,7 +3,7 @@ package sub
 import "strings"
 
 // formatForUserAgent picks the subscription format a well-known client reads
-// when the request names none (upstream s-ui 1.6.8). It matches only the
+// when the request names none (upstream 3s-ui 1.6.8). It matches only the
 // product token, the part before the first "/" or space: Hiddify announces
 // itself "HiddifyNext/2.5 (android) like ClashMeta v2ray sing-box", and it
 // reads the plain links best. An unknown client gets "", the plain links, so

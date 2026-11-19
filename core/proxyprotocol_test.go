@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shenaba/2s-ui/core/proxyheader"
+	"github.com/samur005/3s-ui/core/proxyheader"
 
 	"github.com/sagernet/sing-box/option"
 	"github.com/sagernet/sing-box/transport/v2raywebsocket"

@@ -3,8 +3,8 @@ package tgbot
 import (
 	"sync/atomic"
 
-	"github.com/shenaba/2s-ui/service"
-	"github.com/shenaba/2s-ui/service/notify"
+	"github.com/samur005/3s-ui/service"
+	"github.com/samur005/3s-ui/service/notify"
 )
 
 // botMessages is the bot's own wording, kept separate from the alert wording in

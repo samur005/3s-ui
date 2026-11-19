@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/shenaba/2s-ui/database/model"
+	"github.com/samur005/3s-ui/database/model"
 )
 
 func GetHeaders(client *model.Client, updateInterval int) []string {

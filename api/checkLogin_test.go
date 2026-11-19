@@ -21,7 +21,7 @@ import (
 func TestCheckLoginAnswersUnauthorized(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	engine := gin.New()
-	engine.Use(sessions.Sessions("s-ui-test", cookie.NewStore([]byte("test-secret"))))
+	engine.Use(sessions.Sessions("3s-ui-test", cookie.NewStore([]byte("test-secret"))))
 	// Wired the way the real router wires it: as middleware, so c.Abort stops
 	// the chain rather than only the rest of one handler.
 	engine.Use(func(c *gin.Context) { checkLogin(c) })

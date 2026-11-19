@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/shenaba/2s-ui/database/model"
+	"github.com/samur005/3s-ui/database/model"
 )
 
 // main let a delay-start client without auto reset carry a plan length in

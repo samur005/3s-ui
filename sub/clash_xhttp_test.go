@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/shenaba/2s-ui/util"
+	"github.com/samur005/3s-ui/util"
 
 	"gopkg.in/yaml.v3"
 )

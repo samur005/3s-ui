@@ -1,2 +1,2 @@
 ./build.sh
-SUI_DB_FOLDER="db" SUI_DEBUG=true ./sui
+S3UI_DB_FOLDER="db" S3UI_DEBUG=true ./3sui

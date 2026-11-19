@@ -12,8 +12,8 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/database/model"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/database/model"
 	"gopkg.in/yaml.v3"
 )
 

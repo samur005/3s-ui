@@ -11,7 +11,7 @@ import (
 
 // execRestart replaces the current process image with the container
 // entrypoint, so the freshly installed binary boots exactly like a new
-// container start (entrypoint.sh runs migrate, then execs sui as the same
+// container start (entrypoint.sh runs migrate, then execs 3sui as the same
 // PID). The container itself never restarts, so no restart policy is needed.
 // Falls back to a plain migrate+exec shell chain when entrypoint.sh is absent
 // (e.g. custom images).
@@ -21,11 +21,11 @@ func execRestart(installDir string) error {
 	argv0, argv := entrypoint, []string{entrypoint}
 	if _, err := os.Stat(entrypoint); err != nil {
 		// Custom images without the bundled entrypoint: mirror what it does.
-		bin := filepath.Join(installDir, "sui")
+		bin := filepath.Join(installDir, "3sui")
 		script := fmt.Sprintf("%q migrate; exec %q", bin, bin)
 		argv0, argv = "/bin/sh", []string{"sh", "-c", script}
 	}
-	// entrypoint.sh resolves ./sui relative to the working directory, which is
+	// entrypoint.sh resolves ./3sui relative to the working directory, which is
 	// the install dir on a normal container start. Chdir last so a failure
 	// before this point leaves the still-running process where it was.
 	if err := os.Chdir(installDir); err != nil {

@@ -14,8 +14,8 @@ cur_dir=$(pwd)
 #   en (default), fa, ru, vi, zhcn, zhtw
 #
 # Language is resolved in this order:
-#   1. SUI_LANG, e.g. SUI_LANG=zhcn bash <(curl -Ls .../install.sh)
-#   2. ~/.s2ui_lang, the preference the s-ui menu writes — so an upgrade keeps
+#   1. S3UI_LANG, e.g. S3UI_LANG=zhcn bash <(curl -Ls .../install.sh)
+#   2. ~/.s2ui_lang, the preference the 3s-ui menu writes — so an upgrade keeps
 #      speaking whatever language was picked there
 #   3. a guess from the system $LANG
 #
@@ -39,7 +39,7 @@ normalize_lang() {
 
 detect_lang() {
     local l
-    l=$(normalize_lang "${SUI_LANG:-}")
+    l=$(normalize_lang "${S3UI_LANG:-}")
     [[ -n "$l" ]] && echo "$l" && return
 
     if [[ -f "$lang_pref_file" ]]; then
@@ -80,13 +80,13 @@ d en set_pass "Please set up your password: "
 d en current_creds "Your current admin credentials:"
 d en cancelled "cancel..."
 d en fresh_random "this is a fresh installation, will generate random login info for security concerns:"
-d en forgot_info "if you forgot your login info, you can type s-ui for configuration menu"
-d en upgrade_keep "this is your upgrade, will keep old settings. If you forgot your login info, you can type s-ui for configuration menu"
+d en forgot_info "if you forgot your login info, you can type 3s-ui for configuration menu"
+d en upgrade_keep "this is your upgrade, will keep old settings. If you forgot your login info, you can type 3s-ui for configuration menu"
 d en stopping_singbox "Stopping sing-box service..."
 d en bin_exists "directory exists yet! Please check the content and delete it manually after migration"
-d en got_version "Got s-ui latest version: %s, beginning the installation..."
-d en fetch_fail "Failed to fetch s-ui version, it maybe due to Github API restrictions, please try it later"
-d en download_fail "Downloading s-ui failed, please be sure that your server can access Github"
+d en got_version "Got 3s-ui latest version: %s, beginning the installation..."
+d en fetch_fail "Failed to fetch 3s-ui version, it maybe due to Github API restrictions, please try it later"
+d en download_fail "Downloading 3s-ui failed, please be sure that your server can access Github"
 d en checksum_ok "Checksum verified."
 d en checksum_fail "Checksum does NOT match. The download may be corrupt or tampered with. Aborting."
 d en no_checksums "No SHA256SUMS published for this release; skipping checksum verification."
@@ -94,13 +94,13 @@ d en checksum_unusable "SHA256SUMS could not be used to verify the download (mis
 d en sums_fetch_fail "Failed to download SHA256SUMS for this release. Aborting."
 d en creds_empty "Username and password can not be empty. Aborting."
 d en creds_failed "Failed to set the admin credentials. Aborting."
-d en begin_install "Beginning the install s-ui %s"
-d en download_ver_fail "download s-ui %s failed, please check the version exists"
-d en extract_fail "Extracting s-ui failed, the archive may be corrupt or the disk is full"
-d en broken_bin "The installed s-ui binary does not run, the installation is incomplete"
-d en copy_fail "Copying s-ui into /usr/local failed, check the free space and permissions there"
-d en restored_previous "The previously installed s-ui has been restarted, the panel is back up"
-d en service_stopped "s-ui is NOT running. Fix the problem above, then run the installer again"
+d en begin_install "Beginning the install 3s-ui %s"
+d en download_ver_fail "download 3s-ui %s failed, please check the version exists"
+d en extract_fail "Extracting 3s-ui failed, the archive may be corrupt or the disk is full"
+d en broken_bin "The installed 3s-ui binary does not run, the installation is incomplete"
+d en copy_fail "Copying 3s-ui into /usr/local failed, check the free space and permissions there"
+d en restored_previous "The previously installed 3s-ui has been restarted, the panel is back up"
+d en service_stopped "3s-ui is NOT running. Fix the problem above, then run the installer again"
 d en install_finished "installation finished, it is up and running now..."
 d en access_panel "You may access the Panel with following URL(s):"
 d en executing "Executing..."
@@ -124,13 +124,13 @@ d fa set_pass "رمز عبور خود را وارد کنید: "
 d fa current_creds "اطلاعات ورود ادمین فعلی شما:"
 d fa cancelled "لغو شد..."
 d fa fresh_random "این یک نصب تازه است؛ برای امنیت، اطلاعات ورود تصادفی ساخته می شود:"
-d fa forgot_info "اگر اطلاعات ورود را فراموش کردید، دستور s-ui را برای منوی تنظیمات اجرا کنید"
-d fa upgrade_keep "این یک ارتقا است و تنظیمات قبلی حفظ می شود. اگر اطلاعات ورود را فراموش کردید، دستور s-ui را برای منوی تنظیمات اجرا کنید"
+d fa forgot_info "اگر اطلاعات ورود را فراموش کردید، دستور 3s-ui را برای منوی تنظیمات اجرا کنید"
+d fa upgrade_keep "این یک ارتقا است و تنظیمات قبلی حفظ می شود. اگر اطلاعات ورود را فراموش کردید، دستور 3s-ui را برای منوی تنظیمات اجرا کنید"
 d fa stopping_singbox "در حال متوقف کردن سرویس sing-box..."
 d fa bin_exists "پوشه هنوز وجود دارد! لطفاً محتوای آن را بررسی و پس از مهاجرت به صورت دستی حذف کنید"
-d fa got_version "آخرین نسخهٔ s-ui دریافت شد: %s، شروع نصب..."
-d fa fetch_fail "دریافت نسخهٔ s-ui ناموفق بود؛ ممکن است به دلیل محدودیت های Github API باشد، بعداً دوباره تلاش کنید"
-d fa download_fail "دانلود s-ui ناموفق بود؛ مطمئن شوید سرور شما به Github دسترسی دارد"
+d fa got_version "آخرین نسخهٔ 3s-ui دریافت شد: %s، شروع نصب..."
+d fa fetch_fail "دریافت نسخهٔ 3s-ui ناموفق بود؛ ممکن است به دلیل محدودیت های Github API باشد، بعداً دوباره تلاش کنید"
+d fa download_fail "دانلود 3s-ui ناموفق بود؛ مطمئن شوید سرور شما به Github دسترسی دارد"
 d fa checksum_ok "صحت فایل تایید شد."
 d fa checksum_fail "مقدار checksum مطابقت ندارد. فایل دانلودشده خراب یا دستکاری شده است. عملیات متوقف شد."
 d fa no_checksums "برای این نسخه فایل SHA256SUMS منتشر نشده؛ بررسی checksum انجام نشد."
@@ -138,13 +138,13 @@ d fa checksum_unusable "امکان بررسی فایل دانلودشده با S
 d fa sums_fetch_fail "دانلود فایل SHA256SUMS این نسخه ناموفق بود. عملیات متوقف شد."
 d fa creds_empty "نام کاربری و رمز عبور نمی‌توانند خالی باشند. عملیات متوقف شد."
 d fa creds_failed "تنظیم اطلاعات ورود مدیر ناموفق بود. عملیات متوقف شد."
-d fa begin_install "شروع نصب s-ui نسخهٔ %s"
-d fa download_ver_fail "دانلود s-ui نسخهٔ %s ناموفق بود؛ لطفاً از وجود این نسخه مطمئن شوید"
-d fa extract_fail "استخراج s-ui ناموفق بود؛ ممکن است فایل خراب باشد یا فضای دیسک پر باشد"
-d fa broken_bin "باینری نصب‌شدهٔ s-ui اجرا نمی‌شود؛ نصب ناقص است"
-d fa copy_fail "کپی s-ui در /usr/local ناموفق بود؛ فضای خالی و دسترسی‌های آن را بررسی کنید"
-d fa restored_previous "نسخهٔ نصب‌شدهٔ قبلی s-ui دوباره اجرا شد؛ پنل بالا آمد"
-d fa service_stopped "s-ui در حال اجرا نیست. مشکل بالا را رفع کنید و نصب را دوباره اجرا کنید"
+d fa begin_install "شروع نصب 3s-ui نسخهٔ %s"
+d fa download_ver_fail "دانلود 3s-ui نسخهٔ %s ناموفق بود؛ لطفاً از وجود این نسخه مطمئن شوید"
+d fa extract_fail "استخراج 3s-ui ناموفق بود؛ ممکن است فایل خراب باشد یا فضای دیسک پر باشد"
+d fa broken_bin "باینری نصب‌شدهٔ 3s-ui اجرا نمی‌شود؛ نصب ناقص است"
+d fa copy_fail "کپی 3s-ui در /usr/local ناموفق بود؛ فضای خالی و دسترسی‌های آن را بررسی کنید"
+d fa restored_previous "نسخهٔ نصب‌شدهٔ قبلی 3s-ui دوباره اجرا شد؛ پنل بالا آمد"
+d fa service_stopped "3s-ui در حال اجرا نیست. مشکل بالا را رفع کنید و نصب را دوباره اجرا کنید"
 d fa install_finished "نصب به پایان رسید و هم اکنون در حال اجراست..."
 d fa access_panel "می توانید از طریق آدرس (های) زیر به پنل دسترسی داشته باشید:"
 d fa executing "در حال اجرا..."
@@ -168,13 +168,13 @@ d ru set_pass "Задайте пароль: "
 d ru current_creds "Ваши текущие учётные данные администратора:"
 d ru cancelled "отмена..."
 d ru fresh_random "это новая установка, в целях безопасности будут сгенерированы случайные данные для входа:"
-d ru forgot_info "если вы забыли данные для входа, введите s-ui для меню настроек"
-d ru upgrade_keep "это обновление, старые настройки сохранятся. Если вы забыли данные для входа, введите s-ui для меню настроек"
+d ru forgot_info "если вы забыли данные для входа, введите 3s-ui для меню настроек"
+d ru upgrade_keep "это обновление, старые настройки сохранятся. Если вы забыли данные для входа, введите 3s-ui для меню настроек"
 d ru stopping_singbox "Остановка службы sing-box..."
 d ru bin_exists "каталог всё ещё существует! Проверьте содержимое и удалите его вручную после миграции"
-d ru got_version "Получена последняя версия s-ui: %s, начинается установка..."
-d ru fetch_fail "Не удалось получить версию s-ui, возможно из-за ограничений Github API, попробуйте позже"
-d ru download_fail "Не удалось загрузить s-ui, убедитесь, что ваш сервер имеет доступ к Github"
+d ru got_version "Получена последняя версия 3s-ui: %s, начинается установка..."
+d ru fetch_fail "Не удалось получить версию 3s-ui, возможно из-за ограничений Github API, попробуйте позже"
+d ru download_fail "Не удалось загрузить 3s-ui, убедитесь, что ваш сервер имеет доступ к Github"
 d ru checksum_ok "Контрольная сумма проверена."
 d ru checksum_fail "Контрольная сумма не совпадает. Файл повреждён или подменён. Прерывание."
 d ru no_checksums "Для этого релиза нет SHA256SUMS; проверка контрольной суммы пропущена."
@@ -182,13 +182,13 @@ d ru checksum_unusable "Не удалось проверить загрузку 
 d ru sums_fetch_fail "Не удалось загрузить SHA256SUMS для этого релиза. Прерывание."
 d ru creds_empty "Имя пользователя и пароль не могут быть пустыми. Прерывание."
 d ru creds_failed "Не удалось задать учётные данные администратора. Прерывание."
-d ru begin_install "Начинается установка s-ui %s"
-d ru download_ver_fail "загрузка s-ui %s не удалась, проверьте существование этой версии"
-d ru extract_fail "Не удалось распаковать s-ui: архив повреждён или на диске нет места"
-d ru broken_bin "Установленный файл s-ui не запускается, установка неполная"
-d ru copy_fail "Не удалось скопировать s-ui в /usr/local: проверьте свободное место и права"
-d ru restored_previous "Ранее установленный s-ui перезапущен, панель снова работает"
-d ru service_stopped "s-ui НЕ запущен. Устраните проблему выше и запустите установку заново"
+d ru begin_install "Начинается установка 3s-ui %s"
+d ru download_ver_fail "загрузка 3s-ui %s не удалась, проверьте существование этой версии"
+d ru extract_fail "Не удалось распаковать 3s-ui: архив повреждён или на диске нет места"
+d ru broken_bin "Установленный файл 3s-ui не запускается, установка неполная"
+d ru copy_fail "Не удалось скопировать 3s-ui в /usr/local: проверьте свободное место и права"
+d ru restored_previous "Ранее установленный 3s-ui перезапущен, панель снова работает"
+d ru service_stopped "3s-ui НЕ запущен. Устраните проблему выше и запустите установку заново"
 d ru install_finished "установка завершена, панель запущена и работает..."
 d ru access_panel "Вы можете получить доступ к панели по следующим URL:"
 d ru executing "Выполнение..."
@@ -212,13 +212,13 @@ d vi set_pass "Vui lòng đặt mật khẩu: "
 d vi current_creds "Thông tin đăng nhập quản trị hiện tại của bạn:"
 d vi cancelled "đã hủy..."
 d vi fresh_random "đây là cài đặt mới, sẽ tạo thông tin đăng nhập ngẫu nhiên vì lý do bảo mật:"
-d vi forgot_info "nếu bạn quên thông tin đăng nhập, hãy gõ s-ui để mở menu cấu hình"
-d vi upgrade_keep "đây là bản nâng cấp, cài đặt cũ sẽ được giữ lại. Nếu quên thông tin đăng nhập, hãy gõ s-ui để mở menu cấu hình"
+d vi forgot_info "nếu bạn quên thông tin đăng nhập, hãy gõ 3s-ui để mở menu cấu hình"
+d vi upgrade_keep "đây là bản nâng cấp, cài đặt cũ sẽ được giữ lại. Nếu quên thông tin đăng nhập, hãy gõ 3s-ui để mở menu cấu hình"
 d vi stopping_singbox "Đang dừng dịch vụ sing-box..."
 d vi bin_exists "thư mục vẫn tồn tại! Vui lòng kiểm tra nội dung và xóa thủ công sau khi di trú"
-d vi got_version "Đã lấy phiên bản s-ui mới nhất: %s, bắt đầu cài đặt..."
-d vi fetch_fail "Không thể lấy phiên bản s-ui, có thể do giới hạn của Github API, vui lòng thử lại sau"
-d vi download_fail "Tải s-ui thất bại, hãy chắc chắn máy chủ của bạn có thể truy cập Github"
+d vi got_version "Đã lấy phiên bản 3s-ui mới nhất: %s, bắt đầu cài đặt..."
+d vi fetch_fail "Không thể lấy phiên bản 3s-ui, có thể do giới hạn của Github API, vui lòng thử lại sau"
+d vi download_fail "Tải 3s-ui thất bại, hãy chắc chắn máy chủ của bạn có thể truy cập Github"
 d vi checksum_ok "Đã xác minh checksum."
 d vi checksum_fail "Checksum KHÔNG khớp. Tệp tải về có thể bị hỏng hoặc bị can thiệp. Đang hủy."
 d vi no_checksums "Bản phát hành này không có SHA256SUMS; bỏ qua xác minh checksum."
@@ -226,13 +226,13 @@ d vi checksum_unusable "Không thể dùng SHA256SUMS để xác minh tệp tả
 d vi sums_fetch_fail "Không tải được SHA256SUMS của bản phát hành này. Đang hủy."
 d vi creds_empty "Tên người dùng và mật khẩu không được để trống. Đang hủy."
 d vi creds_failed "Không thể đặt thông tin đăng nhập quản trị. Đang hủy."
-d vi begin_install "Bắt đầu cài đặt s-ui %s"
-d vi download_ver_fail "tải s-ui %s thất bại, vui lòng kiểm tra phiên bản có tồn tại không"
-d vi extract_fail "Giải nén s-ui thất bại, tệp có thể bị hỏng hoặc đĩa đã đầy"
-d vi broken_bin "Tệp s-ui đã cài đặt không chạy được, quá trình cài đặt chưa hoàn tất"
-d vi copy_fail "Sao chép s-ui vào /usr/local thất bại, hãy kiểm tra dung lượng trống và quyền truy cập"
-d vi restored_previous "Bản s-ui đã cài trước đó đã được khởi động lại, bảng điều khiển đã hoạt động"
-d vi service_stopped "s-ui KHÔNG chạy. Hãy khắc phục sự cố ở trên rồi chạy lại trình cài đặt"
+d vi begin_install "Bắt đầu cài đặt 3s-ui %s"
+d vi download_ver_fail "tải 3s-ui %s thất bại, vui lòng kiểm tra phiên bản có tồn tại không"
+d vi extract_fail "Giải nén 3s-ui thất bại, tệp có thể bị hỏng hoặc đĩa đã đầy"
+d vi broken_bin "Tệp 3s-ui đã cài đặt không chạy được, quá trình cài đặt chưa hoàn tất"
+d vi copy_fail "Sao chép 3s-ui vào /usr/local thất bại, hãy kiểm tra dung lượng trống và quyền truy cập"
+d vi restored_previous "Bản 3s-ui đã cài trước đó đã được khởi động lại, bảng điều khiển đã hoạt động"
+d vi service_stopped "3s-ui KHÔNG chạy. Hãy khắc phục sự cố ở trên rồi chạy lại trình cài đặt"
 d vi install_finished "cài đặt hoàn tất, hiện đang chạy..."
 d vi access_panel "Bạn có thể truy cập bảng điều khiển qua (các) URL sau:"
 d vi executing "Đang thực thi..."
@@ -256,13 +256,13 @@ d zhcn set_pass "请设置您的密码： "
 d zhcn current_creds "您当前的管理员登录信息："
 d zhcn cancelled "已取消..."
 d zhcn fresh_random "这是全新安装，为了安全将生成随机登录信息："
-d zhcn forgot_info "如果忘记登录信息，可以输入 s-ui 打开配置菜单"
-d zhcn upgrade_keep "这是升级，将保留旧设置。如果忘记登录信息，可以输入 s-ui 打开配置菜单"
+d zhcn forgot_info "如果忘记登录信息，可以输入 3s-ui 打开配置菜单"
+d zhcn upgrade_keep "这是升级，将保留旧设置。如果忘记登录信息，可以输入 3s-ui 打开配置菜单"
 d zhcn stopping_singbox "正在停止 sing-box 服务..."
 d zhcn bin_exists "目录仍然存在！请检查内容并在迁移后手动删除"
-d zhcn got_version "已获取 s-ui 最新版本：%s，开始安装..."
-d zhcn fetch_fail "获取 s-ui 版本失败，可能是由于 Github API 限制，请稍后再试"
-d zhcn download_fail "下载 s-ui 失败，请确保您的服务器可以访问 Github"
+d zhcn got_version "已获取 3s-ui 最新版本：%s，开始安装..."
+d zhcn fetch_fail "获取 3s-ui 版本失败，可能是由于 Github API 限制，请稍后再试"
+d zhcn download_fail "下载 3s-ui 失败，请确保您的服务器可以访问 Github"
 d zhcn checksum_ok "校验和已验证。"
 d zhcn checksum_fail "校验和不匹配，下载文件可能已损坏或被篡改。已中止。"
 d zhcn no_checksums "此版本未发布 SHA256SUMS，已跳过校验和验证。"
@@ -270,13 +270,13 @@ d zhcn checksum_unusable "无法使用 SHA256SUMS 验证下载文件（缺少条
 d zhcn sums_fetch_fail "下载此版本的 SHA256SUMS 失败。已中止。"
 d zhcn creds_empty "用户名和密码不能为空。已中止。"
 d zhcn creds_failed "设置管理员凭据失败。已中止。"
-d zhcn begin_install "开始安装 s-ui %s"
-d zhcn download_ver_fail "下载 s-ui %s 失败，请检查该版本是否存在"
-d zhcn extract_fail "解压 s-ui 失败，压缩包可能已损坏或磁盘空间不足"
-d zhcn broken_bin "已安装的 s-ui 程序无法运行，安装不完整"
-d zhcn copy_fail "复制 s-ui 到 /usr/local 失败，请检查该目录的剩余空间和权限"
-d zhcn restored_previous "已重新启动原先安装的 s-ui，面板已恢复运行"
-d zhcn service_stopped "s-ui 未在运行。请先解决上面的问题，然后重新执行安装"
+d zhcn begin_install "开始安装 3s-ui %s"
+d zhcn download_ver_fail "下载 3s-ui %s 失败，请检查该版本是否存在"
+d zhcn extract_fail "解压 3s-ui 失败，压缩包可能已损坏或磁盘空间不足"
+d zhcn broken_bin "已安装的 3s-ui 程序无法运行，安装不完整"
+d zhcn copy_fail "复制 3s-ui 到 /usr/local 失败，请检查该目录的剩余空间和权限"
+d zhcn restored_previous "已重新启动原先安装的 3s-ui，面板已恢复运行"
+d zhcn service_stopped "3s-ui 未在运行。请先解决上面的问题，然后重新执行安装"
 d zhcn install_finished "安装完成，现已运行..."
 d zhcn access_panel "您可以通过以下 URL 访问面板："
 d zhcn executing "正在执行..."
@@ -300,13 +300,13 @@ d zhtw set_pass "請設定您的密碼： "
 d zhtw current_creds "您目前的管理員登入資訊："
 d zhtw cancelled "已取消..."
 d zhtw fresh_random "這是全新安裝，為了安全將產生隨機登入資訊："
-d zhtw forgot_info "如果忘記登入資訊，可以輸入 s-ui 開啟設定選單"
-d zhtw upgrade_keep "這是升級，將保留舊設定。如果忘記登入資訊，可以輸入 s-ui 開啟設定選單"
+d zhtw forgot_info "如果忘記登入資訊，可以輸入 3s-ui 開啟設定選單"
+d zhtw upgrade_keep "這是升級，將保留舊設定。如果忘記登入資訊，可以輸入 3s-ui 開啟設定選單"
 d zhtw stopping_singbox "正在停止 sing-box 服務..."
 d zhtw bin_exists "目錄仍然存在！請檢查內容並在遷移後手動刪除"
-d zhtw got_version "已取得 s-ui 最新版本：%s，開始安裝..."
-d zhtw fetch_fail "取得 s-ui 版本失敗，可能是由於 Github API 限制，請稍後再試"
-d zhtw download_fail "下載 s-ui 失敗，請確保您的伺服器可以存取 Github"
+d zhtw got_version "已取得 3s-ui 最新版本：%s，開始安裝..."
+d zhtw fetch_fail "取得 3s-ui 版本失敗，可能是由於 Github API 限制，請稍後再試"
+d zhtw download_fail "下載 3s-ui 失敗，請確保您的伺服器可以存取 Github"
 d zhtw checksum_ok "校驗和已驗證。"
 d zhtw checksum_fail "校驗和不相符，下載檔案可能已損毀或被竄改。已中止。"
 d zhtw no_checksums "此版本未發布 SHA256SUMS，已略過校驗和驗證。"
@@ -314,20 +314,20 @@ d zhtw checksum_unusable "無法使用 SHA256SUMS 驗證下載檔案（缺少項
 d zhtw sums_fetch_fail "下載此版本的 SHA256SUMS 失敗。已中止。"
 d zhtw creds_empty "使用者名稱和密碼不能為空。已中止。"
 d zhtw creds_failed "設定管理員憑證失敗。已中止。"
-d zhtw begin_install "開始安裝 s-ui %s"
-d zhtw download_ver_fail "下載 s-ui %s 失敗，請檢查該版本是否存在"
-d zhtw extract_fail "解壓 s-ui 失敗，壓縮檔可能已損毀或磁碟空間不足"
-d zhtw broken_bin "已安裝的 s-ui 程式無法執行，安裝不完整"
-d zhtw copy_fail "複製 s-ui 到 /usr/local 失敗，請檢查該目錄的剩餘空間與權限"
-d zhtw restored_previous "已重新啟動原先安裝的 s-ui，面板已恢復執行"
-d zhtw service_stopped "s-ui 未在執行。請先解決上面的問題，然後重新執行安裝"
+d zhtw begin_install "開始安裝 3s-ui %s"
+d zhtw download_ver_fail "下載 3s-ui %s 失敗，請檢查該版本是否存在"
+d zhtw extract_fail "解壓 3s-ui 失敗，壓縮檔可能已損毀或磁碟空間不足"
+d zhtw broken_bin "已安裝的 3s-ui 程式無法執行，安裝不完整"
+d zhtw copy_fail "複製 3s-ui 到 /usr/local 失敗，請檢查該目錄的剩餘空間與權限"
+d zhtw restored_previous "已重新啟動原先安裝的 3s-ui，面板已恢復執行"
+d zhtw service_stopped "3s-ui 未在執行。請先解決上面的問題，然後重新執行安裝"
 d zhtw install_finished "安裝完成，現已執行..."
 d zhtw access_panel "您可以透過以下 URL 存取面板："
 d zhtw executing "正在執行..."
 
 # t <key> [printf args] — return the localized message, falling back to English
 # and then to the key itself, so a typo is visible rather than a blank line.
-# install.sh and s-ui.sh keep separate catalogs on purpose: each is curl'd
+# install.sh and 3s-ui.sh keep separate catalogs on purpose: each is curl'd
 # independently, so they cannot share a source file. Shared phrases must be
 # updated in both.
 t() {
@@ -359,7 +359,7 @@ fi
 echo "$(t os_release) $release"
 
 # Detect the init system: systemd everywhere, OpenRC on Alpine.
-# Keep this block in sync with the identical one in s-ui.sh — the two
+# Keep this block in sync with the identical one in 3s-ui.sh — the two
 # scripts are downloaded independently and cannot share a source file.
 if [[ "$release" == "alpine" ]]; then
     init_system="openrc"
@@ -402,7 +402,7 @@ install_base() {
         zypper refresh && zypper -q install -y wget curl tar
         ;;
     alpine)
-        # OpenRC drives the service; bash is what the s-ui menu script needs.
+        # OpenRC drives the service; bash is what the 3s-ui menu script needs.
         apk update && apk add --no-cache wget curl tar bash openrc
         ;;
     *)
@@ -411,33 +411,33 @@ install_base() {
     esac
 }
 
-# Install the OpenRC unit shipped in the tarball (s-ui.openrc). Falls back to
+# Install the OpenRC unit shipped in the tarball (3s-ui.openrc). Falls back to
 # an embedded copy so curl|bash installs that only fetched install.sh still work
 # before a release that includes the file is published.
 install_openrc_service() {
     local src=""
     for candidate in \
-        /usr/local/s-ui/s-ui.openrc \
-        /tmp/s-ui/s-ui.openrc \
-        "$(dirname "$0")/s-ui.openrc" \
-        ./s-ui.openrc; do
+        /usr/local/3s-ui/3s-ui.openrc \
+        /tmp/3s-ui/3s-ui.openrc \
+        "$(dirname "$0")/3s-ui.openrc" \
+        ./3s-ui.openrc; do
         if [[ -f "$candidate" ]]; then
             src="$candidate"
             break
         fi
     done
     if [[ -n "$src" ]]; then
-        cp -f "$src" /etc/init.d/s-ui
+        cp -f "$src" /etc/init.d/3s-ui
     else
-        cat >/etc/init.d/s-ui <<'EOF'
+        cat >/etc/init.d/3s-ui <<'EOF'
 #!/sbin/openrc-run
 
-description="s-ui Service"
-command="/usr/local/s-ui/sui"
-directory="/usr/local/s-ui"
-pidfile="/run/s-ui.pid"
-output_log="/var/log/s-ui.log"
-error_log="/var/log/s-ui.log"
+description="3s-ui Service"
+command="/usr/local/3s-ui/3sui"
+directory="/usr/local/3s-ui"
+pidfile="/run/3s-ui.pid"
+output_log="/var/log/3s-ui.log"
+error_log="/var/log/3s-ui.log"
 supervisor=supervise-daemon
 respawn_delay=10
 
@@ -448,12 +448,12 @@ depend() {
 }
 EOF
     fi
-    chmod +x /etc/init.d/s-ui
+    chmod +x /etc/init.d/3s-ui
 }
 
 config_after_install() {
     echo -e "${yellow}$(t migrating) ${plain}"
-    /usr/local/s-ui/sui migrate
+    /usr/local/3s-ui/3sui migrate
 
     echo -e "${yellow}$(t finished_modify) ${plain}"
     read -p "$(t ask_modify)": config_confirm
@@ -476,14 +476,14 @@ config_after_install() {
         [ -z "$config_path" ] || params="$params -path $config_path"
         [ -z "$config_subPort" ] || params="$params -subPort $config_subPort"
         [ -z "$config_subPath" ] || params="$params -subPath $config_subPath"
-        /usr/local/s-ui/sui setting ${params}
+        /usr/local/3s-ui/3sui setting ${params}
 
         read -r -p "$(t ask_admin)" admin_confirm
         if [[ "${admin_confirm}" == "y" || "${admin_confirm}" == "Y" ]]; then
             # First admin credentials
             # -s so the password does not end up on screen or in the
             # scrollback of a shared terminal; quoted so one with spaces or
-            # glob characters reaches sui intact.
+            # glob characters reaches 3sui intact.
             read -r -p "$(t set_user)" config_account
             read -r -s -p "$(t set_pass)" config_password
             echo
@@ -494,17 +494,17 @@ config_after_install() {
 
             # Set credentials
             echo -e "${yellow}$(t initializing)${plain}"
-            if ! /usr/local/s-ui/sui admin -username "${config_account}" -password "${config_password}"; then
+            if ! /usr/local/3s-ui/3sui admin -username "${config_account}" -password "${config_password}"; then
                 echo -e "${red}$(t creds_failed)${plain}"
                 exit 1
             fi
         else
             echo -e "${yellow}$(t current_creds) ${plain}"
-            /usr/local/s-ui/sui admin -show
+            /usr/local/3s-ui/3sui admin -show
         fi
     else
         echo -e "${red}$(t cancelled)${plain}"
-        if [[ ! -f "/usr/local/s-ui/db/s-ui.db" ]]; then
+        if [[ ! -f "/usr/local/3s-ui/db/3s-ui.db" ]]; then
             local usernameTemp=$(head -c 6 /dev/urandom | base64)
             local passwordTemp=$(head -c 18 /dev/urandom | base64)
             echo -e "$(t fresh_random)"
@@ -513,7 +513,7 @@ config_after_install() {
             echo -e "${green}password:${passwordTemp}${plain}"
             echo -e "###############################################"
             echo -e "${red}$(t forgot_info)${plain}"
-            if ! /usr/local/s-ui/sui admin -username "${usernameTemp}" -password "${passwordTemp}"; then
+            if ! /usr/local/3s-ui/3sui admin -username "${usernameTemp}" -password "${passwordTemp}"; then
                 echo -e "${red}$(t creds_failed)${plain}"
                 exit 1
             fi
@@ -522,7 +522,7 @@ config_after_install() {
         fi
     fi
 
-    # Let the s-ui menu open in the language the install ran in, unless the user
+    # Let the 3s-ui menu open in the language the install ran in, unless the user
     # already picked one there.
     [[ -f "$lang_pref_file" ]] || echo "$lang" >"$lang_pref_file"
 }
@@ -531,11 +531,11 @@ prepare_services() {
     if [[ -f "/etc/systemd/system/sing-box.service" ]]; then
         echo -e "${yellow}$(t stopping_singbox) ${plain}"
         systemctl stop sing-box
-        rm -f /usr/local/s-ui/bin/sing-box /usr/local/s-ui/bin/runSingbox.sh /usr/local/s-ui/bin/signal
+        rm -f /usr/local/3s-ui/bin/sing-box /usr/local/3s-ui/bin/runSingbox.sh /usr/local/3s-ui/bin/signal
     fi
-    if [[ -e "/usr/local/s-ui/bin" ]]; then
+    if [[ -e "/usr/local/3s-ui/bin" ]]; then
         echo -e "###############################################################"
-        echo -e "${green}/usr/local/s-ui/bin${red} $(t bin_exists) ${plain}"
+        echo -e "${green}/usr/local/3s-ui/bin${red} $(t bin_exists) ${plain}"
         echo -e "###############################################################"
     fi
     if [[ "${init_system}" == "systemd" ]]; then
@@ -544,17 +544,17 @@ prepare_services() {
 }
 
 # restart_existing_service brings back whatever is already under /usr/local.
-# install_s-ui stops the running panel before unpacking, so an upgrade that
+# install_3s-ui stops the running panel before unpacking, so an upgrade that
 # fails afterwards leaves it down; when the installed binary still runs, putting
-# it back is strictly better than exiting on a dead panel. `sui -v` is the one
+# it back is strictly better than exiting on a dead panel. `3sui -v` is the one
 # subcommand that needs no database, which makes it a safe liveness probe.
 restart_existing_service() {
-    [[ -x /usr/local/s-ui/sui ]] || return 1
-    /usr/local/s-ui/sui -v >/dev/null 2>&1 || return 1
+    [[ -x /usr/local/3s-ui/3sui ]] || return 1
+    /usr/local/3s-ui/3sui -v >/dev/null 2>&1 || return 1
     if [[ "${init_system}" == "openrc" ]]; then
-        rc-service s-ui restart >/dev/null 2>&1
+        rc-service 3s-ui restart >/dev/null 2>&1
     else
-        systemctl start s-ui >/dev/null 2>&1
+        systemctl start 3s-ui >/dev/null 2>&1
     fi
 }
 
@@ -565,7 +565,7 @@ restart_existing_service() {
 abort_install() {
     echo -e "${red}$(t "$1")${plain}"
     df -h /tmp /usr/local 2>/dev/null
-    rm -rf /tmp/s-ui "/tmp/s-ui-linux-$(arch).tar.gz"
+    rm -rf /tmp/3s-ui "/tmp/3s-ui-linux-$(arch).tar.gz"
     if restart_existing_service; then
         echo -e "${yellow}$(t restored_previous)${plain}"
     else
@@ -591,10 +591,10 @@ abort_install() {
 # request could get an unverified archive installed as root.
 verify_checksum() {
     local tag="$1" file="$2"
-    local sums="/tmp/s-ui-SHA256SUMS" code
+    local sums="/tmp/3s-ui-SHA256SUMS" code
     rm -f "$sums"
 
-    code=$(curl -sL -o "$sums" -w '%{http_code}' "https://github.com/shenaba/2s-ui/releases/download/${tag}/SHA256SUMS") || code=""
+    code=$(curl -sL -o "$sums" -w '%{http_code}' "https://github.com/samur005/3s-ui/releases/download/${tag}/SHA256SUMS") || code=""
     case "$code" in
     200) ;;
     404)
@@ -635,88 +635,88 @@ verify_checksum() {
     return 0
 }
 
-install_s-ui() {
+install_3s-ui() {
     cd /tmp/
 
     if [ $# == 0 ]; then
-        tag=$(curl -Ls "https://api.github.com/repos/shenaba/2s-ui/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+        tag=$(curl -Ls "https://api.github.com/repos/samur005/3s-ui/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
         if [[ ! -n "$tag" ]]; then
             echo -e "${red}$(t fetch_fail)${plain}"
             exit 1
         fi
         echo -e "$(t got_version "${tag}")"
-        wget -N -O /tmp/s-ui-linux-$(arch).tar.gz https://github.com/shenaba/2s-ui/releases/download/${tag}/s-ui-linux-$(arch).tar.gz
+        wget -N -O /tmp/3s-ui-linux-$(arch).tar.gz https://github.com/samur005/3s-ui/releases/download/${tag}/3s-ui-linux-$(arch).tar.gz
         if [[ $? -ne 0 ]]; then
             echo -e "${red}$(t download_fail) ${plain}"
             exit 1
         fi
-        verify_checksum "${tag}" "/tmp/s-ui-linux-$(arch).tar.gz" || exit 1
+        verify_checksum "${tag}" "/tmp/3s-ui-linux-$(arch).tar.gz" || exit 1
     else
         # Every release tag is v-prefixed, so accept the argument with or without it.
         tag="v${1#v}"
-        url="https://github.com/shenaba/2s-ui/releases/download/${tag}/s-ui-linux-$(arch).tar.gz"
+        url="https://github.com/samur005/3s-ui/releases/download/${tag}/3s-ui-linux-$(arch).tar.gz"
         echo -e "$(t begin_install "${tag}")"
-        wget -N -O /tmp/s-ui-linux-$(arch).tar.gz ${url}
+        wget -N -O /tmp/3s-ui-linux-$(arch).tar.gz ${url}
         if [[ $? -ne 0 ]]; then
             echo -e "${red}$(t download_ver_fail "${tag}")${plain}"
             exit 1
         fi
-        verify_checksum "${tag}" "/tmp/s-ui-linux-$(arch).tar.gz" || exit 1
+        verify_checksum "${tag}" "/tmp/3s-ui-linux-$(arch).tar.gz" || exit 1
     fi
 
     # ${tag} keeps the v prefix for URLs; ${last_version} is bare for display.
     last_version="${tag#v}"
 
-    if [[ -e /usr/local/s-ui/ ]]; then
+    if [[ -e /usr/local/3s-ui/ ]]; then
         if [[ "${init_system}" == "openrc" ]]; then
-            rc-service s-ui stop 2>/dev/null
+            rc-service 3s-ui stop 2>/dev/null
         else
-            systemctl stop s-ui
+            systemctl stop 3s-ui
         fi
     fi
 
-    if ! tar zxvf s-ui-linux-$(arch).tar.gz; then
+    if ! tar zxvf 3s-ui-linux-$(arch).tar.gz; then
         abort_install extract_fail
     fi
-    rm s-ui-linux-$(arch).tar.gz -f
+    rm 3s-ui-linux-$(arch).tar.gz -f
 
-    chmod +x s-ui/sui s-ui/s-ui.sh
-    # s-ui.openrc rides along in the tarball and is copied under
-    # /usr/local/s-ui/ with the rest, so install_openrc_service can restore
-    # it without re-embedding (mirrors how s-ui.service is shipped).
-    cp s-ui/s-ui.sh /usr/bin/s-ui
-    if ! cp -rf s-ui /usr/local/; then
+    chmod +x 3s-ui/3sui 3s-ui/3s-ui.sh
+    # 3s-ui.openrc rides along in the tarball and is copied under
+    # /usr/local/3s-ui/ with the rest, so install_openrc_service can restore
+    # it without re-embedding (mirrors how 3s-ui.service is shipped).
+    cp 3s-ui/3s-ui.sh /usr/bin/3s-ui
+    if ! cp -rf 3s-ui /usr/local/; then
         abort_install copy_fail
     fi
     # A truncated copy still leaves an executable behind, and the next step
     # would run migrations against it. Make it prove it starts first.
-    if ! /usr/local/s-ui/sui -v >/dev/null 2>&1; then
+    if ! /usr/local/3s-ui/3sui -v >/dev/null 2>&1; then
         abort_install broken_bin
     fi
     if [[ "${init_system}" == "systemd" ]]; then
-        cp -f s-ui/*.service /etc/systemd/system/
+        cp -f 3s-ui/*.service /etc/systemd/system/
     fi
-    rm -rf s-ui
+    rm -rf 3s-ui
 
     config_after_install
     prepare_services
 
     if [[ "${init_system}" == "openrc" ]]; then
         install_openrc_service
-        rc-update add s-ui default
-        rc-service s-ui restart
+        rc-update add 3s-ui default
+        rc-service 3s-ui restart
     else
-        systemctl enable s-ui --now
+        systemctl enable 3s-ui --now
     fi
 
-    echo -e "${green}s-ui v${last_version}${plain} $(t install_finished)"
+    echo -e "${green}3s-ui v${last_version}${plain} $(t install_finished)"
     echo -e "$(t access_panel)${green}"
-    /usr/local/s-ui/sui uri
+    /usr/local/3s-ui/3sui uri
     echo -e "${plain}"
     echo -e ""
-    s-ui help
+    3s-ui help
 }
 
 echo -e "${green}$(t executing)${plain}"
 install_base
-install_s-ui $1
+install_3s-ui $1

@@ -3,7 +3,7 @@ package database
 import (
 	"log"
 
-	"github.com/shenaba/2s-ui/database/jsonsql"
+	"github.com/samur005/3s-ui/database/jsonsql"
 
 	"gorm.io/gorm"
 )

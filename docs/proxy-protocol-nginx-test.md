@@ -5,9 +5,9 @@
 ## 准备
 
 - **测试机**：装好 nginx，并确认带 stream 模块：`nginx -V 2>&1 | grep -o with-stream`。
-- **面板**：用待测版本的二进制替换 `/usr/local/s-ui/sui`，然后 `systemctl restart s-ui`。
+- **面板**：用待测版本的二进制替换 `/usr/local/3s-ui/3sui`，然后 `systemctl restart 3s-ui`。
 - **客户端**：一台能连代理的机器。先在**不走代理**时运行 `curl ifconfig.me`，记下它的公网 IP，后面要对照。
-- **日志**：服务端开一个终端一直看着：`journalctl -u s-ui -f`。
+- **日志**：服务端开一个终端一直看着：`journalctl -u 3s-ui -f`。
 
 ## 一、配置
 

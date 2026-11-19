@@ -351,7 +351,7 @@ export default {
   activity: "Activity",
   activitySub: "Recent system & client events",
   nodeNew: "New node",
-  nodeSub: "Connect another 2S-UI panel",
+  nodeSub: "Connect another 3S-UI panel",
   nodesTile: "Nodes",
   nodesTileSub: "Managed panels at a glance",
   view: "View",

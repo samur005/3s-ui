@@ -7,10 +7,10 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/shenaba/2s-ui/core"
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/service/notify"
+	"github.com/samur005/3s-ui/core"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/service/notify"
 
 	"github.com/op/go-logging"
 )

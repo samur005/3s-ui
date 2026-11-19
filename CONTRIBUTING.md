@@ -1,6 +1,6 @@
-# Contributing to 2S-UI
+# Contributing to 3S-UI
 
-Thank you for your interest in contributing to 2S-UI. This document explains how to set up a development environment, follow project conventions, and submit changes. Your contributions help make the **multi-inbound-per-user** approach and the rest of the project better for everyone.
+Thank you for your interest in contributing to 3S-UI. This document explains how to set up a development environment, follow project conventions, and submit changes. Your contributions help make the **multi-inbound-per-user** approach and the rest of the project better for everyone.
 
 ## Table of Contents
 
@@ -33,8 +33,8 @@ Please be respectful and constructive when interacting with maintainers and othe
 ### Clone
 
 ```bash
-git clone https://github.com/shenaba/2s-ui
-cd 2s-ui
+git clone https://github.com/samur005/3s-ui
+cd 3s-ui
 ```
 
 The **frontend** lives in `frontend/` in this repo — a plain directory, no submodule, so a plain clone gives you everything. If you only work on the backend you can ignore it entirely: Go does not need it to compile, and you can run with the existing `web/html` contents or build the frontend once (see below).
@@ -44,16 +44,16 @@ The **frontend** lives in `frontend/` in this repo — a plain directory, no sub
 1. Build and run with the provided script (builds backend and runs with debug + local DB):
 
    ```bash
-   ./runSUI.sh
+   ./run3sui.sh
    ```
 
-   This runs `./build.sh` then `SUI_DB_FOLDER="db" SUI_DEBUG=true ./sui`.
+   This runs `./build.sh` then `S3UI_DB_FOLDER="db" S3UI_DEBUG=true ./3sui`.
 
 2. Or build manually:
 
    ```bash
    ./build.sh
-   SUI_DB_FOLDER=db SUI_DEBUG=true ./sui
+   S3UI_DB_FOLDER=db S3UI_DEBUG=true ./3sui
    ```
 
    Default panel: **http://localhost:2095/app/** (user: `admin`, password: `admin` — change in production).
@@ -75,13 +75,13 @@ The **frontend** lives in `frontend/` in this repo — a plain directory, no sub
    mkdir -p web/html
    rm -rf web/html/*
    cp -R frontend/dist/* web/html/
-   go build -ldflags "-w -s" -tags "with_quic,with_grpc,with_utls,with_acme,with_gvisor,with_tailscale" -o sui main.go
+   go build -ldflags "-w -s" -tags "with_quic,with_grpc,with_utls,with_acme,with_gvisor,with_tailscale" -o 3sui main.go
    ```
 
 3. Run:
 
    ```bash
-   SUI_DB_FOLDER=db SUI_DEBUG=true ./sui
+   S3UI_DB_FOLDER=db S3UI_DEBUG=true ./3sui
    ```
 
 ### Build Tags
@@ -96,17 +96,17 @@ Use the same tags when building locally if you need feature parity with releases
 
 | Variable       | Description                    | Example   |
 |----------------|--------------------------------|-----------|
-| `SUI_DB_FOLDER`| Directory for SQLite DB files  | `db`      |
-| `SUI_DEBUG`    | Enable debug mode              | `true`    |
-| `SUI_LOG_LEVEL`| Log level                      | `debug`   |
-| `SUI_BIN_FOLDER` | Directory for binaries       | `bin`     |
+| `S3UI_DB_FOLDER`| Directory for SQLite DB files  | `db`      |
+| `S3UI_DEBUG`    | Enable debug mode              | `true`    |
+| `S3UI_LOG_LEVEL`| Log level                      | `debug`   |
+| `S3UI_BIN_FOLDER` | Directory for binaries       | `bin`     |
 
 ### Docker (optional)
 
 ```bash
-git clone https://github.com/shenaba/2s-ui
-cd 2s-ui
-docker build -t 2s-ui .
+git clone https://github.com/samur005/3s-ui
+cd 3s-ui
+docker build -t 3s-ui .
 # or: docker compose up -d
 ```
 
@@ -165,7 +165,7 @@ When adding new features, place code in the appropriate layer (handler → servi
 1. **Build verification**: Before submitting a PR, ensure the project builds:
 
    ```bash
-   go build -ldflags "-w -s" -tags "with_quic,with_grpc,with_utls,with_acme,with_gvisor,with_tailscale" -o sui main.go
+   go build -ldflags "-w -s" -tags "with_quic,with_grpc,with_utls,with_acme,with_gvisor,with_tailscale" -o 3sui main.go
    ```
 
 2. **Run the tests**: Same command CI uses — the tags and `-checklinkname=0` are both required for the test binaries to link:
@@ -174,7 +174,7 @@ When adding new features, place code in the appropriate layer (handler → servi
    go test -tags "with_quic,with_grpc,with_utls,with_acme,with_gvisor,badlinkname,tfogo_checklinkname0,with_tailscale" -ldflags="-checklinkname=0" ./...
    ```
 
-3. **Manual testing**: Run with `./runSUI.sh`, test the changed area (panel, API, subscription, etc.).
+3. **Manual testing**: Run with `./run3sui.sh`, test the changed area (panel, API, subscription, etc.).
 
 4. **New tests**: Contributions that add **unit tests** (e.g. for `util/`, `service/`, or API handlers) or **integration tests** are very welcome. Prefer the standard library `testing` package and table-driven tests where appropriate.
 
@@ -189,12 +189,12 @@ go vet ./...
 
 ## Features That Need Help
 
-Community help is especially valuable in these areas. Check the [Issues](https://github.com/shenaba/2s-ui/issues) for current tasks and ideas.
+Community help is especially valuable in these areas. Check the [Issues](https://github.com/samur005/3s-ui/issues) for current tasks and ideas.
 
 ### High-Value Areas
 
-- **Multi-inbound per user**: Core differentiator of 2S-UI; improvements to UX, docs, and robustness are welcome.
-- **API (v1 and v2)**: Completeness, consistency, and documentation (see [API Documentation](https://github.com/shenaba/2s-ui/wiki/API-Documentation)).
+- **Multi-inbound per user**: Core differentiator of 3S-UI; improvements to UX, docs, and robustness are welcome.
+- **API (v1 and v2)**: Completeness, consistency, and documentation (see [API Documentation](https://github.com/samur005/3s-ui/wiki/API-Documentation)).
 - **Subscription service**: Link conversion, JSON subscription, and info endpoints (`sub/`, `util/`).
 - **Testing**: Adding unit and integration tests for critical paths.
 - **Documentation**: User docs, API examples, and contribution docs (like this file).
@@ -265,7 +265,7 @@ If you maintain a fork or your own repository and want the contribution guide to
    In the repository **Settings → General → Features**, ensure “Issues” (and optionally “Discussions”) are enabled. The link to `CONTRIBUTING.md` appears when users create a new issue or PR; no extra config is needed as long as the file is in the root.
 
 4. **When forking**  
-   If you fork 2S-UI, `CONTRIBUTING.md` is already in the repo. Update the clone URLs and repo names in this file if you want your fork’s contribution instructions to point to your own repository.
+   If you fork 3S-UI, `CONTRIBUTING.md` is already in the repo. Update the clone URLs and repo names in this file if you want your fork’s contribution instructions to point to your own repository.
 
 ---
 
@@ -277,4 +277,4 @@ If you maintain a fork or your own repository and want the contribution guide to
 
 ---
 
-Thank you for helping 2S-UI grow. Your contributions make it possible for more users to adopt 2S-UI in production and benefit from its multi-inbound-per-user design.
+Thank you for helping 3S-UI grow. Your contributions make it possible for more users to adopt 3S-UI in production and benefit from its multi-inbound-per-user design.

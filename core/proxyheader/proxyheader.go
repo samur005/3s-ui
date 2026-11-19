@@ -107,7 +107,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	panelLog "github.com/shenaba/2s-ui/logger"
+	panelLog "github.com/samur005/3s-ui/logger"
 
 	"github.com/pires/go-proxyproto"
 	"github.com/sagernet/sing-box/adapter"

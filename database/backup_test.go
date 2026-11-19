@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/shenaba/2s-ui/config"
-	"github.com/shenaba/2s-ui/database/model"
-	"github.com/shenaba/2s-ui/logger"
+	"github.com/samur005/3s-ui/config"
+	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/logger"
 
 	"github.com/op/go-logging"
 	"gorm.io/driver/sqlite"
@@ -38,7 +38,7 @@ func TestImportDBKeepsPoolUsableWhenImportFails(t *testing.T) {
 	// failing.
 	logger.InitLogger(logging.ERROR)
 	dir := t.TempDir()
-	t.Setenv("SUI_DB_FOLDER", dir)
+	t.Setenv("S3UI_DB_FOLDER", dir)
 
 	if err := InitDB(config.GetDBPath()); err != nil {
 		t.Fatalf("InitDB: %v", err)
@@ -116,7 +116,7 @@ const loginAttemptsTable = "login_attempts"
 func TestGetDbBacksUpEveryTable(t *testing.T) {
 	logger.InitLogger(logging.ERROR)
 	dir := t.TempDir()
-	t.Setenv("SUI_DB_FOLDER", dir)
+	t.Setenv("S3UI_DB_FOLDER", dir)
 
 	if err := InitDB(config.GetDBPath()); err != nil {
 		t.Fatalf("InitDB: %v", err)
@@ -251,7 +251,7 @@ func seedEveryTable(t *testing.T) {
 func TestGetDbHandlesTablesPastTheVariableLimit(t *testing.T) {
 	logger.InitLogger(logging.ERROR)
 	dir := t.TempDir()
-	t.Setenv("SUI_DB_FOLDER", dir)
+	t.Setenv("S3UI_DB_FOLDER", dir)
 
 	if err := InitDB(config.GetDBPath()); err != nil {
 		t.Fatalf("InitDB: %v", err)

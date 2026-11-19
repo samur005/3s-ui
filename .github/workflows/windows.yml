@@ -1,4 +1,4 @@
-name: Build 2S-UI for Windows
+name: Build 3S-UI for Windows
 
 on:
   workflow_dispatch:
@@ -100,7 +100,7 @@ jobs:
           cache: false
           go-version-file: go.mod
 
-      - name: Build 2s-ui
+      - name: Build 3s-ui
         shell: bash
         run: |
           export CGO_ENABLED=${{ matrix.cgo }}
@@ -111,28 +111,28 @@ jobs:
           go version
           go env GOOS GOARCH
           
-          go build -ldflags="-w -s -checklinkname=0" -tags "${{ env.TAGS }}" -o sui.exe main.go
-          file sui.exe
+          go build -ldflags="-w -s -checklinkname=0" -tags "${{ env.TAGS }}" -o 3sui.exe main.go
+          file 3sui.exe
           
-          mkdir s-ui-windows
-          cp sui.exe s-ui-windows/
-          cp -r windows/* s-ui-windows/
+          mkdir 3s-ui-windows
+          cp 3sui.exe 3s-ui-windows/
+          cp -r windows/* 3s-ui-windows/
 
       - name: Download libcronet-go
         shell: bash
         run: |
-          curl -qsL -o s-ui-windows/libcronet.dll ${{ env.LIBCRONET_BASE_URL }}/libcronet-windows-${{ matrix.arch }}.dll
+          curl -qsL -o 3s-ui-windows/libcronet.dll ${{ env.LIBCRONET_BASE_URL }}/libcronet-windows-${{ matrix.arch }}.dll
 
       - name: Package
         shell: pwsh
         run: |
-          Compress-Archive -Path s-ui-windows -DestinationPath "s-ui-windows-${{ matrix.arch }}.zip"
+          Compress-Archive -Path 3s-ui-windows -DestinationPath "3s-ui-windows-${{ matrix.arch }}.zip"
 
       - name: Upload files to Artifacts
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: s-ui-windows-${{ matrix.arch }}
-          path: ./s-ui-windows-${{ matrix.arch }}.zip
+          name: 3s-ui-windows-${{ matrix.arch }}
+          path: ./3s-ui-windows-${{ matrix.arch }}.zip
           retention-days: 30
 
       - name: Upload to Release
@@ -142,7 +142,7 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.event.release.tag_name }}
-          file: s-ui-windows-${{ matrix.arch }}.zip
-          asset_name: s-ui-windows-${{ matrix.arch }}.zip
+          file: 3s-ui-windows-${{ matrix.arch }}.zip
+          asset_name: 3s-ui-windows-${{ matrix.arch }}.zip
           prerelease: true
           overwrite: true

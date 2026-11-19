@@ -351,7 +351,7 @@ export default {
   activity: "فعالیت",
   activitySub: "رویدادهای اخیر سیستم و کلاینت",
   nodeNew: "نود جدید",
-  nodeSub: "اتصال یک پنل 2S-UI دیگر",
+  nodeSub: "اتصال یک پنل 3S-UI دیگر",
   nodesTile: "نودها",
   nodesTileSub: "نمای کلی پنل‌های مدیریت‌شده",
   view: "نمایش",

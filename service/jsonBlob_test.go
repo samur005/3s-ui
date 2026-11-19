@@ -5,7 +5,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/shenaba/2s-ui/database/model"
+	"github.com/samur005/3s-ui/database/model"
 )
 
 // Issue #268. The driver stores json.RawMessage as BLOB, and SQLite reads a

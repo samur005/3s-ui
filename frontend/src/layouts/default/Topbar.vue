@@ -88,7 +88,7 @@ const THEMES: { value: Theme; label: string; icon: string }[] = [
 ]
 const themeIcon = computed(() => THEMES.find((t) => t.value === app.theme)?.icon ?? 'moon')
 
-const username = computed(() => localStorage.getItem('2sui-user') || 'admin')
+const username = computed(() => localStorage.getItem('3sui-user') || 'admin')
 const initials = computed(() => username.value.slice(0, 2).toUpperCase())
 
 const doLogout = () => logout()

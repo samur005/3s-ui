@@ -7,15 +7,15 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/shenaba/2s-ui/config"
-	"github.com/shenaba/2s-ui/core"
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/database/model"
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/network"
-	"github.com/shenaba/2s-ui/service/notify"
-	"github.com/shenaba/2s-ui/util"
-	"github.com/shenaba/2s-ui/util/common"
+	"github.com/samur005/3s-ui/config"
+	"github.com/samur005/3s-ui/core"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/network"
+	"github.com/samur005/3s-ui/service/notify"
+	"github.com/samur005/3s-ui/util"
+	"github.com/samur005/3s-ui/util/common"
 )
 
 var (

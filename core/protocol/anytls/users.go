@@ -4,8 +4,8 @@ import (
 	"context"
 	"net"
 
-	"github.com/shenaba/2s-ui/core/proxyheader"
-	"github.com/shenaba/2s-ui/core/usersession"
+	"github.com/samur005/3s-ui/core/proxyheader"
+	"github.com/samur005/3s-ui/core/usersession"
 
 	"github.com/sagernet/sing-box/adapter"
 	"github.com/sagernet/sing-box/option"

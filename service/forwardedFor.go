@@ -5,9 +5,9 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/shenaba/2s-ui/core/proxyheader"
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/util/common"
+	"github.com/samur005/3s-ui/core/proxyheader"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/util/common"
 )
 
 // xffTrustedCDN is the setting naming the CDN edges whose X-Forwarded-For an

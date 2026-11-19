@@ -51,7 +51,7 @@ func GenerateTOTPSecret() (string, error) {
 
 // TOTPKeyURI builds the otpauth:// URI the enrolment QR code encodes. issuer is
 // repeated in the label as well as the parameter because that is what apps that
-// predate the parameter read, and dropping it there makes every 2S-UI panel
+// predate the parameter read, and dropping it there makes every 3S-UI panel
 // show up under the bare account name.
 func TOTPKeyURI(secret, account, issuer string) string {
 	label := url.PathEscape(issuer + ":" + account)

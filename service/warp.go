@@ -11,8 +11,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/shenaba/2s-ui/database/model"
-	"github.com/shenaba/2s-ui/util/common"
+	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/util/common"
 
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 )
@@ -53,7 +53,7 @@ func (s *WarpService) RegisterWarp(ep *model.Endpoint) error {
 	publicKey := privateKey.PublicKey().String()
 	hostName, _ := os.Hostname()
 
-	data := fmt.Sprintf(`{"key":"%s","tos":"%s","type": "PC","model": "s-ui", "name": "%s"}`, publicKey, tos, hostName)
+	data := fmt.Sprintf(`{"key":"%s","tos":"%s","type": "PC","model": "3s-ui", "name": "%s"}`, publicKey, tos, hostName)
 	url := "https://api.cloudflareclient.com/v0a2158/reg"
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte(data)))

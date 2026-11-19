@@ -1,6 +1,6 @@
-# Contributing to 2S-UI Frontend
+# Contributing to 3S-UI Frontend
 
-Thank you for your interest in contributing to 2S-UI Frontend. This document explains how to set up the project, follow our conventions, and submit changes.
+Thank you for your interest in contributing to 3S-UI Frontend. This document explains how to set up the project, follow our conventions, and submit changes.
 
 ## Table of Contents
 
@@ -19,19 +19,19 @@ Please be respectful and constructive. This project is for personal learning and
 ## Getting Started
 
 The frontend is not a repository of its own — it lives in the `frontend/` directory
-of the [2s-ui](https://github.com/shenaba/2s-ui) panel repo, which is also where its
+of the [3s-ui](https://github.com/samur005/3s-ui) panel repo, which is also where its
 issues and pull requests go. See that repo's [CONTRIBUTING.md](../CONTRIBUTING.md)
 for backend and full-stack setup; this file covers frontend work specifically.
 
-1. **Fork** [shenaba/2s-ui](https://github.com/shenaba/2s-ui) on GitHub.
+1. **Fork** [samur005/3s-ui](https://github.com/samur005/3s-ui) on GitHub.
 2. **Clone** your fork and enter the frontend directory:
    ```bash
-   git clone https://github.com/<your-username>/2s-ui.git
-   cd 2s-ui/frontend
+   git clone https://github.com/<your-username>/3s-ui.git
+   cd 3s-ui/frontend
    ```
 3. Add the upstream remote (optional, for syncing):
    ```bash
-   git remote add upstream https://github.com/shenaba/2s-ui.git
+   git remote add upstream https://github.com/samur005/3s-ui.git
    ```
 
 ## Development Setup

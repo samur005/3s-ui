@@ -329,7 +329,7 @@
           <input class="input mono" type="password" autocomplete="new-password" v-model="settings.notifySmtpPass" />
         </SRow>
         <SRow :label="$t('setting.notifySmtpFrom')">
-          <input class="input mono" v-model="settings.notifySmtpFrom" placeholder="2s-ui@example.com" />
+          <input class="input mono" v-model="settings.notifySmtpFrom" placeholder="3s-ui@example.com" />
         </SRow>
         <SRow :label="$t('setting.notifySmtpTo')" :hint="$t('setting.notifyListHint')">
           <input class="input mono" v-model="settings.notifySmtpTo" placeholder="admin@example.com" />

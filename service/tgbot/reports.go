@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/shenaba/2s-ui/service"
+	"github.com/samur005/3s-ui/service"
 )
 
 // reportLimit bounds every listing in this file. These are read on a phone, and

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/shenaba/2s-ui/database/model"
+	"github.com/samur005/3s-ui/database/model"
 )
 
 // openTestDB gives each test its own on-disk database, since OpenDB stores the
@@ -269,7 +269,7 @@ func TestMigrateSingBox114KeepsConfiguredDirectDetour(t *testing.T) {
 
 // A database read that fails must stop the migration and, through InitDB, the
 // panel: it should say it cannot read its own tables rather than come up having
-// quietly skipped an upgrade step. This is also what upstream s-ui does, and
+// quietly skipped an upgrade step. This is also what upstream 3s-ui does, and
 // what every other read in these five migrations does.
 //
 // The scenario is not hypothetical -- a row whose options column had been

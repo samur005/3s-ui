@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/service"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/service"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -26,7 +26,7 @@ func loginThrough(t *testing.T, username, password string) Msg {
 	gin.SetMode(gin.TestMode)
 
 	engine := gin.New()
-	engine.Use(sessions.Sessions("s-ui-test", cookie.NewStore([]byte("test-secret"))))
+	engine.Use(sessions.Sessions("3s-ui-test", cookie.NewStore([]byte("test-secret"))))
 	a := ApiService{}
 	engine.POST("/api/login", func(c *gin.Context) { a.Login(c) })
 

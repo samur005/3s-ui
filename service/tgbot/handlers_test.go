@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/shenaba/2s-ui/service/notify"
+	"github.com/samur005/3s-ui/service/notify"
 
 	"github.com/go-telegram/bot/models"
 )
@@ -70,7 +70,7 @@ func TestStrangerRepliesRevealNothing(t *testing.T) {
 		if got == "" {
 			t.Errorf("/%s answered with nothing", cmd)
 		}
-		for _, secret := range []string{"2S-UI", "2s-ui", notify.Host()} {
+		for _, secret := range []string{"3S-UI", "3s-ui", notify.Host()} {
 			if secret != "" && strings.Contains(got, secret) {
 				t.Errorf("/%s leaks %q: %q", cmd, secret, got)
 			}

@@ -1,9 +1,9 @@
 ---
 services:
-  s-ui:
-    image: ghcr.io/shenaba/2s-ui
-    container_name: s-ui
-    hostname: "s-ui"
+  3s-ui:
+    image: ghcr.io/samur005/3s-ui
+    container_name: 3s-ui
+    hostname: "3s-ui"
     volumes:
       - "./db:/app/db"
       - "./cert:/root/cert"
@@ -16,9 +16,9 @@ services:
       # certificates. It binds host port 80, which must be free.
       # - "80:80"
     networks:
-      - s-ui
+      - 3s-ui
     entrypoint: "./entrypoint.sh"
 
 networks:
-  s-ui:
+  3s-ui:
     driver: bridge

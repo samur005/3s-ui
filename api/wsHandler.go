@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/shenaba/2s-ui/service"
+	"github.com/samur005/3s-ui/service"
 
 	"github.com/coder/websocket"
 	"github.com/gin-gonic/gin"

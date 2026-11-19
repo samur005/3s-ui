@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/shenaba/2s-ui/core"
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/database/model"
-	"github.com/shenaba/2s-ui/util"
+	"github.com/samur005/3s-ui/core"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/util"
 
 	"github.com/sagernet/sing-box/experimental/deprecated"
 	"github.com/sagernet/sing-box/option"

@@ -123,7 +123,7 @@ const Data = defineStore('Data', {
         await new Promise((resolve) => setTimeout(resolve, 100))
       }
       if (this.lastLoad == 0) {
-        console.warn('[2s-ui] no panel data after 15s (websocket not connected?) — config views stay blank rather than edit an empty config')
+        console.warn('[3s-ui] no panel data after 15s (websocket not connected?) — config views stay blank rather than edit an empty config')
         return false
       }
       return true

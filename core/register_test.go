@@ -67,7 +67,7 @@ func TestServiceRegistry(t *testing.T) {
 }
 
 // TestCertificateProviderRegistry guards that every certificate provider type
-// s-ui can emit is registered. The types are registered behind build tags, but
+// 3s-ui can emit is registered. The types are registered behind build tags, but
 // the stubs register too, so the set is the same in every build.
 func TestCertificateProviderRegistry(t *testing.T) {
 	assertRegistered(t, "certificate provider", CertificateProviderRegistry().OptionTypes(),

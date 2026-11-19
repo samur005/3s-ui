@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/shenaba/2s-ui/database/model"
+	"github.com/samur005/3s-ui/database/model"
 )
 
 func TestStripServerTlsFields(t *testing.T) {
@@ -133,8 +133,8 @@ func TestStripServerTlsFields(t *testing.T) {
 func TestFillOutJsonHysteriaQUICFields(t *testing.T) {
 	newInbound := func(outJson string) *model.Inbound {
 		return &model.Inbound{
-			Type:    "hysteria",
-			Tag:     "hy-in",
+			Type: "hysteria",
+			Tag:  "hy-in",
 			Options: json.RawMessage(`{"listen_port":443,"up_mbps":100,"down_mbps":200,` +
 				`"connection_receive_window":15728640,"disable_path_mtu_discovery":true,` +
 				`"stream_receive_window":67108864}`),

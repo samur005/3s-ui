@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/database/model"
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/util"
-	"github.com/shenaba/2s-ui/util/common"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/util"
+	"github.com/samur005/3s-ui/util/common"
 )
 
 type UserService struct {
@@ -31,7 +31,7 @@ type UserService struct {
 //
 // Read straight from the DB on every call, deliberately. Caching it and
 // invalidating on the write paths looked cheaper but could not be made
-// correct: `sui admin -reset` writes the row from a *separate process*, and
+// correct: `3sui admin -reset` writes the row from a *separate process*, and
 // ImportDB swaps the whole database file underneath a running panel -- neither
 // can reach an in-process cache, so both would leave sessions alive that the
 // credential change was supposed to retire. One indexed lookup per

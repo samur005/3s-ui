@@ -14,7 +14,7 @@ t() {
     local key=$1
     if [[ $LANG_PREF == "zhcn" ]]; then
         case $key in
-            menu_title)        echo "2S-UI 管理脚本" ;;
+            menu_title)        echo "3S-UI 管理脚本" ;;
             opt_exit)          echo "退出" ;;
             opt_install)       echo "安装" ;;
             opt_update)        echo "更新" ;;
@@ -26,13 +26,13 @@ t() {
             opt_reset_panel)   echo "重置面板设置" ;;
             opt_set_panel)     echo "设置面板参数" ;;
             opt_view_panel)    echo "查看面板设置" ;;
-            opt_start)         echo "2S-UI 启动" ;;
-            opt_stop)          echo "2S-UI 停止" ;;
-            opt_restart)       echo "2S-UI 重启" ;;
-            opt_status)        echo "2S-UI 查看状态" ;;
-            opt_log)           echo "2S-UI 查看日志" ;;
-            opt_enable)        echo "2S-UI 开启开机自启" ;;
-            opt_disable)       echo "2S-UI 关闭开机自启" ;;
+            opt_start)         echo "3S-UI 启动" ;;
+            opt_stop)          echo "3S-UI 停止" ;;
+            opt_restart)       echo "3S-UI 重启" ;;
+            opt_status)        echo "3S-UI 查看状态" ;;
+            opt_log)           echo "3S-UI 查看日志" ;;
+            opt_enable)        echo "3S-UI 开启开机自启" ;;
+            opt_disable)       echo "3S-UI 关闭开机自启" ;;
             opt_bbr)           echo "开启或关闭 BBR" ;;
             opt_ssl)           echo "SSL 证书管理" ;;
             opt_cf_ssl)        echo "Cloudflare SSL 证书" ;;
@@ -64,7 +64,7 @@ t() {
             prompt_sub_port)   echo "输入订阅端口（留空保留现有/默认值）：" ;;
             prompt_sub_path)   echo "输入订阅路径（留空保留现有/默认值）：" ;;
             msg_initializing)  echo "初始化中，请稍候..." ;;
-            msg_uninstalled)   echo "卸载成功，如需删除脚本，退出后执行 rm /usr/local/s-ui -f 命令。" ;;
+            msg_uninstalled)   echo "卸载成功，如需删除脚本，退出后执行 rm /usr/local/3s-ui -f 命令。" ;;
             msg_panel_uri)     echo "面板与订阅地址：" ;;
             msg_lang_select)   echo "选择语言 / Select language:" ;;
             msg_lang_saved)    echo "语言已切换为简体中文。" ;;
@@ -74,7 +74,7 @@ t() {
         esac
     elif [[ $LANG_PREF == "zhtw" ]]; then
         case $key in
-            menu_title)        echo "2S-UI 管理腳本" ;;
+            menu_title)        echo "3S-UI 管理腳本" ;;
             opt_exit)          echo "退出" ;;
             opt_install)       echo "安裝" ;;
             opt_update)        echo "更新" ;;
@@ -86,13 +86,13 @@ t() {
             opt_reset_panel)   echo "重設面板設定" ;;
             opt_set_panel)     echo "設定面板參數" ;;
             opt_view_panel)    echo "檢視面板設定" ;;
-            opt_start)         echo "2S-UI 啟動" ;;
-            opt_stop)          echo "2S-UI 停止" ;;
-            opt_restart)       echo "2S-UI 重啟" ;;
-            opt_status)        echo "2S-UI 檢視狀態" ;;
-            opt_log)           echo "2S-UI 檢視日誌" ;;
-            opt_enable)        echo "2S-UI 開啟開機自啟" ;;
-            opt_disable)       echo "2S-UI 關閉開機自啟" ;;
+            opt_start)         echo "3S-UI 啟動" ;;
+            opt_stop)          echo "3S-UI 停止" ;;
+            opt_restart)       echo "3S-UI 重啟" ;;
+            opt_status)        echo "3S-UI 檢視狀態" ;;
+            opt_log)           echo "3S-UI 檢視日誌" ;;
+            opt_enable)        echo "3S-UI 開啟開機自啟" ;;
+            opt_disable)       echo "3S-UI 關閉開機自啟" ;;
             opt_bbr)           echo "開啟或關閉 BBR" ;;
             opt_ssl)           echo "SSL 憑證管理" ;;
             opt_cf_ssl)        echo "Cloudflare SSL 憑證" ;;
@@ -124,7 +124,7 @@ t() {
             prompt_sub_port)   echo "輸入訂閱連接埠（留空保留現有/預設值）：" ;;
             prompt_sub_path)   echo "輸入訂閱路徑（留空保留現有/預設值）：" ;;
             msg_initializing)  echo "初始化中，請稍候..." ;;
-            msg_uninstalled)   echo "解除安裝成功，如需刪除腳本，離開後執行 rm /usr/local/s-ui -f 指令。" ;;
+            msg_uninstalled)   echo "解除安裝成功，如需刪除腳本，離開後執行 rm /usr/local/3s-ui -f 指令。" ;;
             msg_panel_uri)     echo "面板與訂閱位址：" ;;
             msg_lang_select)   echo "選擇語言 / Select language:" ;;
             msg_lang_saved)    echo "語言已切換為繁體中文。" ;;
@@ -134,7 +134,7 @@ t() {
         esac
     elif [[ $LANG_PREF == "ru" ]]; then
         case $key in
-            menu_title)        echo "Скрипт управления 2S-UI" ;;
+            menu_title)        echo "Скрипт управления 3S-UI" ;;
             opt_exit)          echo "Выход" ;;
             opt_install)       echo "Установить" ;;
             opt_update)        echo "Обновить" ;;
@@ -146,13 +146,13 @@ t() {
             opt_reset_panel)   echo "Сбросить настройки панели" ;;
             opt_set_panel)     echo "Настроить параметры панели" ;;
             opt_view_panel)    echo "Показать настройки панели" ;;
-            opt_start)         echo "Запустить 2S-UI" ;;
-            opt_stop)          echo "Остановить 2S-UI" ;;
-            opt_restart)       echo "Перезапустить 2S-UI" ;;
-            opt_status)        echo "Статус 2S-UI" ;;
-            opt_log)           echo "Логи 2S-UI" ;;
-            opt_enable)        echo "Включить автозапуск 2S-UI" ;;
-            opt_disable)       echo "Отключить автозапуск 2S-UI" ;;
+            opt_start)         echo "Запустить 3S-UI" ;;
+            opt_stop)          echo "Остановить 3S-UI" ;;
+            opt_restart)       echo "Перезапустить 3S-UI" ;;
+            opt_status)        echo "Статус 3S-UI" ;;
+            opt_log)           echo "Логи 3S-UI" ;;
+            opt_enable)        echo "Включить автозапуск 3S-UI" ;;
+            opt_disable)       echo "Отключить автозапуск 3S-UI" ;;
             opt_bbr)           echo "Включить или отключить BBR" ;;
             opt_ssl)           echo "Управление SSL-сертификатами" ;;
             opt_cf_ssl)        echo "SSL-сертификат Cloudflare" ;;
@@ -184,7 +184,7 @@ t() {
             prompt_sub_port)   echo "Порт подписки (пусто — оставить текущее/по умолчанию):" ;;
             prompt_sub_path)   echo "Путь подписки (пусто — оставить текущее/по умолчанию):" ;;
             msg_initializing)  echo "Инициализация, подождите..." ;;
-            msg_uninstalled)   echo "Удаление выполнено. Чтобы удалить сам скрипт, после выхода выполните rm /usr/local/s-ui -f" ;;
+            msg_uninstalled)   echo "Удаление выполнено. Чтобы удалить сам скрипт, после выхода выполните rm /usr/local/3s-ui -f" ;;
             msg_panel_uri)     echo "Адреса панели и подписки:" ;;
             msg_lang_select)   echo "Выберите язык / Select language:" ;;
             msg_lang_saved)    echo "Язык переключён на русский." ;;
@@ -194,7 +194,7 @@ t() {
         esac
     elif [[ $LANG_PREF == "fa" ]]; then
         case $key in
-            menu_title)        echo "اسکریپت مدیریت 2S-UI" ;;
+            menu_title)        echo "اسکریپت مدیریت 3S-UI" ;;
             opt_exit)          echo "خروج" ;;
             opt_install)       echo "نصب" ;;
             opt_update)        echo "به‌روزرسانی" ;;
@@ -206,13 +206,13 @@ t() {
             opt_reset_panel)   echo "بازنشانی تنظیمات پنل" ;;
             opt_set_panel)     echo "تنظیم پارامترهای پنل" ;;
             opt_view_panel)    echo "نمایش تنظیمات پنل" ;;
-            opt_start)         echo "راه‌اندازی 2S-UI" ;;
-            opt_stop)          echo "توقف 2S-UI" ;;
-            opt_restart)       echo "راه‌اندازی مجدد 2S-UI" ;;
-            opt_status)        echo "وضعیت 2S-UI" ;;
-            opt_log)           echo "لاگ‌های 2S-UI" ;;
-            opt_enable)        echo "فعال‌سازی اجرای خودکار 2S-UI" ;;
-            opt_disable)       echo "غیرفعال‌سازی اجرای خودکار 2S-UI" ;;
+            opt_start)         echo "راه‌اندازی 3S-UI" ;;
+            opt_stop)          echo "توقف 3S-UI" ;;
+            opt_restart)       echo "راه‌اندازی مجدد 3S-UI" ;;
+            opt_status)        echo "وضعیت 3S-UI" ;;
+            opt_log)           echo "لاگ‌های 3S-UI" ;;
+            opt_enable)        echo "فعال‌سازی اجرای خودکار 3S-UI" ;;
+            opt_disable)       echo "غیرفعال‌سازی اجرای خودکار 3S-UI" ;;
             opt_bbr)           echo "فعال یا غیرفعال کردن BBR" ;;
             opt_ssl)           echo "مدیریت گواهی SSL" ;;
             opt_cf_ssl)        echo "گواهی SSL کلادفلر" ;;
@@ -244,7 +244,7 @@ t() {
             prompt_sub_port)   echo "پورت اشتراک (برای حفظ مقدار فعلی/پیش‌فرض خالی بگذارید):" ;;
             prompt_sub_path)   echo "مسیر اشتراک (برای حفظ مقدار فعلی/پیش‌فرض خالی بگذارید):" ;;
             msg_initializing)  echo "در حال آماده‌سازی، لطفاً صبر کنید..." ;;
-            msg_uninstalled)   echo "حذف نصب با موفقیت انجام شد. برای حذف این اسکریپت پس از خروج دستور rm /usr/local/s-ui -f را اجرا کنید." ;;
+            msg_uninstalled)   echo "حذف نصب با موفقیت انجام شد. برای حذف این اسکریپت پس از خروج دستور rm /usr/local/3s-ui -f را اجرا کنید." ;;
             msg_panel_uri)     echo "نشانی‌های پنل و اشتراک:" ;;
             msg_lang_select)   echo "انتخاب زبان / Select language:" ;;
             msg_lang_saved)    echo "زبان به فارسی تغییر کرد." ;;
@@ -254,7 +254,7 @@ t() {
         esac
     elif [[ $LANG_PREF == "vi" ]]; then
         case $key in
-            menu_title)        echo "Tập lệnh quản trị 2S-UI" ;;
+            menu_title)        echo "Tập lệnh quản trị 3S-UI" ;;
             opt_exit)          echo "Thoát" ;;
             opt_install)       echo "Cài đặt" ;;
             opt_update)        echo "Cập nhật" ;;
@@ -266,13 +266,13 @@ t() {
             opt_reset_panel)   echo "Đặt lại cài đặt bảng điều khiển" ;;
             opt_set_panel)     echo "Thiết lập tham số bảng điều khiển" ;;
             opt_view_panel)    echo "Xem cài đặt bảng điều khiển" ;;
-            opt_start)         echo "Khởi động 2S-UI" ;;
-            opt_stop)          echo "Dừng 2S-UI" ;;
-            opt_restart)       echo "Khởi động lại 2S-UI" ;;
-            opt_status)        echo "Trạng thái 2S-UI" ;;
-            opt_log)           echo "Nhật ký 2S-UI" ;;
-            opt_enable)        echo "Bật tự khởi động 2S-UI" ;;
-            opt_disable)       echo "Tắt tự khởi động 2S-UI" ;;
+            opt_start)         echo "Khởi động 3S-UI" ;;
+            opt_stop)          echo "Dừng 3S-UI" ;;
+            opt_restart)       echo "Khởi động lại 3S-UI" ;;
+            opt_status)        echo "Trạng thái 3S-UI" ;;
+            opt_log)           echo "Nhật ký 3S-UI" ;;
+            opt_enable)        echo "Bật tự khởi động 3S-UI" ;;
+            opt_disable)       echo "Tắt tự khởi động 3S-UI" ;;
             opt_bbr)           echo "Bật hoặc tắt BBR" ;;
             opt_ssl)           echo "Quản lý chứng chỉ SSL" ;;
             opt_cf_ssl)        echo "Chứng chỉ SSL Cloudflare" ;;
@@ -304,7 +304,7 @@ t() {
             prompt_sub_port)   echo "Nhập cổng đăng ký (để trống giữ giá trị hiện tại/mặc định):" ;;
             prompt_sub_path)   echo "Nhập đường dẫn đăng ký (để trống giữ giá trị hiện tại/mặc định):" ;;
             msg_initializing)  echo "Đang khởi tạo, vui lòng đợi..." ;;
-            msg_uninstalled)   echo "Gỡ cài đặt thành công. Nếu muốn xóa tập lệnh này, sau khi thoát hãy chạy lệnh rm /usr/local/s-ui -f" ;;
+            msg_uninstalled)   echo "Gỡ cài đặt thành công. Nếu muốn xóa tập lệnh này, sau khi thoát hãy chạy lệnh rm /usr/local/3s-ui -f" ;;
             msg_panel_uri)     echo "Địa chỉ bảng điều khiển và đăng ký:" ;;
             msg_lang_select)   echo "Chọn ngôn ngữ / Select language:" ;;
             msg_lang_saved)    echo "Đã chuyển ngôn ngữ sang tiếng Việt." ;;
@@ -314,7 +314,7 @@ t() {
         esac
     else
         case $key in
-            menu_title)        echo "2S-UI Admin Management Script" ;;
+            menu_title)        echo "3S-UI Admin Management Script" ;;
             opt_exit)          echo "Exit" ;;
             opt_install)       echo "Install" ;;
             opt_update)        echo "Update" ;;
@@ -326,13 +326,13 @@ t() {
             opt_reset_panel)   echo "Reset Panel Settings" ;;
             opt_set_panel)     echo "Set Panel settings" ;;
             opt_view_panel)    echo "View Panel Settings" ;;
-            opt_start)         echo "2S-UI Start" ;;
-            opt_stop)          echo "2S-UI Stop" ;;
-            opt_restart)       echo "2S-UI Restart" ;;
-            opt_status)        echo "2S-UI Check State" ;;
-            opt_log)           echo "2S-UI Check Logs" ;;
-            opt_enable)        echo "2S-UI Enable Autostart" ;;
-            opt_disable)       echo "2S-UI Disable Autostart" ;;
+            opt_start)         echo "3S-UI Start" ;;
+            opt_stop)          echo "3S-UI Stop" ;;
+            opt_restart)       echo "3S-UI Restart" ;;
+            opt_status)        echo "3S-UI Check State" ;;
+            opt_log)           echo "3S-UI Check Logs" ;;
+            opt_enable)        echo "3S-UI Enable Autostart" ;;
+            opt_disable)       echo "3S-UI Disable Autostart" ;;
             opt_bbr)           echo "Enable or Disable BBR" ;;
             opt_ssl)           echo "SSL Certificate Management" ;;
             opt_cf_ssl)        echo "Cloudflare SSL Certificate" ;;
@@ -427,7 +427,7 @@ svc_disable() { if [[ "${init_system}" == "openrc" ]]; then rc-update del $1 def
 # before the service has ever written anything (unlike journalctl).
 svc_log() {
     if [[ "${init_system}" == "openrc" ]]; then
-        local log=/var/log/s-ui.log
+        local log=/var/log/3s-ui.log
         if [[ ! -f "$log" ]]; then
             touch "$log" 2>/dev/null || {
                 LOGE "Log file $log does not exist and could not be created"
@@ -473,7 +473,7 @@ before_show_menu() {
 # latest_tag prints the newest published release tag, resolved the same
 # way install.sh resolves it.
 latest_tag() {
-    curl -Ls "https://api.github.com/repos/shenaba/2s-ui/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'
+    curl -Ls "https://api.github.com/repos/samur005/3s-ui/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'
 }
 
 # run_installer runs install.sh taken from a release tag, never from the
@@ -497,7 +497,7 @@ run_installer() {
     installer=$(mktemp)
     # -f: a mistyped tag fails on the HTTP error instead of staging GitHub's
     # 404 body, which is non-empty and passes bash -n.
-    if ! curl -fLs -o "$installer" "https://raw.githubusercontent.com/shenaba/2s-ui/${tag}/install.sh" || [[ ! -s "$installer" ]] || ! bash -n "$installer"; then
+    if ! curl -fLs -o "$installer" "https://raw.githubusercontent.com/samur005/3s-ui/${tag}/install.sh" || [[ ! -s "$installer" ]] || ! bash -n "$installer"; then
         rm -f "$installer"
         LOGE "Failed to download the installer for ${tag}, Please check whether the machine can connect Github"
         return 1
@@ -557,22 +557,22 @@ uninstall() {
         return 0
     fi
     if [[ "${init_system}" == "openrc" ]]; then
-        rc-service s-ui stop
-        rc-update del s-ui default
-        rm /etc/init.d/s-ui -f
+        rc-service 3s-ui stop
+        rc-update del 3s-ui default
+        rm /etc/init.d/3s-ui -f
     else
-        systemctl stop s-ui
-        systemctl disable s-ui
-        rm /etc/systemd/system/s-ui.service -f
+        systemctl stop 3s-ui
+        systemctl disable 3s-ui
+        rm /etc/systemd/system/3s-ui.service -f
         systemctl daemon-reload
         systemctl reset-failed
     fi
-    rm /etc/s-ui/ -rf
-    rm /usr/local/s-ui/ -rf
-    rm /usr/bin/s-ui -f
+    rm /etc/3s-ui/ -rf
+    rm /usr/local/3s-ui/ -rf
+    rm /usr/bin/3s-ui -f
 
     echo ""
-    echo -e "$(t msg_uninstalled) ${green}rm /usr/local/s-ui -f${plain} to delete it."
+    echo -e "$(t msg_uninstalled) ${green}rm /usr/local/3s-ui -f${plain} to delete it."
     echo ""
 
     if [[ $# == 0 ]]; then
@@ -584,7 +584,7 @@ reset_admin() {
     echo "$(t warn_reset_admin)"
     confirm "$(t confirm_reset_admin)" "n"
     if [[ $? == 0 ]]; then
-        /usr/local/s-ui/sui admin -reset
+        /usr/local/3s-ui/3sui admin -reset
     fi
     before_show_menu
 }
@@ -597,20 +597,20 @@ set_admin() {
     if [[ -z "$config_account" || -z "$config_password" ]]; then
         LOGE "Username and password can not be empty."
     else
-        /usr/local/s-ui/sui admin -username "${config_account}" -password "${config_password}"
+        /usr/local/3s-ui/3sui admin -username "${config_account}" -password "${config_password}"
     fi
     before_show_menu
 }
 
 view_admin() {
-    /usr/local/s-ui/sui admin -show
+    /usr/local/3s-ui/3sui admin -show
     before_show_menu
 }
 
 reset_setting() {
     confirm "$(t confirm_reset_panel)" "n"
     if [[ $? == 0 ]]; then
-        /usr/local/s-ui/sui setting -reset
+        /usr/local/3s-ui/3sui setting -reset
     fi
     before_show_menu
 }
@@ -632,18 +632,18 @@ set_setting() {
     [ -z "$config_path" ] || params="$params -path $config_path"
     [ -z "$config_subPort" ] || params="$params -subPort $config_subPort"
     [ -z "$config_subPath" ] || params="$params -subPath $config_subPath"
-    /usr/local/s-ui/sui setting ${params}
+    /usr/local/3s-ui/3sui setting ${params}
     before_show_menu
 }
 
 view_setting() {
-    /usr/local/s-ui/sui setting -show
+    /usr/local/3s-ui/3sui setting -show
     view_uri
     before_show_menu
 }
 
 view_uri() {
-    info=$(/usr/local/s-ui/sui uri)
+    info=$(/usr/local/3s-ui/3sui uri)
     if [[ $? != 0 ]]; then
         LOGE "Get current uri error"
         before_show_menu
@@ -711,7 +711,7 @@ restart() {
 }
 
 status() {
-    svc_status s-ui
+    svc_status 3s-ui
     if [[ $# == 0 ]]; then
         before_show_menu
     fi
@@ -752,9 +752,9 @@ show_log() {
 
 update_shell() {
     # Certificate verification stays on: this file is about to be installed as
-    # /usr/bin/s-ui and run as root. It comes from the latest release tag, not
+    # /usr/bin/3s-ui and run as root. It comes from the latest release tag, not
     # the floating main branch, and is staged next to the target first: wget
-    # straight onto /usr/bin/s-ui leaves a truncated root script behind when a
+    # straight onto /usr/bin/3s-ui leaves a truncated root script behind when a
     # transfer dies halfway, and the same-filesystem rename makes the swap
     # atomic.
     local tag tmp
@@ -765,14 +765,14 @@ update_shell() {
         before_show_menu
         return 0
     fi
-    tmp=$(mktemp /usr/bin/.s-ui.XXXXXX)
-    if ! wget -q -O "$tmp" "https://github.com/shenaba/2s-ui/raw/${tag}/s-ui.sh" || [[ ! -s "$tmp" ]] || ! bash -n "$tmp"; then
+    tmp=$(mktemp /usr/bin/.3s-ui.XXXXXX)
+    if ! wget -q -O "$tmp" "https://github.com/samur005/3s-ui/raw/${tag}/3s-ui.sh" || [[ ! -s "$tmp" ]] || ! bash -n "$tmp"; then
         rm -f "$tmp"
         echo ""
         LOGE "Failed to download script, Please check whether the machine can connect Github"
         before_show_menu
     else
-        chmod 755 "$tmp" && mv "$tmp" /usr/bin/s-ui
+        chmod 755 "$tmp" && mv "$tmp" /usr/bin/3s-ui
         LOGI "Upgrade script succeeded, Please rerun the script" && exit 0
     fi
 }
@@ -814,7 +814,7 @@ check_enabled() {
 }
 
 check_uninstall() {
-    check_status s-ui
+    check_status 3s-ui
     if [[ $? != 2 ]]; then
         echo ""
         LOGE "$(t err_already_inst)"
@@ -828,7 +828,7 @@ check_uninstall() {
 }
 
 check_install() {
-    check_status s-ui
+    check_status 3s-ui
     if [[ $? == 2 ]]; then
         echo ""
         LOGE "$(t err_install_first)"
@@ -867,8 +867,8 @@ show_enable_status() {
     fi
 }
 
-check_s-ui_status() {
-    count=$(ps -ef | grep "sui" | grep -v "grep" | wc -l)
+check_3s-ui_status() {
+    count=$(ps -ef | grep "3sui" | grep -v "grep" | wc -l)
     if [[ count -ne 0 ]]; then
         return 0
     else
@@ -876,12 +876,12 @@ check_s-ui_status() {
     fi
 }
 
-show_s-ui_status() {
-    check_s-ui_status
+show_3s-ui_status() {
+    check_3s-ui_status
     if [[ $? == 0 ]]; then
-        echo -e "s-ui state: ${green}Running${plain}"
+        echo -e "3s-ui state: ${green}Running${plain}"
     else
-        echo -e "s-ui state: ${red}Not Running${plain}"
+        echo -e "3s-ui state: ${red}Not Running${plain}"
     fi
 }
 
@@ -1319,21 +1319,21 @@ generate_self_signed_cert() {
 }
 
 show_usage() {
-    echo -e "2S-UI Control Menu Usage"
+    echo -e "3S-UI Control Menu Usage"
     echo -e "------------------------------------------"
     echo -e "SUBCOMMANDS:"
-    echo -e "s-ui              - Admin Management Script"
-    echo -e "s-ui start        - Start s-ui"
-    echo -e "s-ui stop         - Stop s-ui"
-    echo -e "s-ui restart      - Restart s-ui"
-    echo -e "s-ui status       - Current Status of s-ui"
-    echo -e "s-ui enable       - Enable Autostart on OS Startup"
-    echo -e "s-ui disable      - Disable Autostart on OS Startup"
-    echo -e "s-ui log          - Check s-ui Logs"
-    echo -e "s-ui update       - Update"
-    echo -e "s-ui install      - Install"
-    echo -e "s-ui uninstall    - Uninstall"
-    echo -e "s-ui help         - Control Menu Usage"
+    echo -e "3s-ui              - Admin Management Script"
+    echo -e "3s-ui start        - Start 3s-ui"
+    echo -e "3s-ui stop         - Stop 3s-ui"
+    echo -e "3s-ui restart      - Restart 3s-ui"
+    echo -e "3s-ui status       - Current Status of 3s-ui"
+    echo -e "3s-ui enable       - Enable Autostart on OS Startup"
+    echo -e "3s-ui disable      - Disable Autostart on OS Startup"
+    echo -e "3s-ui log          - Check 3s-ui Logs"
+    echo -e "3s-ui update       - Update"
+    echo -e "3s-ui install      - Install"
+    echo -e "3s-ui uninstall    - Uninstall"
+    echo -e "3s-ui help         - Control Menu Usage"
     echo -e "------------------------------------------"
 }
 
@@ -1399,7 +1399,7 @@ show_menu() {
   ${green}21.${plain} $(t opt_lang)
 ————————————————————————————————
  "
-    show_status s-ui
+    show_status 3s-ui
     echo && read -p "$(t prompt_select)" num
 
     case "${num}" in
@@ -1437,25 +1437,25 @@ show_menu() {
         check_install && view_setting
         ;;
     11)
-        check_install && start s-ui
+        check_install && start 3s-ui
         ;;
     12)
-        check_install && stop s-ui
+        check_install && stop 3s-ui
         ;;
     13)
-        check_install && restart s-ui
+        check_install && restart 3s-ui
         ;;
     14)
-        check_install && status s-ui
+        check_install && status 3s-ui
         ;;
     15)
-        check_install && show_log s-ui
+        check_install && show_log 3s-ui
         ;;
     16)
-        check_install && enable s-ui
+        check_install && enable 3s-ui
         ;;
     17)
-        check_install && disable s-ui
+        check_install && disable 3s-ui
         ;;
     18)
         bbr_menu
@@ -1478,25 +1478,25 @@ show_menu() {
 if [[ $# > 0 ]]; then
     case $1 in
     "start")
-        check_install 0 && start s-ui 0
+        check_install 0 && start 3s-ui 0
         ;;
     "stop")
-        check_install 0 && stop s-ui 0
+        check_install 0 && stop 3s-ui 0
         ;;
     "restart")
-        check_install 0 && restart s-ui 0
+        check_install 0 && restart 3s-ui 0
         ;;
     "status")
         check_install 0 && status 0
         ;;
     "enable")
-        check_install 0 && enable s-ui 0
+        check_install 0 && enable 3s-ui 0
         ;;
     "disable")
-        check_install 0 && disable s-ui 0
+        check_install 0 && disable 3s-ui 0
         ;;
     "log")
-        check_install 0 && show_log s-ui 0
+        check_install 0 && show_log 3s-ui 0
         ;;
     "update")
         check_install 0 && update 0

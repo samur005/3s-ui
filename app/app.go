@@ -3,17 +3,17 @@ package app
 import (
 	"log"
 
-	"github.com/shenaba/2s-ui/cmd/migration"
-	"github.com/shenaba/2s-ui/config"
-	"github.com/shenaba/2s-ui/core"
-	"github.com/shenaba/2s-ui/cronjob"
-	"github.com/shenaba/2s-ui/database"
-	"github.com/shenaba/2s-ui/logger"
-	"github.com/shenaba/2s-ui/service"
-	"github.com/shenaba/2s-ui/service/notify"
-	"github.com/shenaba/2s-ui/service/tgbot"
-	"github.com/shenaba/2s-ui/sub"
-	"github.com/shenaba/2s-ui/web"
+	"github.com/samur005/3s-ui/cmd/migration"
+	"github.com/samur005/3s-ui/config"
+	"github.com/samur005/3s-ui/core"
+	"github.com/samur005/3s-ui/cronjob"
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/service"
+	"github.com/samur005/3s-ui/service/notify"
+	"github.com/samur005/3s-ui/service/tgbot"
+	"github.com/samur005/3s-ui/sub"
+	"github.com/samur005/3s-ui/web"
 
 	"github.com/op/go-logging"
 )
@@ -39,7 +39,7 @@ func (a *APP) Init() error {
 
 	// Data repairs from older releases run here, before the panel opens the
 	// database, on every start-up. The in-panel update button swaps the binary
-	// and restarts the service without ever calling `sui migrate`, so leaving
+	// and restarts the service without ever calling `3sui migrate`, so leaving
 	// this to the install script left every panel-updated instance unmigrated.
 	// Each restart path — self-update, systemd, Docker, manual — ends up
 	// executing this binary, so this one call covers all of them. A failure is
@@ -158,8 +158,8 @@ func (a *APP) Start() error {
 // vhost while switching the panel side off — that vhost is the 443 the current page
 // arrives on, so the follow-up api/save and api/restartApp would never be sent, and
 // the panel would end up plaintext with nobody answering on 443. It also heals
-// pre-rename s-ui-panel-*.conf files and orphans left by an earlier switch-off —
-// this instance's own only: another panel on the same host (a second SUI_DB_FOLDER)
+// pre-rename 3s-ui-panel-*.conf files and orphans left by an earlier switch-off —
+// this instance's own only: another panel on the same host (a second S3UI_DB_FOLDER)
 // shares conf.d, and its vhosts are not ours to remove.
 //
 // Failures are logged only: whether nginx is installed, or whether the panel runs as
