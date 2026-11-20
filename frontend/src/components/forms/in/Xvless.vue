@@ -102,7 +102,20 @@
             <Btn sm @click="generateShortId"><Ico name="refresh" :size="14" /></Btn>
           </div>
         </Field>
-        <Field label="fingerprint"><input class="input mono" v-model="data.realityFingerprint" placeholder="chrome" /></Field>
+        <Field label="fingerprint">
+          <Select v-model="data.realityFingerprint">
+            <option value="chrome">chrome</option>
+            <option value="firefox">firefox</option>
+            <option value="safari">safari</option>
+            <option value="ios">ios</option>
+            <option value="android">android</option>
+            <option value="edge">edge</option>
+            <option value="360">360</option>
+            <option value="qq">qq</option>
+            <option value="random">random</option>
+            <option value="randomized">randomized</option>
+          </Select>
+        </Field>
       </div>
     </template>
 
