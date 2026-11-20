@@ -1292,3 +1292,13 @@ func (a *ApiService) GetAutoEnroll(c *gin.Context) {
 	}
 	jsonObj(c, map[string]string{"value": val}, nil)
 }
+
+func (a *ApiService) ScanRealityTarget(c *gin.Context) {
+	domain := strings.TrimSpace(c.PostForm("domain"))
+	if domain == "" {
+		jsonMsg(c, "scanRealityTarget", common.NewError("domain required"))
+		return
+	}
+	res := service.ScanRealityTarget(domain)
+	jsonObj(c, res, nil)
+}
