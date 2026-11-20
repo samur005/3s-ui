@@ -14,6 +14,7 @@ export const protoColor = (t: string): string =>
     shadowtls: 'var(--amber)',
     anytls: 'var(--emerald)',
     mieru: 'var(--violet)',
+    qwdtt: 'var(--sky)',
     mixed: 'var(--text-3)',
   } as Record<string, string>)[t] || 'var(--text-3)'
 

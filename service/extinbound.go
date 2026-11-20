@@ -1,0 +1,109 @@
+package service
+
+import (
+	"encoding/json"
+	"sort"
+
+	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/util/common"
+
+	"gorm.io/gorm"
+)
+
+// External inbound types are rows on the Inbounds page that sing-box knows
+// nothing about: qWDTT today, WireGuard/AmneziaWG style userspace servers
+// next. Each is driven by a process or device the panel supervises itself.
+//
+// For the panel they behave like any inbound -- a row with a tag, an enable
+// switch, clients bound through clients.inbounds, a place in the list -- but
+// they must never reach the sing-box config. Everything that builds core
+// config or hot-plugs inbounds into the running core filters them out with
+// externalTypes(); the save path hands them to their driver instead of the
+// core. A new type is added by registering a driver, nothing else here changes.
+type extDriver struct {
+	// Type is the inbound type string stored in the row.
+	Type string
+	// Single refuses a second row of this type (one server per host).
+	Single bool
+	// Normalize validates the options a form sent and returns them in the
+	// stored shape. stored holds the row's current options (nil for a new
+	// row): what the form leaves out keeps its stored value. The row's id, tag
+	// and enable switch are not part of them.
+	Normalize func(options, stored json.RawMessage) (json.RawMessage, error)
+	// Apply makes the stored state take effect (start, stop or restart the
+	// process, adjust routing). It runs after the transaction committed, for
+	// a save, a switch and a delete alike, and must read the DB itself.
+	Apply func()
+}
+
+var extDrivers = map[string]*extDriver{}
+
+func registerExtDriver(d *extDriver) { extDrivers[d.Type] = d }
+
+func extDriverFor(inboundType string) *extDriver { return extDrivers[inboundType] }
+
+// externalTypes lists the registered types, for "type NOT IN ?" filters.
+func externalTypes() []string {
+	out := make([]string, 0, len(extDrivers))
+	for t := range extDrivers {
+		out = append(out, t)
+	}
+	sort.Strings(out)
+	return out
+}
+
+// saveExternal is InboundService.save for an inbound whose type has a driver:
+// the row is validated and stored, clients are bound as for any inbound, and
+// the driver is told once the transaction has committed. The core is not
+// touched.
+func (s *InboundService) saveExternal(tx *gorm.DB, act string, inbound *model.Inbound, drv *extDriver, initUserIds, hostname string, afterCommit *func()) error {
+	if inbound.NodeId != nil {
+		return common.NewError("inbound belongs to a node: manage it on the node panel")
+	}
+	var storedOptions json.RawMessage
+	if act == "edit" {
+		var old model.Inbound
+		if err := tx.Model(model.Inbound{}).Select("id", "type", "enable", "options").Where("id = ?", inbound.Id).Find(&old).Error; err != nil {
+			return err
+		}
+		if !inbound.EnableSet {
+			inbound.Enable = old.Enable
+		}
+		storedOptions = old.Options
+	}
+	if err := tagFreeAcross(tx, model.Inbound{}, "inbound", inbound.Tag, inbound.Id); err != nil {
+		return err
+	}
+	if drv.Single {
+		var n int64
+		if err := tx.Model(model.Inbound{}).
+			Where("type = ? AND node_id IS NULL AND id <> ?", drv.Type, inbound.Id).Count(&n).Error; err != nil {
+			return err
+		}
+		if n > 0 {
+			return common.NewErrorf("only one %s inbound is supported: edit the existing one", drv.Type)
+		}
+	}
+	opts, err := drv.Normalize(inbound.Options, storedOptions)
+	if err != nil {
+		return err
+	}
+	inbound.Options = opts
+	inbound.TlsId = 0
+	if len(inbound.Addrs) == 0 {
+		inbound.Addrs = json.RawMessage("null")
+	}
+	if len(inbound.OutJson) == 0 {
+		inbound.OutJson = json.RawMessage("null")
+	}
+	if err := tx.Omit("up", "down").Save(inbound).Error; err != nil {
+		return err
+	}
+	if act == "new" {
+		if err := s.ClientService.UpdateClientsOnInboundAdd(tx, initUserIds, inbound.Id, hostname); err != nil {
+			return err
+		}
+	}
+	*afterCommit = drv.Apply
+	return nil
+}

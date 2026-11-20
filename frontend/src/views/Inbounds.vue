@@ -83,9 +83,9 @@
             disabled
           />
           <CardBtn v-else icon="edit" :label="$t('ui.edit')" :title="$t('actions.edit')" @click="openDrawer(item.id)" />
-          <CardBtn v-if="!nodeNameOf(item)" icon="clone" :label="$t('ui.clone')" border :title="$t('actions.clone')" @click="clone(item.id)" />
+          <CardBtn v-if="!nodeNameOf(item) && !isExternal(item)" icon="clone" :label="$t('ui.clone')" border :title="$t('actions.clone')" @click="clone(item.id)" />
           <CardBtn
-            v-if="dataStore.enableTraffic"
+            v-if="dataStore.enableTraffic && !isExternal(item)"
             icon="chart"
             :label="$t('ui.stats')"
             border
@@ -103,7 +103,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Data from '@/store/modules/data'
-import { createInbound, followListenPort } from '@/types/inbounds'
+import { createInbound, followListenPort, ExternalInTypes } from '@/types/inbounds'
 import RandomUtil from '@/plugins/randomUtil'
 import { protoColor } from '@/plugins/colors'
 import { HumanReadable } from '@/plugins/utils'
@@ -160,6 +160,9 @@ const rows = computed((): any[] =>
   }),
 )
 
+// Run by the panel itself (qWDTT): no sing-box counters, nothing to clone.
+const isExternal = (item: any): boolean => ExternalInTypes.includes(item.type)
+
 // ---------------- cells ----------------
 const iconStyle = (type: string) => {
   const col = protoColor(type)
@@ -175,7 +178,7 @@ const usersTitle = (item: any): string | undefined =>
 // inbounds it belongs to. A node replica is measured on its node, which reports
 // per client only, so there is nothing to show for one here.
 const trafficOf = (item: any): string =>
-  item.node_id ? '—' : HumanReadable.sizeFormat(dataStore.inboundTraffic[item.tag] ?? 0)
+  item.node_id || isExternal(item) ? '—' : HumanReadable.sizeFormat(dataStore.inboundTraffic[item.tag] ?? 0)
 
 // ---------------- enable switch ----------------
 // Absent is on: rows from a panel that predates the switch carry no flag.

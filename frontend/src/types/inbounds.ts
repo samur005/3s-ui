@@ -27,6 +27,8 @@ export const InTypes = {
   Redirect: 'redirect',
   TProxy: 'tproxy',
   Cloudflared: 'cloudflared',
+  // Not a sing-box listener: the panel runs the qWDTT server itself.
+  Qwdtt: 'qwdtt',
 }
 
 type InType = typeof InTypes[keyof typeof InTypes]
@@ -42,7 +44,15 @@ export const ProxyProtocolTypes: string[] = [InTypes.VLESS, InTypes.VMess, InTyp
 export const InboundTypesWithUsers: string[] = [
   'mixed', 'socks', 'http', 'shadowsocks', 'snell', 'vmess', 'trojan', 'naive',
   'hysteria', 'shadowtls', 'tuic', 'hysteria2', 'vless', 'anytls', 'mieru',
+  // Panel-driven types carry no credential in the client config, but clients
+  // are still bound to them (takesUsers in service/inbounds.go).
+  'qwdtt',
 ]
+
+// Inbounds the panel runs itself rather than handing to sing-box. They have
+// their own form, no listen/TLS/transport sections and no client-side half.
+// Keep in step with the registered drivers (service/extinbound.go).
+export const ExternalInTypes: string[] = ['qwdtt']
 
 export interface Addr {
   server: string
@@ -269,6 +279,26 @@ export interface Cloudflared extends InboundBasics {
   grace_period?: string
   region?: string
 }
+// qWDTT: WireGuard over DTLS over the TURN relays of a VK call. The field
+// names are the server's own (qwdtt.Config); listen/listen_port are derived
+// from listenAddr by the panel and only read back.
+export interface Qwdtt extends InboundBasics {
+  remark?: string
+  listenAddr: string
+  wgPort: number
+  password: string
+  dns: string
+  configDir?: string
+  listenRaw?: string
+  listenDirect?: string
+  subHost?: string
+  vkHashes?: string
+  clientPort: number
+  workers: number
+  autoVkHash: boolean
+  routeThroughCore: boolean
+  outboundTag?: string
+}
 export interface Redirect extends InboundBasics {}
 // Only tproxy carries these: RedirectInboundOptions is ListenOptions and
 // nothing else.
@@ -298,6 +328,7 @@ type InterfaceMap = {
   redirect: Redirect
   tproxy: TProxy
   cloudflared: Cloudflared
+  qwdtt: Qwdtt
 }
 
 // Create union type from InterfaceMap
@@ -335,6 +366,11 @@ const defaultValues: Record<InType, Inbound> = {
   redirect: <Redirect>{ type: InTypes.Redirect },
   tproxy: <TProxy>{ type: InTypes.TProxy },
   cloudflared: <Cloudflared>{ type: InTypes.Cloudflared, token: '', protocol: 'auto' },
+  qwdtt: <Qwdtt>{
+    type: InTypes.Qwdtt, listenAddr: '0.0.0.0:56000', wgPort: 56001, password: '', dns: '8.8.8.8',
+    listenRaw: '0.0.0.0:56003', listenDirect: '', configDir: '', subHost: '', vkHashes: '', remark: '',
+    clientPort: 9000, workers: 16, autoVkHash: true, routeThroughCore: true, outboundTag: '',
+  },
 }
 
 // Secrets sing-box requires on the inbound itself (as opposed to per-client

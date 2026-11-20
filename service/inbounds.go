@@ -166,6 +166,22 @@ func (s *InboundService) save(tx *gorm.DB, act string, data json.RawMessage, ini
 		if inbound.NodeId != nil {
 			return common.NewError("inbound belongs to a node: manage it on the node panel")
 		}
+		// An inbound's type decides who runs it, so it cannot change between
+		// a sing-box listener and an external one (or between two external
+		// kinds) in place: the old one would be left running under the wrong
+		// owner. Create the new one and delete the old.
+		storedType := ""
+		if act == "edit" {
+			if err = tx.Model(model.Inbound{}).Select("type").Where("id = ?", inbound.Id).Scan(&storedType).Error; err != nil {
+				return err
+			}
+			if (extDriverFor(storedType) != nil || extDriverFor(inbound.Type) != nil) && storedType != inbound.Type {
+				return common.NewErrorf("the type of an inbound cannot be changed between %s and %s: add a new inbound instead", storedType, inbound.Type)
+			}
+		}
+		if drv := extDriverFor(inbound.Type); drv != nil {
+			return s.saveExternal(tx, act, &inbound, drv, initUserIds, hostname, afterCommit)
+		}
 		if inbound.TlsId > 0 {
 			err = tx.Model(model.Tls{}).Where("id = ?", inbound.TlsId).Find(&inbound.Tls).Error
 			if err != nil {
@@ -303,9 +319,17 @@ func (s *InboundService) save(tx *gorm.DB, act string, data json.RawMessage, ini
 			return err
 		}
 		var old model.Inbound
-		err = tx.Model(model.Inbound{}).Select("id", "node_id").Where("tag = ?", tag).Scan(&old).Error
+		err = tx.Model(model.Inbound{}).Select("id", "type", "node_id").Where("tag = ?", tag).Scan(&old).Error
 		if err != nil {
 			return err
+		}
+		if drv := extDriverFor(old.Type); drv != nil && old.NodeId == nil {
+			// Not in the core: its driver stops it once the row is gone.
+			*afterCommit = drv.Apply
+			if err = s.ClientService.UpdateClientsOnInboundDelete(tx, old.Id, tag); err != nil {
+				return err
+			}
+			return tx.Where("tag = ?", tag).Delete(model.Inbound{}).Error
 		}
 		if old.NodeId == nil {
 			riders, err := clientDetourRiders(tx, old.Id, tag)
@@ -368,7 +392,7 @@ func (s *InboundService) GetAllConfig(db *gorm.DB) ([]json.RawMessage, error) {
 	// node_id IS NULL: replicas of remote inbounds must never reach the local
 	// core — their ports live on other machines and binding them here would
 	// wedge the core in its 15s restart loop. A disabled inbound stays out too.
-	err := db.Model(model.Inbound{}).Preload("Tls").Where("node_id IS NULL AND enable = ?", true).Find(&inbounds).Error
+	err := db.Model(model.Inbound{}).Preload("Tls").Where("node_id IS NULL AND enable = ? AND type NOT IN ?", true, externalTypes()).Find(&inbounds).Error
 	if err != nil {
 		return nil, err
 	}
@@ -416,6 +440,11 @@ func (s *InboundService) hasUser(inboundType string) bool {
 // master adopting from this panel; the SPA's counterpart is the inbound
 // drawer's hasUser.
 func takesUsers(inboundType string, shadowtlsVersion int, ssManaged bool) bool {
+	// An external inbound has no credential in the client config, but clients
+	// are still bound to it (they are who get its link).
+	if extDriverFor(inboundType) != nil {
+		return true
+	}
 	if !(&InboundService{}).hasUser(inboundType) {
 		return false
 	}
@@ -598,7 +627,7 @@ func (s *InboundService) UpdateInboundsUsers(tx *gorm.DB, ids []uint) error {
 	// core, so the fallback below would AddInbound them here and bind the remote
 	// node's port locally. A disabled inbound is not in the core either, and
 	// the fallback would switch it back on.
-	err := tx.Model(model.Inbound{}).Preload("Tls").Where("id in ?", ids).Where("node_id IS NULL AND enable = ?", true).Find(&inbounds).Error
+	err := tx.Model(model.Inbound{}).Preload("Tls").Where("id in ?", ids).Where("node_id IS NULL AND enable = ? AND type NOT IN ?", true, externalTypes()).Find(&inbounds).Error
 	if err != nil {
 		return err
 	}
@@ -678,7 +707,7 @@ func (s *InboundService) RestartInbounds(tx *gorm.DB, ids []uint) error {
 	// Client edits pass in the union of their inbound ids, which may include
 	// node replicas — those must not be hot-plugged into the local core. Nor
 	// a disabled inbound: a TLS edit would otherwise switch it back on.
-	err := tx.Model(model.Inbound{}).Preload("Tls").Where("id in ?", ids).Where("node_id IS NULL AND enable = ?", true).Find(&inbounds).Error
+	err := tx.Model(model.Inbound{}).Preload("Tls").Where("id in ?", ids).Where("node_id IS NULL AND enable = ? AND type NOT IN ?", true, externalTypes()).Find(&inbounds).Error
 	if err != nil {
 		return err
 	}

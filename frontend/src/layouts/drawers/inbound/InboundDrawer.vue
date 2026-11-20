@@ -63,6 +63,7 @@
         <Mieru v-if="inbound.type == inTypes.Mieru" direction="in" :data="inbound" />
         <Snell v-if="inbound.type == inTypes.Snell" direction="in" :data="inbound" />
         <Cloudflared v-if="inbound.type == inTypes.Cloudflared" :data="inbound" />
+        <Qwdtt v-if="inbound.type == inTypes.Qwdtt" :data="inbound" :is-new="isNew" />
         <TProxy v-if="inbound.type == inTypes.TProxy" :inbound="inbound" />
         <!-- mieru's transport is its own TCP/UDP string, not the V2Ray transport
              object this form edits; switching that on would overwrite it. -->
@@ -73,11 +74,11 @@
 
         <!-- 入站自身的开关和流量上限 (#289)。抽屉只编辑本机入站,节点副本不进来 -->
         <hr class="form-divider" />
-        <SectionLabel style="margin-bottom: 12px;">{{ $t('ui.limits') }}</SectionLabel>
+        <SectionLabel style="margin-bottom: 12px;">{{ isExternal ? $t('enable') : $t('ui.limits') }}</SectionLabel>
         <div style="margin-bottom: 15px;">
           <SwitchLabel v-model="enabled" :label="$t('enable')" />
         </div>
-        <div v-if="!isNew" class="card usage-card">
+        <div v-if="!isNew && !isExternal" class="card usage-card">
           <div style="display: flex; align-items: center; margin-bottom: 10px;">
             <div style="font-size: 12px; color: var(--text-3); font-weight: 600;">{{ $t('ui.currentUsage') }}</div>
             <Chip v-if="depleted" color="rose" style="margin-inline-start: 8px;">{{ $t('in.depleted') }}</Chip>
@@ -100,7 +101,7 @@
             <BarMini :value="percent" :color="percentColor" :height="5" />
           </div>
         </div>
-        <Field :label="$t('ui.dataLimit')" :hint="$t('in.trafficLimitHint')">
+        <Field v-if="!isExternal" :label="$t('ui.dataLimit')" :hint="$t('in.trafficLimitHint')">
           <div style="display: flex; gap: 8px;">
             <input class="input mono" type="number" min="0" v-model.number="volumeGiB" />
             <div class="input suffix-box">{{ $t('stats.GB') }}</div>
@@ -147,7 +148,7 @@ import Select from '@/components/ui/Select.vue'
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Data from '@/store/modules/data'
-import { InTypes, ProxyProtocolTypes, InboundTypesWithUsers, createInbound, Addr, followListenPort } from '@/types/inbounds'
+import { InTypes, ProxyProtocolTypes, InboundTypesWithUsers, ExternalInTypes, createInbound, Addr, followListenPort } from '@/types/inbounds'
 import { InitUsers, bindableClients, initUsersIncomplete, resolveInitUsers } from '@/types/clients'
 import { checkHopInterval } from '@/types/hysteria2'
 import { push } from 'notivue'
@@ -174,6 +175,7 @@ import Tun from '@/components/forms/in/Tun.vue'
 import AnyTls from '@/components/forms/in/AnyTls.vue'
 import Mieru from '@/components/forms/in/Mieru.vue'
 import Cloudflared from '@/components/forms/in/Cloudflared.vue'
+import Qwdtt from '@/components/forms/in/Qwdtt.vue'
 import Snell from '@/components/forms/out/protocols/Snell.vue'
 import TProxy from '@/components/forms/in/TProxy.vue'
 import Transport from '@/components/forms/out/Transport.vue'
@@ -213,6 +215,7 @@ const proxyTypes = [
   InTypes.AnyTls,
   InTypes.Mieru,
   InTypes.Snell,
+  InTypes.Qwdtt,
 ]
 const localTypes = [
   InTypes.Mixed,
@@ -259,7 +262,8 @@ const MuxAvailable = [
   InTypes.Trojan,
   InTypes.Shadowsocks,
 ]
-const NoListen = [InTypes.Tun, InTypes.Cloudflared]
+// qwdtt takes its address as one host:port of its own (listenAddr).
+const NoListen = [InTypes.Tun, InTypes.Cloudflared, InTypes.Qwdtt]
 
 const inbound = ref<any>(createInbound('direct', { id: 0, tag: '' }))
 const loading = ref(false)
@@ -271,6 +275,7 @@ const originalPort = ref<number | undefined>(undefined)
 const initUsers = ref<InitUsers>({ model: 'none', values: [] })
 
 const isNew = computed(() => props.id == 0)
+const isExternal = computed(() => ExternalInTypes.includes(inbound.value.type))
 const hasInData = computed(() => HasInData.includes(inbound.value.type))
 const hasTls = computed(() => HasTls.includes(inbound.value.type))
 const muxAvailable = computed(() => MuxAvailable.includes(inbound.value.type))

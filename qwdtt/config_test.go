@@ -12,8 +12,8 @@ func TestDefault(t *testing.T) {
 	if c.ListenAddr != "0.0.0.0:56000" || c.WGPort != 56001 || c.ClientPort != 9000 || c.Workers != 16 {
 		t.Errorf("defaults changed: %+v", c)
 	}
-	if !c.RouteThroughCore || !c.AutoVkHash || c.AccessMode != AccessAll {
-		t.Errorf("routing, auto hash and access must default on: %+v", c)
+	if !c.RouteThroughCore || !c.AutoVkHash {
+		t.Errorf("routing and auto hash must default on: %+v", c)
 	}
 	if err := c.Validate(); err != nil {
 		t.Errorf("defaults must validate: %v", err)
@@ -59,7 +59,7 @@ func TestMergeFillsZeroFields(t *testing.T) {
 	got := Config{Remark: "x"}.Merge()
 	d := Default()
 	if got.ListenAddr != d.ListenAddr || got.WGPort != d.WGPort || got.DNS != d.DNS ||
-		got.ClientPort != d.ClientPort || got.Workers != d.Workers || got.AccessMode != AccessAll {
+		got.ClientPort != d.ClientPort || got.Workers != d.Workers {
 		t.Errorf("Merge did not fill defaults: %+v", got)
 	}
 	if got.Remark != "x" {
@@ -198,21 +198,6 @@ func TestSubscription(t *testing.T) {
 	p := s.Profiles[0]
 	if p.Peer != "1.2.3.4:56000" || p.Hashes != "h1" || p.Password != "pw" || p.Port != 9000 || p.Workers != 16 {
 		t.Errorf("profile = %+v", p)
-	}
-}
-
-func TestHasAccess(t *testing.T) {
-	c := Default()
-	if !c.HasAccess("alice") {
-		t.Error("mode all must give everyone access")
-	}
-	c.AccessMode, c.Clients = AccessSelected, []string{"alice"}
-	if !c.HasAccess("alice") || c.HasAccess("bob") {
-		t.Error("mode selected must give access to the listed clients only")
-	}
-	c.Clients = nil
-	if c.HasAccess("alice") {
-		t.Error("mode selected with no clients must give nobody access")
 	}
 }
 

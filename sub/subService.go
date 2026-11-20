@@ -19,11 +19,11 @@ type SubService struct {
 }
 
 // withQwdtt appends the client's qwdtt:// link, when qWDTT is on and the client
-// has access to it. The link comes from the live qWDTT configuration rather
+// is bound to the qWDTT inbound. The link comes from the live qWDTT configuration rather
 // than from client.Links: its VK hashes are replaced as calls end, and every
 // subscription has to hand out the current ones.
 func (s *SubService) withQwdtt(client *model.Client, links []string) []string {
-	if link := s.qwdtt.ClientLink(client.Name); link != "" {
+	if link := s.qwdtt.ClientLink(client); link != "" {
 		return append(links, link)
 	}
 	return links

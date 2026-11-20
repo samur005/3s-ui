@@ -168,6 +168,13 @@ export default {
     copied: "Скопировано",
   },
   qwdtt: {
+    openInbounds: "Входящие",
+    noInbound: "Входящего qWDTT ещё нет. Добавьте его на странице «Входящие» (тип qwdtt): настройки хранятся там, пока его нет, ничего не запускается.",
+    inboundHint: "Настройки, переключатель и клиенты со ссылкой находятся во входящем qWDTT (страница «Входящие»). Здесь остаются cookies VK, работа с hash, ссылка и журнал.",
+    noHashes: "VK hash пока нет.",
+    openPage: "Cookies и инструменты",
+    generateAfterSave: "Сначала сохраните входящее, после этого hash можно создать здесь.",
+    cookiesOnPage: "Cookies VK настраиваются на странице qWDTT.",
     title: "qWDTT",
     linuxOnly: "Только Linux",
     running: "Работает",

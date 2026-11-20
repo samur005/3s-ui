@@ -169,6 +169,13 @@ export default {
     copied: "Copied",
   },
   qwdtt: {
+    openInbounds: "Inbounds",
+    noInbound: "There is no qWDTT inbound yet. Add one on the Inbounds page (type qwdtt): its settings live there, and nothing runs until it exists.",
+    inboundHint: "Settings, the on/off switch and the clients that get the link are on the qWDTT inbound (Inbounds page). This page keeps the VK cookies, the hash tools, the link and the log.",
+    noHashes: "No VK hashes yet.",
+    openPage: "Cookies and tools",
+    generateAfterSave: "Save the inbound first; then a hash can be generated here.",
+    cookiesOnPage: "VK cookies are managed on the qWDTT page.",
     title: "qWDTT",
     linuxOnly: "Linux only",
     running: "Running",
