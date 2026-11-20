@@ -1266,3 +1266,29 @@ func (a *ApiService) maybeAutoEnroll(obj string, result *service.SaveResult) {
 		}
 	}
 }
+
+func (a *ApiService) SetAutoEnroll(c *gin.Context) {
+	val := c.PostForm("value")
+	if val != "true" && val != "false" {
+		jsonMsg(c, "setAutoEnroll", common.NewError("value must be true or false"))
+		return
+	}
+	db := database.GetDB()
+	var row model.Setting
+	err := db.Where("`key` = ?", "autoEnrollSync").First(&row).Error
+	if err != nil {
+		err = db.Create(&model.Setting{Key: "autoEnrollSync", Value: val}).Error
+	} else {
+		err = db.Model(&row).Update("value", val).Error
+	}
+	jsonMsg(c, "setAutoEnroll", err)
+}
+
+func (a *ApiService) GetAutoEnroll(c *gin.Context) {
+	var row model.Setting
+	val := "false"
+	if database.GetDB().Where("`key` = ?", "autoEnrollSync").First(&row).Error == nil {
+		val = row.Value
+	}
+	jsonObj(c, map[string]string{"value": val}, nil)
+}
