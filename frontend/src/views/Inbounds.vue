@@ -33,7 +33,9 @@
           <div class="inb-ico" :style="iconStyle(item.type)"><Ico name="inbound" :size="19" /></div>
           <div class="inb-title">
             <div class="inb-tag">{{ item.tag }}</div>
-            <div class="inb-type" :style="{ color: protoColor(item.type) }">{{ item.type }}</div>
+            <div class="inb-type" :style="{ color: protoColor(item.type) }">
+              {{ item.type }}<span class="inb-engine"> · {{ engineLabel(item) }}</span>
+            </div>
           </div>
           <Chip v-if="nodeNameOf(item)" color="brand">{{ nodeNameOf(item) }}</Chip>
           <!-- Switched off by its traffic cap rather than by hand (#289). -->
@@ -162,6 +164,12 @@ const rows = computed((): any[] =>
 
 // Run by the panel itself (qWDTT): no sing-box counters, nothing to clone.
 const isExternal = (item: any): boolean => ExternalInTypes.includes(item.type)
+// Which engine runs the inbound: the server sends it with every row, older
+// rows (a node's replicas) fall back to the type.
+const engineLabel = (item: any): string => {
+  const engine = item.engine || (isExternal(item) ? 'external' : 'singbox')
+  return t(engine === 'external' ? 'ui.engineExternal' : 'ui.engineSingbox')
+}
 
 // ---------------- cells ----------------
 const iconStyle = (type: string) => {
@@ -336,6 +344,7 @@ const showStats = (tag: string) => {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.inb-engine { color: var(--text-3); font-weight: 500; }
 .inb-type {
   font-size: 11.5px;
   font-weight: 600;
