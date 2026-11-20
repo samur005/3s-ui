@@ -2,7 +2,6 @@ package service
 
 import (
 	"bytes"
-	"fmt"
 	"encoding/json"
 	"io"
 	"net/http"
