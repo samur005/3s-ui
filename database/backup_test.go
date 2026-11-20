@@ -225,6 +225,7 @@ func seedEveryTable(t *testing.T) {
 		&model.Node{Name: "node-1", BaseUrl: "https://node.example", WebPath: "/app/", Token: "n0de", Baselines: obj},
 		&model.Cert{Domain: "example.com", CertFile: "/etc/cert.pem", KeyFile: "/etc/key.pem"},
 		&model.LoginAttempt{Scope: "ip", Key: "1.2.3.4", Failures: 1, WindowStart: now},
+		&model.WgPeer{InboundId: 1, ClientId: 1, PrivateKey: "k", PublicKey: "p", PresharedKey: "s", Address: "10.8.1.2"},
 		&model.QwdttState{Id: 1, Config: `{"enabled":true}`, VkCookies: "remixsid=x", VkCalls: `{}`},
 	}
 	for _, row := range rows {

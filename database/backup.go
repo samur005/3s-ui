@@ -88,6 +88,7 @@ func GetDb(exclude string) ([]byte, error) {
 		&model.Node{},
 		&model.Cert{},
 		&model.QwdttState{},
+		&model.WgPeer{},
 	)
 	if err != nil {
 		return nil, err
@@ -216,6 +217,16 @@ func GetDb(exclude string) ([]byte, error) {
 		return nil, err
 	} else if len(qwdttRows) > 0 {
 		if err := backupDb.CreateInBatches(qwdttRows, backupBatchSize).Error; err != nil {
+			return nil, err
+		}
+	}
+	// WireGuard / AmneziaWG client keys and addresses: without them every
+	// client config handed out so far would stop matching after a restore.
+	var wgPeers []model.WgPeer
+	if err := db.Model(&model.WgPeer{}).Scan(&wgPeers).Error; err != nil {
+		return nil, err
+	} else if len(wgPeers) > 0 {
+		if err := backupDb.CreateInBatches(wgPeers, backupBatchSize).Error; err != nil {
 			return nil, err
 		}
 	}

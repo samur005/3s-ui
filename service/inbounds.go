@@ -66,6 +66,7 @@ func (s *InboundService) GetAll() (*[]map[string]interface{}, error) {
 			"enable": inbound.Enable,
 			"volume": inbound.Volume,
 			"tls_id": inbound.TlsId,
+			"engine": engineOf(inbound.Type),
 		}
 		if inbound.NodeId != nil {
 			inbData["node_id"] = *inbound.NodeId
@@ -329,7 +330,13 @@ func (s *InboundService) save(tx *gorm.DB, act string, data json.RawMessage, ini
 			if err = s.ClientService.UpdateClientsOnInboundDelete(tx, old.Id, tag); err != nil {
 				return err
 			}
-			return tx.Where("tag = ?", tag).Delete(model.Inbound{}).Error
+			if err = tx.Where("tag = ?", tag).Delete(model.Inbound{}).Error; err != nil {
+				return err
+			}
+			if drv.OnDelete != nil {
+				return drv.OnDelete(tx, old.Id)
+			}
+			return nil
 		}
 		if old.NodeId == nil {
 			riders, err := clientDetourRiders(tx, old.Id, tag)

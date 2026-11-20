@@ -99,6 +99,8 @@ func (a *APIHandler) postHandler(c *gin.Context) {
 		a.ApiService.CloseSessions(c, true)
 	case "testNode":
 		a.ApiService.TestNode(c)
+	case "wgRestart":
+		a.ApiService.RestartWg(c)
 	case "qwdttSave":
 		a.ApiService.SaveQwdtt(c)
 	case "qwdttRestart":
@@ -172,6 +174,12 @@ func (a *APIHandler) getHandler(c *gin.Context) {
 		a.ApiService.UpdateInfo(c)
 	case "updateStatus":
 		a.ApiService.UpdateStatus(c)
+	case "wgStatus":
+		a.ApiService.GetWgStatus(c)
+	case "wgClient":
+		a.ApiService.GetWgClient(c)
+	case "wgGenerate":
+		a.ApiService.GetWgGenerate(c)
 	case "qwdtt":
 		a.ApiService.GetQwdtt(c)
 	case "qwdttLogs":

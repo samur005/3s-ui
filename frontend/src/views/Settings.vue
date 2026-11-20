@@ -408,6 +408,7 @@ import { i18n } from '@/locales'
 import HttpUtils from '@/plugins/httputil'
 import api from '@/plugins/api'
 import { FindDiff } from '@/plugins/utils'
+import { geo, geoList, geositeList, dropRemovedPresets } from '@/plugins/subJsonPresets'
 import EditorModal from '@/layouts/drawers/EditorModal.vue'
 import Tabs from '@/components/ui/Tabs.vue'
 import Btn from '@/components/ui/Btn.vue'
@@ -1260,98 +1261,15 @@ const defaultDns = {
   "strategy": "prefer_ipv4"
 }
 
-const geositeList = [
-  { title: "Private", value: "geosite-private" },
-  { title: "Ads", value: "geosite-ads" },
-  { title: "🇮🇷 Iran", value: "geosite-ir" },
-  { title: "🇨🇳 China", value: "geosite-cn" },
-  { title: "🇻🇳 Vietnam", value: "geosite-vn" },
-]
-
-const geoList = [
-  { title: "Site-Private", value: "geosite-private" },
-  { title: "IP-Private", value: "geoip-private" },
-  { title: "Site-Ads", value: "geosite-ads" },
-  { title: "🇮🇷 Site-Iran", value: "geosite-ir" },
-  { title: "🇮🇷 IP-Iran", value: "geoip-ir" },
-  { title: "🇨🇳 Site-China", value: "geosite-cn" },
-  { title: "🇨🇳 IP-China", value: "geoip-cn" },
-  { title: "🇻🇳 Site-Vietnam", value: "geosite-vn" },
-  { title: "🇻🇳 IP-Vietnam", value: "geoip-vn" },
-]
-
-const geo = [
-  {
-    tag: "geosite-ads",
-    type: "remote",
-    format: "binary",
-    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/category-ads-all.srs",
-    download_detour: "direct"
-  },
-  {
-    tag: "geosite-private",
-    type: "remote",
-    format: "binary",
-    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/private.srs",
-    download_detour: "direct"
-  },
-  {
-    tag: "geosite-ir",
-    type: "remote",
-    format: "binary",
-    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/category-ir.srs",
-    download_detour: "direct"
-  },
-  {
-    tag: "geosite-cn",
-    type: "remote",
-    format: "binary",
-    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geosite/cn.srs",
-    download_detour: "direct"
-  },
-  {
-    tag: "geosite-vn",
-    type: "remote",
-    format: "binary",
-    url: "https://github.com/Thaomtam/Geosite-vn/raw/rule-set/Geosite-vn.srs",
-    download_detour: "direct"
-  },
-  {
-    tag: "geoip-private",
-    type: "remote",
-    format: "binary",
-    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geoip/private.srs",
-    download_detour: "direct"
-  },
-  {
-    tag: "geoip-ir",
-    type: "remote",
-    format: "binary",
-    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geoip/ir.srs",
-    download_detour: "direct"
-  },
-  {
-    tag: "geoip-cn",
-    type: "remote",
-    format: "binary",
-    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geoip/cn.srs",
-    download_detour: "direct"
-  },
-  {
-    tag: "geoip-vn",
-    type: "remote",
-    format: "binary",
-    url: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@sing/geo/geoip/vn.srs",
-    download_detour: "direct"
-  }
-]
-
 // 解析 settings.subJsonExt → 本地对象;并按旧实现把规范化后的 JSON 回写
 const loadSubJsonExt = () => {
   const s: string = settings.value.subJsonExt ?? ''
   if (s.length > 0) {
     try {
       const parsed = JSON.parse(s)
+      // Presets that no longer exist (Iran, China, Vietnam) are dropped, so a
+      // setting saved with them neither errors nor keeps dead rule-sets.
+      dropRemovedPresets(parsed)
       subJsonExt.value = parsed
       settings.value.subJsonExt = Object.keys(parsed).length > 0 ? JSON.stringify(parsed, null, 2) : ''
     } catch (e) {

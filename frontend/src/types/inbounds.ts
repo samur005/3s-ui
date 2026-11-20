@@ -29,6 +29,9 @@ export const InTypes = {
   Cloudflared: 'cloudflared',
   // Not a sing-box listener: the panel runs the qWDTT server itself.
   Qwdtt: 'qwdtt',
+  // Run by the panel as well: WireGuard and AmneziaWG servers (wgserver).
+  Wg: 'wg',
+  Awg: 'awg',
 }
 
 type InType = typeof InTypes[keyof typeof InTypes]
@@ -46,13 +49,13 @@ export const InboundTypesWithUsers: string[] = [
   'hysteria', 'shadowtls', 'tuic', 'hysteria2', 'vless', 'anytls', 'mieru',
   // Panel-driven types carry no credential in the client config, but clients
   // are still bound to them (takesUsers in service/inbounds.go).
-  'qwdtt',
+  'qwdtt', 'wg', 'awg',
 ]
 
 // Inbounds the panel runs itself rather than handing to sing-box. They have
 // their own form, no listen/TLS/transport sections and no client-side half.
 // Keep in step with the registered drivers (service/extinbound.go).
-export const ExternalInTypes: string[] = ['qwdtt']
+export const ExternalInTypes: string[] = ['qwdtt', 'wg', 'awg']
 
 export interface Addr {
   server: string
@@ -299,6 +302,60 @@ export interface Qwdtt extends InboundBasics {
   routeThroughCore: boolean
   outboundTag?: string
 }
+// WireGuard and AmneziaWG (wgserver.Config). One engine serves both; "awg"
+// adds a version and the obfuscation fields that version has (AwgFields).
+export interface Wg extends InboundBasics {
+  privateKey?: string
+  publicKey?: string
+  subnet: string
+  mtu: number
+  dns: string
+  keepalive: number
+  allowedIps: string
+  endpoint: string
+  routeThroughCore: boolean
+  outboundTag?: string
+}
+export interface Awg extends Wg {
+  version: string
+  jc: number; jmin: number; jmax: number
+  s1: number; s2: number; s3: number; s4: number
+  h1: string; h2: string; h3: string; h4: string
+  i1: string; i2: string; i3: string; i4: string; i5: string
+  headerProtectionKey: string
+  contentPaddingAddition: string
+  rekeyAfterTime: string
+  rekeyTimeout: string
+  rejectAfterTime: string
+  keepaliveTimeout: string
+  maxHandshakeAttempts: string
+  randomTrailers: boolean
+  disableCookies: boolean
+}
+
+// AmneziaWG generations the form offers and which obfuscation fields each one
+// has. Keep in step with wgserver.Fields (wgserver/version.go). There is no
+// official 2.5: it shares the 2.0 field set.
+export const AwgVersions: string[] = ['1.0', '1.5', '2.0', '2.5', '3.0', '3.1']
+export interface AwgFieldSet {
+  cps: boolean
+  s34: boolean
+  hRange: boolean
+  protection: boolean
+  trailersCookie: boolean
+}
+export const awgFields = (v: string): AwgFieldSet => {
+  const l = ({ '1.0': 0, '1.5': 1, '2.0': 2, '2.5': 2, '3.0': 3, '3.1': 4 } as Record<string, number>)[v] ?? 2
+  return { cps: l >= 1, s34: l >= 2, hRange: l >= 2 && l < 3, protection: l >= 3, trailersCookie: l >= 4 }
+}
+// Everything the generator fills, so a version switch can top up what is empty.
+export const AwgObfuscationKeys: string[] = [
+  'jc', 'jmin', 'jmax', 's1', 's2', 's3', 's4', 'h1', 'h2', 'h3', 'h4',
+  'i1', 'i2', 'i3', 'i4', 'i5', 'headerProtectionKey', 'contentPaddingAddition',
+  'rekeyAfterTime', 'rekeyTimeout', 'rejectAfterTime', 'keepaliveTimeout', 'maxHandshakeAttempts',
+  'randomTrailers', 'disableCookies',
+]
+
 export interface Redirect extends InboundBasics {}
 // Only tproxy carries these: RedirectInboundOptions is ListenOptions and
 // nothing else.
@@ -329,6 +386,8 @@ type InterfaceMap = {
   tproxy: TProxy
   cloudflared: Cloudflared
   qwdtt: Qwdtt
+  wg: Wg
+  awg: Awg
 }
 
 // Create union type from InterfaceMap
@@ -370,6 +429,18 @@ const defaultValues: Record<InType, Inbound> = {
     type: InTypes.Qwdtt, listenAddr: '0.0.0.0:56000', wgPort: 56001, password: '', dns: '8.8.8.8',
     listenRaw: '0.0.0.0:56003', listenDirect: '', configDir: '', subHost: '', vkHashes: '', remark: '',
     clientPort: 9000, workers: 16, autoVkHash: true, routeThroughCore: true, outboundTag: '',
+  },
+  wg: <Wg>{
+    type: InTypes.Wg, listen_port: 51820, subnet: '', mtu: 0, dns: '1.1.1.1, 8.8.8.8', keepalive: 25,
+    allowedIps: '0.0.0.0/0, ::/0', endpoint: '', routeThroughCore: true, outboundTag: '',
+  },
+  awg: <Awg>{
+    type: InTypes.Awg, listen_port: 51820, subnet: '', mtu: 0, dns: '1.1.1.1, 8.8.8.8', keepalive: 25,
+    allowedIps: '0.0.0.0/0, ::/0', endpoint: '', routeThroughCore: true, outboundTag: '', version: '2.0',
+    jc: 0, jmin: 0, jmax: 0, s1: 0, s2: 0, s3: 0, s4: 0, h1: '', h2: '', h3: '', h4: '',
+    i1: '', i2: '', i3: '', i4: '', i5: '', headerProtectionKey: '', contentPaddingAddition: '',
+    rekeyAfterTime: '', rekeyTimeout: '', rejectAfterTime: '', keepaliveTimeout: '', maxHandshakeAttempts: '',
+    randomTrailers: false, disableCookies: false,
   },
 }
 
