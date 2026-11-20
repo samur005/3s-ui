@@ -6,7 +6,6 @@
 The 3S-UI frontend is rewritten in full, with a range of features added on top to make the panel nicer to use.
 
 ![](https://img.shields.io/github/v/release/samur005/3s-ui.svg)
-[![Docker Pulls](https://img.shields.io/docker/pulls/samur005/3s-ui.svg)](https://hub.docker.com/r/samur005/3s-ui)
 [![Go Report Card](https://goreportcard.com/badge/github.com/samur005/3s-ui)](https://goreportcard.com/report/github.com/samur005/3s-ui)
 [![Downloads](https://img.shields.io/github/downloads/samur005/3s-ui/total.svg)](https://github.com/samur005/3s-ui/releases)
 [![License](https://img.shields.io/badge/license-GPL%20V3-blue.svg?longCache=true)](https://www.gnu.org/licenses/gpl-3.0.en.html)
