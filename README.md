@@ -401,7 +401,12 @@ Three things guard the login, all on by default:
 3S-UI can run a [qWDTT](https://github.com/SpaceNeuroX/proxy-turn-vk-android)
 server for you: clients reach it through the TURN relays of a VK call, and the
 hash of that call is generated and kept alive by the panel itself. There is no
-separate wdtt panel to install. Open **qWDTT** in the sidebar.
+separate wdtt panel to install. Add an inbound of type **qwdtt** on the
+**Inbounds** page (next to VLESS and the rest); its settings, on/off switch and
+clients live there. The **qWDTT** sidebar page keeps the VK cookies, the hash
+tools, the share link and the log. An existing qWDTT setup from v2.2.0 is turned
+into that inbound automatically on the first start (everyone who had the link
+is bound to it). One qWDTT inbound is supported; sing-box never sees it.
 
 - **Server** — the panel supervises the `qwdtt` sidecar (start, stop, restart on
   a config change, crash back-off, log view). Settings live in the panel
@@ -422,8 +427,9 @@ separate wdtt panel to install. Open **qWDTT** in the sidebar.
   hash is still alive and replaces it after two dead answers in a row.
   Set `S3UI_VK_HASH` (comma-separated, up to 4) to pin hashes from the
   environment instead; it overrides the stored ones and disables generation.
-- **Subscriptions** — clients with access get one `qwdtt://config?…` line in
-  their link subscription (all clients, or a chosen list). The link is built on
+- **Subscriptions** — clients bound to the qWDTT inbound (pick them when creating
+  it, or on the client's own page) get one `qwdtt://config?…` line in their link
+  subscription. The link is built on
   the fly, so a rotated hash reaches every subscription at once. The page also
   shows the link as a QR code and the JSON form.
 - **Firewall** — open the DTLS port (`56000/udp` by default) and, if you use
