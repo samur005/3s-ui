@@ -13,6 +13,7 @@
     @click="toggle"
     @keydown="onTriggerKey"
   >
+    <Ico v-if="current?.icon" :name="current.icon" :size="15" class="sel-leading" aria-hidden="true" />
     <span class="sel-value" :class="{ placeholder: current === null }">{{ display }}</span>
     <Ico name="chevronDown" :size="15" class="sel-caret" :style="open ? 'transform: rotate(180deg)' : ''" />
   </button>
@@ -36,6 +37,7 @@
             @click="pick(it)"
             @mouseenter="hl = i"
           >
+            <Ico v-if="it.icon" :name="it.icon" :size="15" class="sel-opt-ico" aria-hidden="true" />
             <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;">{{ it.label }}</span>
             <Ico v-if="isActive(it)" name="check" :size="14" />
           </button>
@@ -50,7 +52,7 @@ import { Fragment, computed, nextTick, onBeforeUnmount, ref, useId, useSlots, ty
 import Ico from './Ico.vue'
 import { pushOverlay } from './overlay'
 
-type Item = { group?: string; value?: any; label: string; disabled?: boolean }
+type Item = { group?: string; value?: any; label: string; disabled?: boolean; icon?: string }
 
 defineOptions({ inheritAttrs: false })
 
@@ -96,11 +98,13 @@ const collect = (nodes: VNode[], out: Item[]) => {
     } else if (n.type === 'option') {
       const label = textOf(n.children).trim()
       const hasValue = n.props !== null && 'value' in n.props
+      const iconRaw = n.props?.['data-icon'] ?? n.props?.dataIcon
       out.push({
         // mirror native behavior: no value attr -> text is the value
         value: hasValue ? n.props!.value : label,
         label,
         disabled: n.props?.disabled !== undefined && n.props?.disabled !== false,
+        icon: iconRaw != null && iconRaw !== false ? String(iconRaw) : undefined,
       })
     }
     // anything else (comments, whitespace) is ignored, like a native select
