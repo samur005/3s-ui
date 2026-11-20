@@ -417,6 +417,7 @@ export default {
     syncEnroll: "Enroll in bidirectional sync",
     syncEnrollBulk: "Enroll for bidirectional sync",
     syncUnenroll: "Remove from sync",
+    autoEnroll: "Auto-enroll new clients and inbounds",
     syncEnrollBulkHint: "Select inbounds and clients to include in bidirectional sync",
     enrolled: "enrolled",
     syncDirty: "Pending sync",
