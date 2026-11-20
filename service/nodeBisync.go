@@ -21,10 +21,13 @@ func (s *NodeSyncService) runBidirectionalSync(node *model.Node, client *http.Cl
 	if err != nil {
 		return err
 	}
+	logger.Info("bisync: fetching catalog from ", node.Name)
 	remote, err := s.fetchSyncCatalog(node, client)
 	if err != nil {
+		logger.Warning("bisync: fetch catalog failed: ", err)
 		return err
 	}
+	logger.Info("bisync: got catalog proto=", remote.Proto, " inbounds=", len(remote.Inbounds), " clients=", len(remote.Clients))
 	if remote.Proto < bisync.ProtocolVersion {
 		return common.NewError("node does not support bidirectional sync (proto ", strconv.Itoa(remote.Proto), ")")
 	}
