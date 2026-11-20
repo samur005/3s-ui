@@ -174,3 +174,26 @@ var errNodeReplica = errString("cannot enroll a node replica inbound")
 type errString string
 
 func (e errString) Error() string { return string(e) }
+
+// UnenrollClient removes a client from bidirectional sync (clears sync identity).
+func UnenrollClient(id uint) error {
+	db := database.GetDB()
+	return db.Model(&model.Client{}).Where("id = ?", id).Updates(map[string]any{
+		"sync_uid": "", "sync_rev": 0, "sync_base": 0, "sync_origin": "", "deleted_at": 0,
+	}).Error
+}
+
+// UnenrollInbound removes a local inbound from bidirectional sync.
+func UnenrollInbound(id uint) error {
+	db := database.GetDB()
+	var ib model.Inbound
+	if err := db.First(&ib, id).Error; err != nil {
+		return err
+	}
+	if ib.NodeId != nil {
+		return errNodeReplica
+	}
+	return db.Model(&ib).Updates(map[string]any{
+		"sync_uid": "", "sync_rev": 0, "sync_base": 0, "sync_origin": "", "deleted_at": 0, "sync_needs_local": false,
+	}).Error
+}
