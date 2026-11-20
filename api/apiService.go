@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"os"
 	"os/exec"
 	"errors"
 	"fmt"
@@ -1327,4 +1328,24 @@ func parseX25519(s string) (string, string) {
 		}
 	}
 	return priv, pub
+}
+
+func (a *ApiService) GenerateSelfSigned(c *gin.Context) {
+	domain := strings.TrimSpace(c.PostForm("domain"))
+	if domain == "" {
+		domain = "localhost"
+	}
+	dir := filepath.Join(config.GetBinFolderPath(), "certs", "selfsigned")
+	_ = os.MkdirAll(dir, 0755)
+	certPath := filepath.Join(dir, domain+".crt")
+	keyPath := filepath.Join(dir, domain+".key")
+
+	cmd := exec.Command("openssl", "req", "-x509", "-newkey", "rsa:2048",
+		"-keyout", keyPath, "-out", certPath, "-days", "365", "-nodes",
+		"-subj", "/CN="+domain)
+	if err := cmd.Run(); err != nil {
+		jsonMsg(c, "generateSelfSigned", common.NewError("openssl failed: ", err.Error()))
+		return
+	}
+	jsonObj(c, map[string]string{"certFile": certPath, "keyFile": keyPath}, nil)
 }
