@@ -11,8 +11,8 @@ import (
 )
 
 // External inbound types are rows on the Inbounds page that sing-box knows
-// nothing about: qWDTT today, WireGuard/AmneziaWG style userspace servers
-// next. Each is driven by a process or device the panel supervises itself.
+// nothing about: qWDTT, WireGuard/AmneziaWG, and Xray-core VLESS. Each is
+// driven by a process or device the panel supervises itself.
 //
 // For the panel they behave like any inbound -- a row with a tag, an enable
 // switch, clients bound through clients.inbounds, a place in the list -- but
@@ -49,6 +49,7 @@ type extDriver struct {
 const (
 	EngineSingbox  = "singbox"
 	EngineExternal = "external"
+	EngineXray     = "xray"
 )
 
 var extDrivers = map[string]*extDriver{}

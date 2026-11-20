@@ -49,6 +49,7 @@ func NewClientConfig(name string) (json.RawMessage, error) {
 		// carried for compatibility with clients that still read it.
 		"vmess":  {"name": name, "uuid": uid, "alterId": 0},
 		"vless":  {"name": name, "uuid": uid, "flow": "xtls-rprx-vision"},
+		"xvless": {"name": name, "uuid": uid, "flow": ""},
 		"trojan": {"name": name, "password": shared},
 		"anytls": {"name": name, "password": shared},
 		// mieru authenticates on the name as well as the password: the name is

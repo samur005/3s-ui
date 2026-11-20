@@ -154,6 +154,7 @@ func TestNormalizeRefusesBadInput(t *testing.T) {
 		`{"subnet":"fd00::/64"}`, `{"privateKey":"abc"}`, `{"mtu":100}`, `{"keepalive":-1}`, `{"dns":"example.com"}`,
 		`{"allowedIps":"everything"}`, `{"endpoint":"a b"}`, `{"endpoint":"a/b"}`,
 		`{"outboundTag":"x\ny"}`,
+		`{"outboundTag":"does-not-exist"}`,
 	}
 	for _, o := range bad {
 		if _, err := NormalizeOptions(db, TypeWG, 0, json.RawMessage(o), nil); err == nil {
@@ -294,6 +295,9 @@ func TestInjectCoreAddsOneTunPerRoutedInbound(t *testing.T) {
 	}
 	initDB(t)
 	db := DB()
+	if err := db.Exec(`INSERT INTO outbounds(type, tag, options) VALUES ('socks','proxy','{}')`).Error; err != nil {
+		t.Fatal(err)
+	}
 	a := addInbound(t, db, TypeWG, "wg", `{"outboundTag":"proxy"}`, true)
 	b := addInbound(t, db, TypeAWG, "awg", `{"routeThroughCore":false}`, true)
 	c := addInbound(t, db, TypeWG, "wg3", `{}`, false)

@@ -144,6 +144,9 @@ const filterOptions = computed((): [string | number, string][] => {
     ['local', t('node.local')],
     ['tls', t('ui.tlsOnly')],
     ['online', t('ui.online')],
+    ['engine:singbox', t('ui.engineSingbox')],
+    ['engine:xray', t('ui.engineXray')],
+    ['engine:external', t('ui.engineExternal')],
   ]
   // one entry per node that actually owns a replica inbound
   const nodeIds = [...new Set(inbounds.value.filter((i: any) => i.node_id).map((i: any) => i.node_id))]
@@ -158,6 +161,9 @@ const rows = computed((): any[] =>
     if (typeof filter.value === 'string' && filter.value.startsWith('node:')) {
       return String(i.node_id) === filter.value.slice(5)
     }
+    if (typeof filter.value === 'string' && filter.value.startsWith('engine:')) {
+      return engineOfItem(i) === filter.value.slice(7)
+    }
     return true
   }),
 )
@@ -168,8 +174,12 @@ const isExternal = (item: any): boolean => ExternalInTypes.includes(item.type)
 // rows (a node's replicas) fall back to the type.
 const engineLabel = (item: any): string => {
   const engine = item.engine || (isExternal(item) ? 'external' : 'singbox')
-  return t(engine === 'external' ? 'ui.engineExternal' : 'ui.engineSingbox')
+  if (engine === 'xray') return t('ui.engineXray')
+  if (engine === 'external') return t('ui.engineExternal')
+  return t('ui.engineSingbox')
 }
+const engineOfItem = (item: any): string => item.engine || (isExternal(item) ? 'external' : 'singbox')
+
 
 // ---------------- cells ----------------
 const iconStyle = (type: string) => {

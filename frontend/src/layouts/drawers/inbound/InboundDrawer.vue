@@ -22,14 +22,14 @@
           v-model="inbound.type"
           @change="changeType"
         >
-          <optgroup :label="$t('ui.protoGroupProxy')">
-            <option v-for="p in proxyTypes" :key="p" :value="p">{{ p }}</option>
+          <optgroup :label="$t('ui.protoGroupSingbox')">
+            <option v-for="p in singboxTypes" :key="p" :value="p">{{ p }}</option>
+          </optgroup>
+          <optgroup :label="$t('ui.protoGroupXray')">
+            <option v-for="p in xrayTypes" :key="p" :value="p">{{ p }}</option>
           </optgroup>
           <optgroup :label="$t('ui.protoGroupExternal')">
             <option v-for="p in externalTypes" :key="p" :value="p">{{ p }}</option>
-          </optgroup>
-          <optgroup :label="$t('ui.protoGroupLocal')">
-            <option v-for="p in localTypes" :key="p" :value="p">{{ p }}</option>
           </optgroup>
         </Select>
       </Field>
@@ -69,6 +69,7 @@
         <Qwdtt v-if="inbound.type == inTypes.Qwdtt" :data="inbound" :is-new="isNew" />
         <Wg v-if="inbound.type == inTypes.Wg" :data="inbound" :is-new="isNew" />
         <Awg v-if="inbound.type == inTypes.Awg" :data="inbound" :is-new="isNew" />
+        <Xvless v-if="inbound.type == inTypes.Xvless" :data="inbound" :is-new="isNew" />
         <TProxy v-if="inbound.type == inTypes.TProxy" :inbound="inbound" />
         <!-- mieru's transport is its own TCP/UDP string, not the V2Ray transport
              object this form edits; switching that on would overwrite it. -->
@@ -183,6 +184,7 @@ import Cloudflared from '@/components/forms/in/Cloudflared.vue'
 import Qwdtt from '@/components/forms/in/Qwdtt.vue'
 import Wg from '@/components/forms/in/Wg.vue'
 import Awg from '@/components/forms/in/Awg.vue'
+import Xvless from '@/components/forms/in/Xvless.vue'
 import Snell from '@/components/forms/out/protocols/Snell.vue'
 import TProxy from '@/components/forms/in/TProxy.vue'
 import Transport from '@/components/forms/out/Transport.vue'
@@ -209,7 +211,7 @@ const { t } = useI18n({ useScope: 'global' })
 const inTypes = InTypes
 
 // protocol select groups (design extra.jsx) — together they cover the full InTypes set
-const proxyTypes = [
+const singboxTypes = [
   InTypes.VLESS,
   InTypes.VMess,
   InTypes.Trojan,
@@ -222,14 +224,6 @@ const proxyTypes = [
   InTypes.AnyTls,
   InTypes.Mieru,
   InTypes.Snell,
-]
-// Run by the panel itself rather than by sing-box.
-const externalTypes = [
-  InTypes.Qwdtt,
-  InTypes.Wg,
-  InTypes.Awg,
-]
-const localTypes = [
   InTypes.Mixed,
   InTypes.SOCKS,
   InTypes.HTTP,
@@ -238,6 +232,15 @@ const localTypes = [
   InTypes.Redirect,
   InTypes.TProxy,
   InTypes.Cloudflared,
+]
+const xrayTypes = [
+  InTypes.Xvless,
+]
+// Run by the panel itself rather than by sing-box or Xray.
+const externalTypes = [
+  InTypes.Qwdtt,
+  InTypes.Wg,
+  InTypes.Awg,
 ]
 
 const HasInData = [
@@ -276,7 +279,7 @@ const MuxAvailable = [
 ]
 // qwdtt takes its address as one host:port of its own (listenAddr); wg and awg
 // have a UDP port field of their own on their form.
-const NoListen = [InTypes.Tun, InTypes.Cloudflared, InTypes.Qwdtt, InTypes.Wg, InTypes.Awg]
+const NoListen = [InTypes.Tun, InTypes.Cloudflared, InTypes.Qwdtt, InTypes.Wg, InTypes.Awg, InTypes.Xvless]
 
 const inbound = ref<any>(createInbound('direct', { id: 0, tag: '' }))
 const loading = ref(false)

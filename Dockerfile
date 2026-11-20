@@ -45,7 +45,8 @@ RUN if [ "$TARGETARCH" = "arm" ]; then export GOARM=7; [ "$TARGETVARIANT" = "v6"
     go build -ldflags="-w -s" \
     -tags "with_quic,with_grpc,with_utls,with_acme,with_gvisor,with_naive_outbound,with_purego,with_tailscale,with_cloudflared,with_openconnect,with_openvpn,with_usbip" \
     -o 3sui main.go && \
-    scripts/build-qwdtt.sh /app/qwdtt
+    scripts/build-qwdtt.sh /app/qwdtt && \
+    scripts/fetch-xray.sh /app/xray
 
 FROM alpine
 LABEL org.opencontainers.image.source="https://github.com/samur005/3s-ui"
@@ -58,10 +59,9 @@ ENV S3UI_IN_DOCKER=1
 WORKDIR /app
 RUN set -ex && apk upgrade --no-cache --scripts=no apk-tools && \
     apk add --no-cache --upgrade bash ca-certificates nftables iproute2 openssl socat curl
-# qwdtt is the qWDTT sidecar (scripts/build-qwdtt.sh); the panel looks for it
-# next to its own binary. See the README (qWDTT) for the NET_ADMIN/host
-# networking it needs.
-COPY --from=backend-builder /app/3sui /app/qwdtt /app/libcronet.so /app/
+# qwdtt is the qWDTT sidecar; xray is the pinned Xray-core binary
+# (scripts/fetch-xray.sh). Both sit next to the panel binary.
+COPY --from=backend-builder /app/3sui /app/qwdtt /app/xray /app/libcronet.so /app/
 COPY --chmod=755 entrypoint.sh /app/
 # The port is read from the database, not written here: the operator can
 # change it from the panel, and a check with it baked in would go red on a

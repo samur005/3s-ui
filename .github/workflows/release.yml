@@ -239,6 +239,14 @@ jobs:
           scripts/build-qwdtt.sh 3s-ui/qwdtt
           file 3s-ui/qwdtt
 
+      - name: Fetch Xray-core
+        run: |
+          set -e
+          # Pinned in xray/version.go and scripts/fetch-xray.sh (XRAY_REF).
+          scripts/fetch-xray.sh 3s-ui/xray
+          file 3s-ui/xray
+          ./3s-ui/xray version | head -1
+
       - name: Package
         run: tar -zcvf 3s-ui-linux-${{ matrix.platform }}.tar.gz 3s-ui
 
