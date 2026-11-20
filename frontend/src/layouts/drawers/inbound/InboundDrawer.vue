@@ -95,6 +95,7 @@
         <Wg v-if="inbound.type == inTypes.Wg" :data="inbound" :is-new="isNew" />
         <Awg v-if="inbound.type == inTypes.Awg" :data="inbound" :is-new="isNew" />
         <Xvless v-if="inbound.type == inTypes.Xvless" :data="inbound" :is-new="isNew" />
+        <TrustTunnel v-if="inbound.type == inTypes.TrustTunnel" :data="inbound" :is-new="isNew" />
         <TProxy v-if="inbound.type == inTypes.TProxy" :inbound="inbound" />
         <!-- mieru's transport is its own TCP/UDP string, not the V2Ray transport
              object this form edits; switching that on would overwrite it. -->
@@ -211,6 +212,7 @@ import Qwdtt from '@/components/forms/in/Qwdtt.vue'
 import Wg from '@/components/forms/in/Wg.vue'
 import Awg from '@/components/forms/in/Awg.vue'
 import Xvless from '@/components/forms/in/Xvless.vue'
+import TrustTunnel from '@/components/forms/in/TrustTunnel.vue'
 import Snell from '@/components/forms/out/protocols/Snell.vue'
 import TProxy from '@/components/forms/in/TProxy.vue'
 import Transport from '@/components/forms/out/Transport.vue'
