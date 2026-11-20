@@ -55,12 +55,14 @@ func BuildConfig(db *gorm.DB) ([]byte, error) {
 		},
 		"inbounds": inbounds,
 		"outbounds": []map[string]any{
+			// Xray 26.x freedom applies built-in finalRules that block private
+			// destinations (SSRF protection). Panel route rules are NOT synced
+			// into this config yet — do not treat this as full routing support.
 			{"protocol": "freedom", "tag": "direct"},
 			{"protocol": "blackhole", "tag": "block"},
 		},
 		// Routing stays minimal on purpose: reverse portal/bridge and panel
-		// rule sync into Xray are not implemented yet. Private-IP blocking
-		// needs geoip.dat beside the binary; operators can edit the file.
+		// rule sync into Xray are not implemented yet.
 		"routing": map[string]any{
 			"domainStrategy": "AsIs",
 			"rules":          []any{},

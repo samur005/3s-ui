@@ -18,6 +18,7 @@ import (
 	"github.com/samur005/3s-ui/util"
 	"github.com/samur005/3s-ui/util/common"
 	"github.com/samur005/3s-ui/wgserver"
+	"github.com/samur005/3s-ui/xray"
 )
 
 var (
@@ -617,6 +618,13 @@ func (s *ConfigService) Save(obj string, act string, data json.RawMessage, initU
 				if err != nil {
 					return nil, common.NewErrorf("failed to update users for inbounds: %v", err)
 				}
+			}
+			// xvless users live in the Xray config, not in sing-box: rebuild
+			// whenever a client save may have changed who is bound.
+			afterCommit = func() {
+				xray.Get().Apply(func() ([]byte, error) {
+					return xray.BuildConfig(database.GetDB())
+				})
 			}
 		}
 	case "tls":
