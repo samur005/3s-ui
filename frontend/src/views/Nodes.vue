@@ -13,6 +13,7 @@
   />
   <SyncConflictsModal :visible="conflictsVisible" @close="conflictsVisible = false" />
   <TombstonesModal :visible="tombstonesVisible" @close="tombstonesVisible = false" />
+  <EnrollSyncModal :visible="enrollVisible" @close="enrollVisible = false" />
 
   <!-- delete confirmation -->
   <DeleteConfirm :open="del.visible" :loading="deleting" @close="del.visible = false" @confirm="confirmDelete" />
@@ -27,6 +28,9 @@
       </Btn>
       <Btn sm @click="tombstonesVisible = true">
         <Ico name="trash" :size="15" /> {{ $t('node.syncTombstones') || 'Pending deletions' }}
+      </Btn>
+      <Btn sm @click="enrollVisible = true">
+        <Ico name="check" :size="15" /> {{ $t('node.syncEnrollBulk') || 'Enroll for sync' }}
       </Btn>
     </div>
 
@@ -84,10 +88,12 @@ import NodeDrawer from '@/layouts/drawers/node/NodeDrawer.vue'
 import NodeImportModal from '@/layouts/drawers/node/NodeImportModal.vue'
 import SyncConflictsModal from '@/layouts/drawers/node/SyncConflictsModal.vue'
 import TombstonesModal from '@/layouts/drawers/node/TombstonesModal.vue'
+import EnrollSyncModal from '@/layouts/drawers/node/EnrollSyncModal.vue'
 import HttpUtils from '@/plugins/httputil'
 
 const conflictsVisible = ref(false)
 const tombstonesVisible = ref(false)
+const enrollVisible = ref(false)
 
 const { t } = useI18n({ useScope: 'global' })
 const dataStore = Data()
