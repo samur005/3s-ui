@@ -74,6 +74,7 @@ const nav: (NavItem | NavSep)[] = [
   { title: 'ui.nav.outbounds', icon: 'outbound', path: '/outbounds' },
   { title: 'ui.nav.endpoints', icon: 'endpoint', path: '/endpoints' },
   { title: 'ui.nav.services', icon: 'services', path: '/services' },
+  { title: 'ui.nav.qwdtt', icon: 'shield', path: '/qwdtt' },
   { sep: 'ui.sec.configuration' },
   { title: 'ui.nav.tls', icon: 'tls', path: '/tls' },
   { title: 'ui.nav.basics', icon: 'basics', path: '/basics' },

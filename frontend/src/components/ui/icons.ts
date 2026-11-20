@@ -1,6 +1,6 @@
 // ============================================================
 // Icon set — minimal stroke icons (1.75 stroke, 24 grid)
-// Ported from design_handoff_2s_ui_console/icons.jsx
+// Ported from design_handoff_3s_ui_console/icons.jsx
 // Each entry is the inner SVG markup of a 24×24 viewBox.
 // ============================================================
 

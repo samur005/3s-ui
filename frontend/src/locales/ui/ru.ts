@@ -1,4 +1,4 @@
-// Generated from design_handoff_2s_ui_console dictionaries (gen-ui-locales.mjs)
+// Generated from design_handoff_3s_ui_console dictionaries (gen-ui-locales.mjs)
 export default {
   ruleNew: "Новое правило маршрутизации",
   ruleSub: "Сопоставить трафик и применить действие",
@@ -224,6 +224,7 @@ export default {
     outbounds: "Исходящие",
     endpoints: "Эндпоинты",
     services: "Сервисы",
+    qwdtt: "qWDTT",
     tls: "Настройки TLS",
     rules: "Правила",
     dns: "DNS",
@@ -245,6 +246,7 @@ export default {
     outbounds: "Исходящие",
     endpoints: "Точки",
     services: "Сервисы",
+    qwdtt: "qWDTT",
     tls: "Настройки TLS",
     rules: "Маршруты",
     dns: "DNS",
@@ -260,6 +262,7 @@ export default {
     outbounds: "Куда направляется трафик",
     endpoints: "Точки WireGuard и Tailscale",
     services: "Вспомогательные сервисы sing-box",
+    qwdtt: "Туннель через звонки VK (qwdtt://) с автогенерацией VK hash",
     tls: "Сертификаты и ключи Reality",
     rules: "Правила обработки подключений",
     dns: "Резолверы и маршрутизация DNS",
