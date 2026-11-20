@@ -1869,7 +1869,7 @@ func autoBindSyncedInbounds(c *model.Client) {
 		return
 	}
 	var ids []uint
-	db.Model(&model.Inbound{}).Where("sync_uid <> '' AND enable = 1 AND deleted_at = 0").Pluck("id", &ids)
+	db.Model(&model.Inbound{}).Where("sync_uid <> '' AND enable = 1 AND deleted_at = 0 AND type NOT IN (?, ?)", "awg", "wg").Pluck("id", &ids)
 	if len(ids) == 0 {
 		return
 	}
