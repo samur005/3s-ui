@@ -1307,7 +1307,7 @@ func (a *ApiService) ScanRealityTarget(c *gin.Context) {
 
 func (a *ApiService) GenerateRealityKey(c *gin.Context) {
 	// Use xray x25519 to generate keypair
-	cmd := exec.Command("xray", "x25519")
+	cmd := exec.Command("/usr/local/3s-ui/xray", "x25519")
 	out, err := cmd.Output()
 	if err != nil {
 		jsonMsg(c, "generateRealityKey", common.NewError("xray x25519 failed: ", err.Error()))
