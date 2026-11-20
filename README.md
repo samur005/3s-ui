@@ -20,6 +20,9 @@ The 3S-UI frontend is rewritten in full, with a range of features added on top t
 - **qWDTT** — a built-in VK call tunnel server with automatic VK hash
   generation, routed through your sing-box rules and shared as `qwdtt://`
   subscription links ([details](#qwdtt-vk-call-tunnel)).
+- **WireGuard and AmneziaWG inbounds** — servers run by the panel, one peer per
+  bound client, per-client configs, links and QR codes, traffic routed through
+  your sing-box rules ([details](#wireguard-and-amneziawg-inbounds)).
 - **Central TLS** — Reality, uTLS fingerprints, XTLS, and certificates
   registered once then picked per inbound.
 - **Routing rules** — matching on domain, IP, port, protocol, process, user and
@@ -458,6 +461,52 @@ only place the version is pinned:
 To update qWDTT, change `QWDTT_REF` in `scripts/build-qwdtt.sh` (re-create the
 patch if it no longer applies), rebuild, and restart it from the page.
 Per-client traffic accounting from other qWDTT panels is not implemented.
+
+## WireGuard and AmneziaWG inbounds
+
+Add an inbound of type **wg** (WireGuard) or **awg** (AmneziaWG) on the
+**Inbounds** page; they sit in their own *Run by the panel* group of the type
+picker and each row says which engine runs it. Several of each can exist side by
+side (every one gets its own UDP port, tunnel subnet and interface).
+
+- **Engine** — one userspace engine (amneziawg-go) serves both: an `awg` inbound
+  with no obfuscation is plain WireGuard. Linux only; the panel creates the
+  device (`s3wg<id>` / `s3awg<id>`), its keys and its peers.
+- **Clients** — bind clients to the inbound (when creating it, or in the
+  client's form). Each bound client gets a peer with its own key pair, a
+  preshared key and an address from the inbound's subnet (the server takes the
+  first host). Unbinding keeps the peer, so binding again hands out the same
+  config; deleting the client removes it. Editing an inbound never rotates keys.
+- **Getting a config** — the **QR** button of the client has a *WG / AWG* tab with
+  the QR code, *Copy config*, *Download .conf* and, for AmneziaWG, the Amnezia
+  `vpn://` key. The link subscription carries a `wireguard://` line (WireGuard)
+  or a `vpn://` line (AmneziaWG) per inbound, and
+  `<sub url>/<client>?format=conf[&inbound=<id>]` downloads the `.conf` (wg-quick
+  / awg-quick format) for apps that take a file.
+- **AmneziaWG versions** — 1.0, 1.5, 2.0, 2.5, 3.0 and 3.1. The form shows only
+  the parameters a version has: Jc/Jmin/Jmax, S1/S2 and H1-H4 for all; I1-I5
+  signature chains from 1.5; S3/S4 and H1-H4 as ranges from 2.0; from 3.0 header
+  protection, content padding and the rekey/reject timers (S1-S4 must be 12 or
+  more, H are single numbers again); 3.1 adds random trailers and cookie
+  disabling. New values are generated at random and every set is validated
+  (overlapping H ranges, S2 = S1 + 56 and the like are refused). There is no
+  separate 2.5 specification, so it uses the 2.0 parameters. Clients must run the
+  same set; switching an inbound's version rebuilds its device but keeps the
+  peers.
+- **Routing** — with *Through sing-box* (default) the panel adds a hidden TUN
+  inbound (`wgtun-<id>`, interface `s3c<id>`) to the core and policy-routes the
+  device into it, so your routing rules and outbounds apply to client traffic;
+  an optional outbound forces all of an inbound's clients to one tag. Saving an
+  inbound that needs the TUN restarts the core once. Switch it off and the
+  server NATs straight to the internet with iptables.
+- **Firewall** — open each inbound's UDP port (51820 for the first, then the next
+  free ones) in the host firewall; the panel does not do that for you.
+- **Needs** root (or `CAP_NET_ADMIN`), `/dev/net/tun` and `ip` (iproute2);
+  `iptables` for NAT mode and the `FORWARD` accept rules. In Docker use
+  `network_mode: host` and `cap_add: [NET_ADMIN]`, as for qWDTT.
+- **Not done** — per-client traffic counters, IPv6 inside the tunnel (the default
+  `::/0` AllowedIPs sends clients' IPv6 into the tunnel, where it is dropped, so
+  nothing leaks) and nftables-only hosts.
 
 ## Contributing
 
