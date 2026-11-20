@@ -63,6 +63,8 @@ func (a *APIHandler) postHandler(c *gin.Context) {
 		a.ApiService.ResolveSyncConflict(c)
 	case "enrollSync":
 		a.ApiService.EnrollSync(c)
+	case "unenrollSync":
+		a.ApiService.UnenrollSync(c)
 	case "listTombstones":
 		a.ApiService.ListTombstones(c)
 	case "purgeTombstone":
