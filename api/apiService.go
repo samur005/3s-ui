@@ -1204,3 +1204,19 @@ func (a *ApiService) EnrollSync(c *gin.Context) {
 	}
 	jsonMsg(c, "enrollSync", err)
 }
+
+func (a *ApiService) ListTombstones(c *gin.Context) {
+	rows, err := bisync.ListTombstones()
+	jsonObj(c, rows, err)
+}
+
+func (a *ApiService) PurgeTombstone(c *gin.Context) {
+	kind := c.PostForm("kind")
+	id, err := strconv.ParseUint(c.PostForm("id"), 10, 64)
+	if err != nil {
+		jsonMsg(c, "purgeTombstone", common.NewError("invalid id"))
+		return
+	}
+	err = bisync.PurgeTombstone(kind, uint(id))
+	jsonMsg(c, "purgeTombstone", err)
+}
