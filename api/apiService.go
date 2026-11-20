@@ -1321,10 +1321,12 @@ func parseX25519(s string) (string, string) {
 	var priv, pub string
 	for _, line := range strings.Split(s, "\n") {
 		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "Private key:") {
-			priv = strings.TrimSpace(strings.TrimPrefix(line, "Private key:"))
-		} else if strings.HasPrefix(line, "Public key:") {
-			pub = strings.TrimSpace(strings.TrimPrefix(line, "Public key:"))
+		if strings.HasPrefix(line, "PrivateKey:") {
+			priv = strings.TrimSpace(strings.TrimPrefix(line, "PrivateKey:"))
+		} else if strings.HasPrefix(line, "Password (PublicKey):") {
+			pub = strings.TrimSpace(strings.TrimPrefix(line, "Password (PublicKey):"))
+		} else if strings.HasPrefix(line, "Public key:") || strings.HasPrefix(line, "PublicKey:") {
+			pub = strings.TrimSpace(strings.TrimPrefix(strings.TrimPrefix(line, "Public key:"), "PublicKey:"))
 		}
 	}
 	return priv, pub
