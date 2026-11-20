@@ -520,6 +520,14 @@ func (s *NodeService) Save(tx *gorm.DB, act string, data json.RawMessage) error 
 		}
 		node.WebPath = normalizeWebPath(node.WebPath)
 		node.CertPin = normalizeCertPin(node.CertPin)
+		switch node.SyncMode {
+		case "", "one_way":
+			node.SyncMode = "one_way"
+		case "bidirectional":
+			// ok — opt-in only via explicit save
+		default:
+			return common.NewError("unknown syncMode; use one_way or bidirectional")
+		}
 		var oldName string
 		if act == "edit" {
 			if node.Id == 0 {

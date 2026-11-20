@@ -16,6 +16,7 @@ import (
 	"github.com/samur005/3s-ui/logger"
 	"github.com/samur005/3s-ui/service/notify"
 	"github.com/samur005/3s-ui/util"
+	"github.com/samur005/3s-ui/service/bisync"
 	"github.com/samur005/3s-ui/util/common"
 
 	"gorm.io/gorm"
@@ -49,6 +50,7 @@ func (s *ClientService) GetAll() (*[]model.Client, error) {
 	db := database.GetDB()
 	var clients []model.Client
 	err := db.Model(model.Client{}).
+		Where("deleted_at = 0").
 		Select(clientListColumns).
 		Scan(&clients).Error
 	if err != nil {
@@ -65,7 +67,7 @@ func (s *ClientService) GetAll() (*[]model.Client, error) {
 // The three reset columns are there for the list to show when the next reset
 // lands. They are read-only on this shape: the bulk edit submits these rows,
 // and findInboundsChanges restores every reset column from the stored row.
-const clientListColumns = "`id`, `enable`, `name`, `desc`, `group`, `remark`, `inbounds`, `up`, `down`, `volume`, `expiry`, `created_at`, `online_at`, `limit_ip`, `auto_reset`, `delay_start`, `next_reset`"
+const clientListColumns = "`id`, `enable`, `name`, `desc`, `group`, `remark`, `inbounds`, `up`, `down`, `volume`, `expiry`, `created_at`, `online_at`, `limit_ip`, `auto_reset`, `delay_start`, `next_reset`, `sync_uid`, `sync_rev`, `deleted_at`"
 
 // GetAllWithConfig adds config for the cluster reconcile diff only: clientDiffers
 // compares it, and an absent key reads as "always different", which would re-push
@@ -74,6 +76,7 @@ func (s *ClientService) GetAllWithConfig() (*[]model.Client, error) {
 	db := database.GetDB()
 	var clients []model.Client
 	err := db.Model(model.Client{}).
+		Where("deleted_at = 0").
 		Select(clientListColumns + ", `config`").
 		Scan(&clients).Error
 	if err != nil {
@@ -191,6 +194,14 @@ func (s *ClientService) Save(tx *gorm.DB, act string, data json.RawMessage, host
 			}
 		}
 		alignNextReset(&client, stored, time.Now().Unix(), panelLocation())
+		// Enrolled clients bump revision on local edit so peers detect the change.
+		if client.SyncUID != "" && client.Group != clusterGroup {
+			if pid, perr := bisync.PanelSyncID(); perr == nil {
+				n := bisync.BumpRev(bisync.Record{UID: client.SyncUID, Rev: client.SyncRev, Base: client.SyncBase, Origin: client.SyncOrigin}, pid)
+				client.SyncRev, client.SyncBase, client.SyncOrigin = n.Rev, n.Base, n.Origin
+				client.DeletedAt = 0
+			}
+		}
 		err = tx.Save(&client).Error
 		if err != nil {
 			return nil, err
@@ -447,8 +458,7 @@ func (s *ClientService) Save(tx *gorm.DB, act string, data json.RawMessage, host
 			}
 			inboundIds = common.UnionUintArray(inboundIds, clientInbounds)
 		}
-		err = tx.Where("id in ?", ids).Delete(model.Client{}).Error
-		if err != nil {
+		if err = tombstoneOrDeleteClients(tx, ids); err != nil {
 			return nil, err
 		}
 		savedIds = ids
@@ -467,8 +477,7 @@ func (s *ClientService) Save(tx *gorm.DB, act string, data json.RawMessage, host
 		if err != nil {
 			return nil, err
 		}
-		err = tx.Where("id = ?", id).Delete(model.Client{}).Error
-		if err != nil {
+		if err = tombstoneOrDeleteClients(tx, []uint{id}); err != nil {
 			return nil, err
 		}
 		savedIds = []uint{id}
@@ -477,6 +486,36 @@ func (s *ClientService) Save(tx *gorm.DB, act string, data json.RawMessage, host
 	}
 
 	return &ClientWrite{Ids: savedIds, InboundIds: inboundIds}, nil
+}
+
+
+// tombstoneOrDeleteClients soft-deletes enrolled (sync_uid) clients so peers
+// see a tombstone; unenrolled rows are removed as before.
+func tombstoneOrDeleteClients(tx *gorm.DB, ids []uint) error {
+	pid, err := bisync.PanelSyncID()
+	if err != nil {
+		return err
+	}
+	for _, id := range ids {
+		var c model.Client
+		if err := tx.Where("id = ?", id).First(&c).Error; err != nil {
+			return err
+		}
+		if c.SyncUID == "" {
+			if err := tx.Where("id = ?", id).Delete(&model.Client{}).Error; err != nil {
+				return err
+			}
+			continue
+		}
+		n := bisync.Tombstone(bisync.Record{UID: c.SyncUID, Rev: c.SyncRev, Base: c.SyncBase, Origin: c.SyncOrigin}, pid)
+		if err := tx.Model(&c).Updates(map[string]any{
+			"enable": false, "deleted_at": n.DeletedAt,
+			"sync_rev": n.Rev, "sync_base": n.Base, "sync_origin": n.Origin,
+		}).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func clientIds(clients []*model.Client) []uint {

@@ -57,6 +57,16 @@ func (a *APIHandler) postHandler(c *gin.Context) {
 		a.ApiService.AdoptInbounds(c, loginUser)
 	case "reconcileNode":
 		a.ApiService.ReconcileNode(c)
+	case "listSyncConflicts":
+		a.ApiService.ListSyncConflicts(c)
+	case "resolveSyncConflict":
+		a.ApiService.ResolveSyncConflict(c)
+	case "enrollSync":
+		a.ApiService.EnrollSync(c)
+	case "listTombstones":
+		a.ApiService.ListTombstones(c)
+	case "purgeTombstone":
+		a.ApiService.PurgeTombstone(c)
 	case "restartApp":
 		a.ApiService.RestartApp(c)
 	case "restartSb":

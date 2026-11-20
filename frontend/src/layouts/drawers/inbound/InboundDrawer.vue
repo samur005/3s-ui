@@ -36,6 +36,20 @@
       <Field :label="$t('objects.tag')">
         <input class="input mono" required v-model="inbound.tag" />
       </Field>
+        <hr class="form-divider" />
+        <div v-if="!isNew && !inbound.node_id" class="access-head" style="margin-top: 10px;">
+          <SectionLabel>{{ $t('node.syncMode') }}</SectionLabel>
+        </div>
+        <div v-if="!isNew && !inbound.node_id && !inbound.syncUid" style="margin-bottom: 15px;">
+          <Btn sm variant="subtle" :loading="enrolling" @click="enrollSync">
+            <Ico name="refresh" :size="14" /> {{ $t('node.syncEnroll') }}
+          </Btn>
+          <MHint style="margin-top: 8px;">{{ $t('node.syncBiDiWarn') }}</MHint>
+        </div>
+        <div v-else-if="!isNew && inbound.syncUid" style="margin-bottom: 15px; font-size: 12.5px; color: var(--text-3);">
+          {{ $t('node.syncBidirectional') }} · <span class="mono">{{ inbound.syncUid.slice(0, 8) }}…</span>
+        </div>
+
 
       <Segmented
         v-if="hasInData"
@@ -196,6 +210,7 @@ import OutJson from '@/components/forms/in/OutJson.vue'
 import Dial from '@/components/forms/out/Dial.vue'
 import AddrVue from '@/components/forms/in/Addr.vue'
 import SwitchLabel from '@/components/ui/SwitchLabel.vue'
+import HttpUtils from '@/plugins/httputil'
 import BarMini from '@/components/charts/BarMini.vue'
 import { HumanReadable } from '@/plugins/utils'
 
@@ -284,6 +299,7 @@ const NoListen = [InTypes.Tun, InTypes.Cloudflared, InTypes.Qwdtt, InTypes.Wg, I
 
 const inbound = ref<any>(createInbound('direct', { id: 0, tag: '' }))
 const loading = ref(false)
+const enrolling = ref(false)
 const side = ref<string | number>('s')
 const originalTag = ref('')
 // The listen port as loaded, so a save can carry the Multi Domain rows that
@@ -481,6 +497,18 @@ const add_addr = () => {
   inbound.value.addrs?.push(<Addr>{ server: location.hostname, server_port: inbound.value.listen_port })
 }
 
+
+const enrollSync = async () => {
+  if (!inbound.value.id || enrolling.value) return
+  enrolling.value = true
+  const msg = await HttpUtils.post('api/enrollSync', { kind: 'inbound', id: inbound.value.id })
+  enrolling.value = false
+  if (msg?.success) {
+    const arr = await Data().loadInbounds([inbound.value.id])
+    if (arr?.[0]) inbound.value = { ...inbound.value, ...arr[0] }
+  }
+}
+
 const saveChanges = async () => {
   if (!props.visible || loading.value) return
   // check duplicate tag
@@ -530,3 +558,4 @@ watch(() => props.visible, (v) => {
   color: var(--text-2);
 }
 </style>
+

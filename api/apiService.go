@@ -15,6 +15,7 @@ import (
 	"github.com/samur005/3s-ui/database/model"
 	"github.com/samur005/3s-ui/logger"
 	"github.com/samur005/3s-ui/service"
+	"github.com/samur005/3s-ui/service/bisync"
 	"github.com/samur005/3s-ui/service/notify"
 	"github.com/samur005/3s-ui/util"
 	"github.com/samur005/3s-ui/util/common"
@@ -1140,4 +1141,82 @@ func (a *ApiService) ReconcileNode(c *gin.Context) {
 	}
 	err = a.NodeSyncService.ReconcileNow(uint(id))
 	jsonMsg(c, "reconcileNode", err)
+}
+
+func (a *ApiService) GetSyncCatalog(c *gin.Context) {
+	cat, err := bisync.BuildCatalog()
+	jsonObj(c, cat, err)
+}
+
+func (a *ApiService) ApplySyncCatalog(c *gin.Context) {
+	var cat bisync.Catalog
+	if err := json.Unmarshal([]byte(c.PostForm("data")), &cat); err != nil {
+		jsonMsg(c, "syncCatalogApply", err)
+		return
+	}
+	// nodeID 0 — peer push without local node row mapping; conflicts still stored.
+	if err := bisync.IngestRemoteCatalog(0, &cat); err != nil {
+		jsonMsg(c, "syncCatalogApply", err)
+		return
+	}
+	jsonMsg(c, "syncCatalogApply", nil)
+}
+
+func (a *ApiService) ListSyncConflicts(c *gin.Context) {
+	rows, err := bisync.ListConflicts()
+	jsonObj(c, rows, err)
+}
+
+func (a *ApiService) ResolveSyncConflict(c *gin.Context) {
+	id, err := strconv.ParseUint(c.PostForm("id"), 10, 64)
+	if err != nil {
+		jsonMsg(c, "resolveSyncConflict", common.NewError("invalid id"))
+		return
+	}
+	dec := bisync.Decision(c.PostForm("decision"))
+	if dec != bisync.KeepLocal && dec != bisync.KeepRemote && dec != bisync.Defer {
+		jsonMsg(c, "resolveSyncConflict", common.NewError("decision must be local, remote, or defer"))
+		return
+	}
+	err = bisync.ResolveConflict(uint(id), dec)
+	jsonMsg(c, "resolveSyncConflict", err)
+}
+
+func (a *ApiService) EnrollSync(c *gin.Context) {
+	kind := c.PostForm("kind")
+	id, err := strconv.ParseUint(c.PostForm("id"), 10, 64)
+	if err != nil {
+		jsonMsg(c, "enrollSync", common.NewError("invalid id"))
+		return
+	}
+	switch kind {
+	case "client":
+		err = bisync.EnrollClient(uint(id))
+	case "inbound":
+		err = bisync.EnrollInbound(uint(id))
+	default:
+		jsonMsg(c, "enrollSync", common.NewError("kind must be client or inbound"))
+		return
+	}
+	if err == nil {
+		a.NodeSyncService.MarkAllDirty()
+		go a.NodeSyncService.ReconcileDirtyOnline()
+	}
+	jsonMsg(c, "enrollSync", err)
+}
+
+func (a *ApiService) ListTombstones(c *gin.Context) {
+	rows, err := bisync.ListTombstones()
+	jsonObj(c, rows, err)
+}
+
+func (a *ApiService) PurgeTombstone(c *gin.Context) {
+	kind := c.PostForm("kind")
+	id, err := strconv.ParseUint(c.PostForm("id"), 10, 64)
+	if err != nil {
+		jsonMsg(c, "purgeTombstone", common.NewError("invalid id"))
+		return
+	}
+	err = bisync.PurgeTombstone(kind, uint(id))
+	jsonMsg(c, "purgeTombstone", err)
 }

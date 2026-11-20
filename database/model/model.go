@@ -66,6 +66,13 @@ type Client struct {
 	Group    string          `json:"group" form:"group"`
 	Remark   string          `json:"remark" form:"remark"`
 
+	// Cluster bi-di identity (empty = not enrolled in bidirectional sync).
+	SyncUID    string `json:"syncUid,omitempty" form:"syncUid" gorm:"index;default:'';size:36"`
+	SyncRev    int64  `json:"syncRev,omitempty" form:"syncRev" gorm:"default:0;not null"`
+	SyncBase   int64  `json:"syncBase,omitempty" form:"syncBase" gorm:"default:0;not null"`
+	SyncOrigin string `json:"syncOrigin,omitempty" form:"syncOrigin" gorm:"default:'';size:64"`
+	DeletedAt  int64  `json:"deletedAt,omitempty" form:"deletedAt" gorm:"default:0;not null;index"`
+
 	// Timestamps (unix seconds): creation time and last time the client had traffic
 	CreatedAt int64 `json:"createdAt" form:"createdAt" gorm:"default:0;not null"`
 	OnlineAt  int64 `json:"onlineAt" form:"onlineAt" gorm:"default:0;not null"`
@@ -197,8 +204,22 @@ type Node struct {
 	// node yet; the heartbeat retriggers Reconcile while it is set.
 	Dirty    bool  `json:"dirty" gorm:"default:false;not null"`
 	LastSync int64 `json:"lastSync" gorm:"default:0;not null"`
+	// SyncMode is "one_way" (default) or "bidirectional". Never auto-enabled.
+	SyncMode string `json:"syncMode" form:"syncMode" gorm:"default:one_way;not null;size:32"`
 	// Baselines holds the per-client traffic counters seen on the node at the
 	// last collection: map[clientName]{up,down}. Single writer (traffic job),
 	// one row UPDATE per node per cycle.
 	Baselines json.RawMessage `json:"-"`
+}
+
+// SyncConflict holds a divergent bi-di edit until an operator resolves it.
+type SyncConflict struct {
+	Id        uint   `json:"id" gorm:"primaryKey;autoIncrement"`
+	UID       string `json:"uid" gorm:"index;size:36;not null"`
+	Kind      string `json:"kind" gorm:"size:16;not null"` // client|inbound
+	NodeId    uint   `json:"nodeId" gorm:"index;default:0"`
+	LocalJSON  string `json:"localJson" gorm:"type:text"`
+	RemoteJSON string `json:"remoteJson" gorm:"type:text"`
+	CreatedAt int64  `json:"createdAt" gorm:"not null"`
+	Resolved  bool   `json:"resolved" gorm:"default:false;not null"`
 }

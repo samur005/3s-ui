@@ -95,6 +95,8 @@ func (a *APIv2Handler) postHandler(c *gin.Context) {
 		a.ApiService.CloseSessions(c, false)
 	case "clusterBans":
 		a.ApiService.ApplyClusterBans(c)
+	case "syncCatalogApply":
+		a.ApiService.ApplySyncCatalog(c)
 	default:
 		jsonMsg(c, "failed", common.NewError("unknown action: ", action))
 	}
@@ -128,6 +130,8 @@ func (a *APIv2Handler) getHandler(c *gin.Context) {
 		a.ApiService.GetSessions(c, false)
 	case "clusterIps":
 		a.ApiService.GetClusterIps(c)
+	case "syncCatalog":
+		a.ApiService.GetSyncCatalog(c)
 	case "logs":
 		a.ApiService.GetLogs(c)
 	case "changes":

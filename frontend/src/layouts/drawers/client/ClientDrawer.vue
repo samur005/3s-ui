@@ -48,6 +48,20 @@
           </div>
           <input class="input" v-model="client.group" />
         </Field>
+        <hr class="form-divider" />
+        <div v-if="!isNew" class="access-head">
+          <SectionLabel>{{ $t('node.syncMode') }}</SectionLabel>
+        </div>
+        <div v-if="!isNew && !client.syncUid" style="margin-bottom: 15px;">
+          <Btn sm variant="subtle" :loading="enrolling" @click="enrollSync">
+            <Ico name="refresh" :size="14" /> {{ $t('node.syncEnroll') }}
+          </Btn>
+          <MHint style="margin-top: 8px;">{{ $t('node.syncBiDiWarn') }}</MHint>
+        </div>
+        <div v-else-if="!isNew && client.syncUid" style="margin-bottom: 15px; font-size: 12.5px; color: var(--text-3);">
+          {{ $t('node.syncBidirectional') }} · <span class="mono">{{ client.syncUid.slice(0, 8) }}…</span>
+        </div>
+
 
         <hr class="form-divider" />
 
@@ -260,6 +274,8 @@ import Avatar from '@/components/ui/Avatar.vue'
 import InboundsSelect from '@/components/ui/InboundsSelect.vue'
 import MSwitchRow from '@/components/ui/MSwitchRow.vue'
 import SwitchLabel from '@/components/ui/SwitchLabel.vue'
+import MHint from '@/components/ui/MHint.vue'
+import HttpUtils from '@/plugins/httputil'
 import SectionLabel from '@/components/ui/SectionLabel.vue'
 import KeyInput from '@/components/ui/KeyInput.vue'
 import DateTimeInput from '@/components/ui/DateTimeInput.vue'
@@ -281,6 +297,7 @@ const { t } = useI18n({ useScope: 'global' })
 const isNew = computed(() => props.id === 0)
 const tab = ref('general')
 const loading = ref(false)
+const enrolling = ref(false)
 const client = ref<Client>(createClient())
 const clientConfig = ref<any>({})
 const extLinks = ref<Link[]>([])
@@ -462,6 +479,20 @@ const updateData = async (id: number) => {
   subLinks.value = client.value.links?.filter((l) => l.type == 'sub') ?? []
 }
 
+
+const enrollSync = async () => {
+  if (!client.value.id || enrolling.value) return
+  enrolling.value = true
+  const msg = await HttpUtils.post('api/enrollSync', { kind: 'client', id: client.value.id })
+  enrolling.value = false
+  if (msg?.success) {
+    client.value.syncUid = 'enrolled' // optimistic; real uid comes on next load
+    // Force reload of this client
+    const arr = await Data().loadClients([client.value.id])
+    if (arr?.[0]) client.value = { ...client.value, ...arr[0] }
+  }
+}
+
 const saveChanges = async () => {
   if (!props.visible || loading.value) return
   // check duplicate name
@@ -548,3 +579,4 @@ watch(() => props.visible, (v) => {
   color: var(--text-2);
 }
 </style>
+

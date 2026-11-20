@@ -155,6 +155,7 @@ func InitDB(dbPath string) error {
 		&model.QwdttState{},
 		&model.WgPeer{},
 		&model.LoginAttempt{},
+		&model.SyncConflict{},
 	}
 	err = db.AutoMigrate(models...)
 	if err != nil {
