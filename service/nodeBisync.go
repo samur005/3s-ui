@@ -58,6 +58,7 @@ func (s *NodeSyncService) runBidirectionalSync(node *model.Node, client *http.Cl
 				}
 			}
 			res := bisync.MergeRemote(pid, localOK, local, rem)
+			logger.Info("bisync: ", kind, " ", rem.UID[:8], " action=", res.Action, " localOK=", localOK)
 			switch res.Action {
 			case "echo", "noop":
 				continue
