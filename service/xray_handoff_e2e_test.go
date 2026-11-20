@@ -614,3 +614,173 @@ func TestE2E_XrayHandoffDomainBlock(t *testing.T) {
 	}
 	t.Logf("OK domain block via sniff: %v", err)
 }
+
+func TestE2E_XrayHandoffPerClientAuthUser(t *testing.T) {
+	bin := testXrayBin(t)
+	dir := t.TempDir()
+	httpOK := startEcho(t, "ok-id")
+	defer httpOK.stop()
+
+	handoffPort := freeTCP(t)
+	vlessPort := freeTCP(t)
+	socksAlice := freeTCP(t)
+	socksBob := freeTCP(t)
+	uuidAlice := "5783a3e7-e373-51cd-8642-c83782b807c5"
+	uuidBob := "6783a3e7-e373-51cd-8642-c83782b807c6"
+	masterUser, masterPass := "xray-master", "master-secret-pass"
+	tag := "xv-id"
+
+	alicePass := xray.DeriveClientPass(masterPass, "alice")
+	bobPass := xray.DeriveClientPass(masterPass, "bob")
+	aliceOut := xray.SocksOutboundTagForClient(1, "alice")
+	bobOut := xray.SocksOutboundTagForClient(1, "bob")
+
+	// sing-box: alice allowed (direct), bob rejected via auth_user
+	coreCfg := map[string]any{
+		"log": map[string]any{"level": "warn"},
+		"inbounds": []any{map[string]any{
+			"type": "mixed", "tag": tag, "listen": "127.0.0.1", "listen_port": handoffPort,
+			"users": []any{
+				map[string]any{"username": "alice", "password": alicePass},
+				map[string]any{"username": "bob", "password": bobPass},
+			},
+		}},
+		"outbounds": []any{
+			map[string]any{"type": "direct", "tag": "direct"},
+			map[string]any{"type": "block", "tag": "block"},
+		},
+		"route": map[string]any{"rules": []any{
+			map[string]any{"inbound": []string{tag}, "action": "sniff"},
+			map[string]any{"inbound": []string{tag}, "auth_user": []string{"bob"}, "action": "reject"},
+			map[string]any{"inbound": []string{tag}, "auth_user": []string{"alice"}, "action": "route", "outbound": "direct"},
+		}},
+	}
+	body, _ := json.Marshal(coreCfg)
+	c := core.NewCore()
+	if err := c.Start(body); err != nil {
+		t.Fatalf("core: %v", err)
+	}
+	defer func() { _ = c.Stop() }()
+	time.Sleep(250 * time.Millisecond)
+
+	cfg := xray.VlessConfig{
+		Listen: "127.0.0.1", ListenPort: vlessPort, Endpoint: "127.0.0.1",
+		Method: "raw", Security: "none", Decryption: "none",
+		RouteThroughCore: true, HandoffUser: masterUser, HandoffPass: masterPass, HandoffPort: handoffPort,
+	}
+	ibBoth, err := xray.BuildInboundForTestMulti(tag, cfg, []xray.ClientCred{
+		{Email: "alice", ID: uuidAlice, Enable: true},
+		{Email: "bob", ID: uuidBob, Enable: true},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	xSrv := map[string]any{
+		"inbounds": []any{ibBoth},
+		"outbounds": []any{
+			map[string]any{"protocol": "blackhole", "tag": "block"},
+			map[string]any{"protocol": "socks", "tag": aliceOut, "settings": map[string]any{
+				"servers": []any{map[string]any{"address": "127.0.0.1", "port": handoffPort,
+					"users": []any{map[string]any{"user": "alice", "pass": alicePass}}}},
+			}},
+			map[string]any{"protocol": "socks", "tag": bobOut, "settings": map[string]any{
+				"servers": []any{map[string]any{"address": "127.0.0.1", "port": handoffPort,
+					"users": []any{map[string]any{"user": "bob", "pass": bobPass}}}},
+			}},
+		},
+		"routing": map[string]any{"rules": []any{
+			map[string]any{"type": "field", "inboundTag": []string{tag}, "user": []string{"alice"}, "outboundTag": aliceOut},
+			map[string]any{"type": "field", "inboundTag": []string{tag}, "user": []string{"bob"}, "outboundTag": bobOut},
+		}},
+	}
+	writeJSON(t, filepath.Join(dir, "id-srv.json"), xSrv)
+	if out, err := exec.Command(bin, "run", "-test", "-c", filepath.Join(dir, "id-srv.json")).CombinedOutput(); err != nil {
+		t.Fatalf("xray -test: %v\n%s", err, out)
+	}
+	stopSrv := runXrayProc(t, bin, "run", "-c", filepath.Join(dir, "id-srv.json"))
+	defer stopSrv()
+
+	// Client configs for alice and bob
+	for _, tc := range []struct {
+		name, uuid string
+		socks      int
+		wantOK     bool
+	}{
+		{"alice", uuidAlice, socksAlice, true},
+		{"bob", uuidBob, socksBob, false},
+	} {
+		linkCfg := cfg
+		link, err := xray.ShareLink(linkCfg, tc.uuid, tc.name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		writeJSON(t, filepath.Join(dir, tc.name+"-cli.json"), clientSOCKSFromLink(t, link, tc.socks))
+		stop := runXrayProc(t, bin, "run", "-c", filepath.Join(dir, tc.name+"-cli.json"))
+		defer stop()
+		out, err := exec.Command("curl", "-fsS", "--max-time", "4",
+			"--socks5-hostname", fmt.Sprintf("127.0.0.1:%d", tc.socks),
+			"http://"+httpOK.addr+"/"+tc.name).CombinedOutput()
+		if tc.wantOK {
+			if err != nil || !strings.Contains(string(out), "ok-id") {
+				t.Fatalf("%s should pass: %v %q", tc.name, err, out)
+			}
+			t.Logf("OK %s allowed: %q", tc.name, out)
+		} else if err == nil {
+			t.Fatalf("%s should be blocked, got %q", tc.name, out)
+		} else {
+			t.Logf("OK %s blocked: %v", tc.name, err)
+		}
+	}
+
+	// UDP: alice echo ok, bob blocked (auth_user reject applies to UDP associate too)
+	pc, err := net.ListenPacket("udp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pc.Close()
+	udpAddr := pc.LocalAddr().(*net.UDPAddr)
+	go func() {
+		buf := make([]byte, 512)
+		for {
+			n, addr, err := pc.ReadFrom(buf)
+			if err != nil {
+				return
+			}
+			_, _ = pc.WriteTo(append([]byte("U:"), buf[:n]...), addr)
+		}
+	}()
+	dokodemo := freeTCP(t)
+	ul, _ := net.ListenPacket("udp", "127.0.0.1:0")
+	dokodemo = ul.LocalAddr().(*net.UDPAddr).Port
+	ul.Close()
+	xCli := map[string]any{
+		"inbounds": []any{map[string]any{
+			"listen": "127.0.0.1", "port": dokodemo, "protocol": "dokodemo-door",
+			"settings": map[string]any{"address": udpAddr.IP.String(), "port": udpAddr.Port, "network": "udp"},
+		}},
+		"outbounds": []any{map[string]any{
+			"protocol": "vless",
+			"settings": map[string]any{"vnext": []any{map[string]any{
+				"address": "127.0.0.1", "port": vlessPort,
+				"users": []any{map[string]any{"id": uuidAlice, "encryption": "none", "email": "alice"}},
+			}}},
+			"streamSettings": map[string]any{"method": "raw", "security": "none"},
+		}},
+	}
+	writeJSON(t, filepath.Join(dir, "alice-udp.json"), xCli)
+	stopUDP := runXrayProc(t, bin, "run", "-c", filepath.Join(dir, "alice-udp.json"))
+	defer stopUDP()
+	conn, err := net.DialUDP("udp", nil, &net.UDPAddr{IP: net.IP{127, 0, 0, 1}, Port: dokodemo})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	_ = conn.SetDeadline(time.Now().Add(3 * time.Second))
+	_, _ = conn.Write([]byte("hi"))
+	buf := make([]byte, 64)
+	n, err := conn.Read(buf)
+	if err != nil || !strings.Contains(string(buf[:n]), "U:hi") {
+		t.Fatalf("alice udp: %v %q", err, buf[:n])
+	}
+	t.Logf("OK alice UDP via identity handoff: %q", buf[:n])
+}

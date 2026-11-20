@@ -60,13 +60,26 @@ func BuildConfig(db *gorm.DB) ([]byte, error) {
 			if cfg.HandoffUser == "" || cfg.HandoffPass == "" {
 				return nil, fmt.Errorf("xray: inbound %s: routeThroughCore needs handoff credentials", row.Tag)
 			}
-			otag := HandoffOutboundTag(row.Id)
-			outbounds = append(outbounds, socksOutbound(otag, row.Id, cfg))
-			routeRules = append(routeRules, map[string]any{
-				"type":        "field",
-				"inboundTag":  []string{row.Tag},
-				"outboundTag": otag,
-			})
+			creds := clientSocksList(row.Id, cfg.HandoffPass, clients)
+			if len(creds) == 0 {
+				// No bound clients yet: shared handoff (inbound-level rules only).
+				otag := HandoffOutboundTag(row.Id)
+				outbounds = append(outbounds, socksOutboundShared(otag, row.Id, cfg))
+				routeRules = append(routeRules, map[string]any{
+					"type": "field", "inboundTag": []string{row.Tag}, "outboundTag": otag,
+				})
+			} else {
+				// One socks outbound per VLESS user (email); Xray routes by "user".
+				for _, cs := range creds {
+					outbounds = append(outbounds, socksOutboundUser(cs.OutTag, row.Id, cfg, cs.Username, cs.Password))
+					routeRules = append(routeRules, map[string]any{
+						"type":        "field",
+						"inboundTag":  []string{row.Tag},
+						"user":        []string{cs.Email},
+						"outboundTag": cs.OutTag,
+					})
+				}
+			}
 		} else {
 			routeRules = append(routeRules, map[string]any{
 				"type":        "field",
@@ -93,15 +106,19 @@ func BuildConfig(db *gorm.DB) ([]byte, error) {
 	return json.MarshalIndent(doc, "", "  ")
 }
 
-func socksOutbound(tag string, id uint, c VlessConfig) map[string]any {
+func socksOutboundShared(tag string, id uint, c VlessConfig) map[string]any {
+	return socksOutboundUser(tag, id, c, c.HandoffUser, c.HandoffPass)
+}
+
+func socksOutboundUser(tag string, id uint, c VlessConfig, user, pass string) map[string]any {
 	server := map[string]any{
 		"address": "127.0.0.1",
 		"port":    HandoffPort(id, c.HandoffPort),
+		"users": []map[string]any{{
+			"user": user,
+			"pass": pass,
+		}},
 	}
-	server["users"] = []map[string]any{{
-		"user": c.HandoffUser,
-		"pass": c.HandoffPass,
-	}}
 	return map[string]any{
 		"protocol": "socks",
 		"tag":      tag,
@@ -290,4 +307,9 @@ func ConfigDir() string {
 // BuildInboundForTest exposes buildInbound for integration tests in other packages.
 func BuildInboundForTest(tag string, c VlessConfig, uuid string) (map[string]any, error) {
 	return buildInbound(tag, c, []ClientCred{{Email: "u", ID: uuid, Enable: true}})
+}
+
+// BuildInboundForTestMulti is for integration tests with multiple clients.
+func BuildInboundForTestMulti(tag string, c VlessConfig, clients []ClientCred) (map[string]any, error) {
+	return buildInbound(tag, c, clients)
 }

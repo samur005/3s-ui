@@ -19,8 +19,9 @@ import (
 // rules (by inbound tag) and outbounds apply. This is not a translation of
 // panel rules into Xray JSON.
 //
-// SOCKS cannot carry the original client IP or the VLESS user email into
-// sing-box; rules that depend on those see 127.0.0.1 and no user.
+// Per-client SOCKS usernames (panel client names) are mapped so sing-box
+// auth_user rules work. Original client IP cannot be preserved over loopback
+// SOCKS (always 127.0.0.1); see identity.go.
 //
 // The mixed inbound reuses the xvless row's tag so operator inbound-tag rules
 // match. Tags are unique across all panel inbound rows (tagFreeAcross), and
@@ -180,6 +181,7 @@ func coreFragment(rows []handoffRow) (mixed []json.RawMessage, rules []json.RawM
 	var tags []string
 	var forced []json.RawMessage
 	ports := map[int]string{}
+	db := database.GetDB()
 	for _, row := range rows {
 		if !row.Enable {
 			continue
@@ -200,15 +202,34 @@ func coreFragment(rows []handoffRow) (mixed []json.RawMessage, rules []json.RawM
 			return nil, nil, fmt.Errorf("xray handoff: port %d used by %q and %q", port, other, tag)
 		}
 		ports[port] = tag
+
+		var users []map[string]any
+		if db != nil {
+			clients, cerr := boundClients(db, row.ID)
+			if cerr != nil {
+				return nil, nil, cerr
+			}
+			for _, cs := range clientSocksList(row.ID, cfg.HandoffPass, clients) {
+				users = append(users, map[string]any{
+					"username": cs.Username,
+					"password": cs.Password,
+				})
+			}
+		}
+		// Fallback shared account when no clients are bound yet (inbound idle).
+		if len(users) == 0 {
+			users = []map[string]any{{
+				"username": cfg.HandoffUser,
+				"password": cfg.HandoffPass,
+			}}
+		}
+
 		obj := map[string]any{
 			"type":        "mixed",
 			"tag":         tag,
 			"listen":      "127.0.0.1",
 			"listen_port": port,
-			"users": []map[string]any{{
-				"username": cfg.HandoffUser,
-				"password": cfg.HandoffPass,
-			}},
+			"users":       users,
 		}
 		raw, _ := json.Marshal(obj)
 		mixed = append(mixed, raw)
