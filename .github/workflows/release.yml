@@ -11,6 +11,7 @@ on:
       - '.github/workflows/release.yml'
       - 'frontend/**'
       - '**.sh'
+      - 'scripts/patches/**'
       - '**.go'
       - 'go.mod'
       - 'go.sum'
@@ -228,6 +229,15 @@ jobs:
           cp 3s-ui.service 3s-ui/
           cp 3s-ui.openrc 3s-ui/
           cp 3s-ui.sh 3s-ui/
+
+      # The qWDTT sidecar (see scripts/build-qwdtt.sh). Pure Go, so it is built
+      # for the same GOOS/GOARCH/GOARM as the panel and shipped next to it; the
+      # panel looks for ./qwdtt beside its own executable.
+      - name: Build qWDTT sidecar
+        run: |
+          set -e
+          scripts/build-qwdtt.sh 3s-ui/qwdtt
+          file 3s-ui/qwdtt
 
       - name: Package
         run: tar -zcvf 3s-ui-linux-${{ matrix.platform }}.tar.gz 3s-ui

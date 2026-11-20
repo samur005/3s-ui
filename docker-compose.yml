@@ -18,6 +18,13 @@ services:
     networks:
       - 3s-ui
     entrypoint: "./entrypoint.sh"
+    # qWDTT (VK call tunnel) needs to create network interfaces and routing
+    # rules, so it only works with these two settings; the UDP ports it
+    # listens on (56000, 56003 by default) then bind on the host directly.
+    # Without them the panel works as usual and qWDTT stays unavailable.
+    # network_mode: host    # replaces `ports:` and `networks:` above
+    # cap_add:
+    #   - NET_ADMIN
 
 networks:
   3s-ui:

@@ -390,23 +390,23 @@ install_base() {
     echo -e "${yellow}$(t installing_base)${plain}"
     case "${release}" in
     centos | almalinux | rocky | oracle)
-        yum -y update && yum install -y -q wget curl tar
+        yum -y update && yum install -y -q wget curl tar iproute
         ;;
     fedora | rhel)
-        dnf -y update && dnf install -y -q wget curl tar
+        dnf -y update && dnf install -y -q wget curl tar iproute
         ;;
     arch | manjaro | parch)
-        pacman -Syu && pacman -Syu --noconfirm wget curl tar
+        pacman -Syu && pacman -Syu --noconfirm wget curl tar iproute2
         ;;
     opensuse-tumbleweed)
-        zypper refresh && zypper -q install -y wget curl tar
+        zypper refresh && zypper -q install -y wget curl tar iproute2
         ;;
     alpine)
         # OpenRC drives the service; bash is what the 3s-ui menu script needs.
-        apk update && apk add --no-cache wget curl tar bash openrc
+        apk update && apk add --no-cache wget curl tar bash openrc iproute2
         ;;
     *)
-        apt-get update && apt-get install -y -q wget curl tar
+        apt-get update && apt-get install -y -q wget curl tar iproute2
         ;;
     esac
 }
@@ -681,6 +681,10 @@ install_3s-ui() {
     rm 3s-ui-linux-$(arch).tar.gz -f
 
     chmod +x 3s-ui/3sui 3s-ui/3s-ui.sh
+    # The qWDTT sidecar (scripts/build-qwdtt.sh) rides along next to the panel
+    # binary; the panel finds it as /usr/local/3s-ui/qwdtt. Older tarballs do
+    # not have it, which is fine: qWDTT then just reports the binary missing.
+    [[ -f 3s-ui/qwdtt ]] && chmod +x 3s-ui/qwdtt
     # 3s-ui.openrc rides along in the tarball and is copied under
     # /usr/local/3s-ui/ with the rest, so install_openrc_service can restore
     # it without re-embedding (mirrors how 3s-ui.service is shipped).
