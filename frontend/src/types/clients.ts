@@ -27,6 +27,7 @@ export interface Client {
   nextReset?: number
   totalUp?: number
   totalDown?: number
+  syncUid?: string
 }
 
 const defaultClient: Client = {
