@@ -1302,3 +1302,28 @@ func (a *ApiService) ScanRealityTarget(c *gin.Context) {
 	res := service.ScanRealityTarget(domain)
 	jsonObj(c, res, nil)
 }
+
+func (a *ApiService) GenerateRealityKey(c *gin.Context) {
+	// Use xray x25519 to generate keypair
+	cmd := exec.Command("xray", "x25519")
+	out, err := cmd.Output()
+	if err != nil {
+		jsonMsg(c, "generateRealityKey", common.NewError("xray x25519 failed: ", err.Error()))
+		return
+	}
+	priv, pub := parseX25519(string(out))
+	jsonObj(c, map[string]string{"privateKey": priv, "publicKey": pub}, nil)
+}
+
+func parseX25519(s string) (string, string) {
+	var priv, pub string
+	for _, line := range strings.Split(s, "\n") {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "Private key:") {
+			priv = strings.TrimSpace(strings.TrimPrefix(line, "Private key:"))
+		} else if strings.HasPrefix(line, "Public key:") {
+			pub = strings.TrimSpace(strings.TrimPrefix(line, "Public key:"))
+		}
+	}
+	return priv, pub
+}
