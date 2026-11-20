@@ -814,3 +814,39 @@ func TestHysteria2LinkUnusableObfsIsDropped(t *testing.T) {
 		})
 	}
 }
+
+func TestShadowsocksStandaloneStillEmitsURI(t *testing.T) {
+	in := &model.Inbound{
+		Type:    "shadowsocks",
+		Tag:     "ss-alone",
+		Enable:  true,
+		Options: json.RawMessage(`{"listen":"0.0.0.0","listen_port":8388,"method":"aes-128-gcm"}`),
+		OutJson: json.RawMessage(`{"type":"shadowsocks","tag":"ss-alone","server":"example.com","server_port":8388,"method":"aes-128-gcm"}`),
+		Addrs:   json.RawMessage(`null`),
+	}
+	cfg := json.RawMessage(`{"shadowsocks":{"name":"u","password":"secretpass"}}`)
+	links := LinkGenerator(cfg, in, "example.com", "")
+	if len(links) != 1 || !strings.HasPrefix(links[0], "ss://") {
+		t.Fatalf("standalone SS links = %v", links)
+	}
+	if strings.Contains(links[0], "127.0.0.1") {
+		t.Fatalf("standalone SS should not use loopback: %s", links[0])
+	}
+}
+
+func TestShadowsocksWithDetourOmitsPlainURI(t *testing.T) {
+	in := &model.Inbound{
+		Type:    "shadowsocks",
+		Tag:     "ss-shadowtls",
+		Enable:  true,
+		Options: json.RawMessage(`{"listen":"127.0.0.1","listen_port":20018,"method":"aes-128-gcm"}`),
+		// Client chain: SS dials via ShadowTLS outbound (detour). No SIP002 form.
+		OutJson: json.RawMessage(`{"type":"shadowsocks","tag":"ss-shadowtls","server":"127.0.0.1","server_port":20018,"method":"aes-128-gcm","detour":"shadowtls"}`),
+		Addrs:   json.RawMessage(`[{"server":"127.0.0.1","server_port":20018,"remark":"ss-shadowtls"}]`),
+	}
+	cfg := json.RawMessage(`{"shadowsocks":{"name":"u","password":"secretpass"}}`)
+	links := LinkGenerator(cfg, in, "3s.antibs.fun", "")
+	if len(links) != 0 {
+		t.Fatalf("detoured SS must not emit plain URI, got %v", links)
+	}
+}

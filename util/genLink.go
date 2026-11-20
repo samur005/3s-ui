@@ -16,6 +16,23 @@ import (
 
 var InboundTypeWithLink = []string{"socks", "http", "mixed", "shadowsocks", "naive", "hysteria", "hysteria2", "anytls", "tuic", "vless", "trojan", "vmess", "mieru"}
 
+// omitPlainURI reports whether this inbound must not appear in the default
+// URI subscription. A client out_json "detour" builds a sing-box/Clash chain
+// (ShadowTLS→SS loopback helpers and similar); there is no tested standard
+// URI/plugin form for that chain, and emitting ss://…@127.0.0.1:… is broken
+// off-box. JSON and Clash export keep the chain via out_json.
+func omitPlainURI(i *model.Inbound) bool {
+	if i == nil || len(i.OutJson) == 0 || string(i.OutJson) == "null" {
+		return false
+	}
+	var out map[string]interface{}
+	if err := json.Unmarshal(i.OutJson, &out); err != nil {
+		return false
+	}
+	detour, _ := out["detour"].(string)
+	return strings.TrimSpace(detour) != ""
+}
+
 type LinkParam struct {
 	Key   string
 	Value string
@@ -29,6 +46,9 @@ func JoinRemark(clientRemark, inboundRemark string) string {
 }
 
 func LinkGenerator(clientConfig json.RawMessage, i *model.Inbound, hostname string, clientRemark string) []string {
+	if omitPlainURI(i) {
+		return []string{}
+	}
 	inbound, err := i.MarshalFull()
 	if err != nil {
 		return []string{}
