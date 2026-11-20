@@ -28,6 +28,9 @@
         @click.prevent="toggle(it.id)"
       >
         <span class="inb-dot" :class="{ online: it.online }" />
+        <span class="ib-proto" :style="{ color: protoColor(it.type) }" :title="it.type" :aria-label="it.type">
+          <Ico :name="protoIcon(it.type)" :size="15" />
+        </span>
         <div style="flex: 1; min-width: 0;">
           <div class="ib-tag">{{ it.tag }}</div>
           <div class="mono ib-meta">{{ it.type }} · :{{ it.port }}</div>
@@ -47,6 +50,8 @@ import { useI18n } from 'vue-i18n'
 import Pop from './Pop.vue'
 import Ico from './Ico.vue'
 import Check from './Check.vue'
+import { protoIcon } from '@/plugins/protoIcon'
+import { protoColor } from '@/plugins/colors'
 
 // off: the inbound is switched off -- still assignable, so the client is on it
 // once it comes back, but serving nothing and giving no link until then.
@@ -162,4 +167,5 @@ const summary = computed(() => {
 }
 .ib-off { flex: none; height: 18px; font-size: 10.5px; padding: 0 6px; }
 .ib-empty { padding: 16px; text-align: center; color: var(--text-3); font-size: 12.5px; }
+.ib-proto { flex: none; display: inline-flex; align-items: center; opacity: .95; }
 </style>

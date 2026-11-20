@@ -14,11 +14,19 @@ export const protoColor = (t: string): string =>
     shadowtls: 'var(--amber)',
     anytls: 'var(--emerald)',
     mieru: 'var(--violet)',
+    snell: 'var(--amber)',
     qwdtt: 'var(--sky)',
     wg: 'var(--rose)',
     awg: 'var(--pink)',
     xvless: 'var(--violet)',
-    mixed: 'var(--text-3)',
+    mixed: 'var(--text-2)',
+    socks: 'var(--sky)',
+    http: 'var(--brand)',
+    direct: 'var(--emerald)',
+    tun: 'var(--text-2)',
+    redirect: 'var(--cyan)',
+    tproxy: 'var(--violet)',
+    cloudflared: 'var(--amber)',
   } as Record<string, string>)[t] || 'var(--text-3)'
 
 export const outColor = (t: string): string =>

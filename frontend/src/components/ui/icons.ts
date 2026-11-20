@@ -52,6 +52,32 @@ export const ICONS: Record<string, string> = {
   eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" /><circle cx="12" cy="12" r="3" />',
   eyeOff: '<path d="M10.6 5.8A9.8 9.8 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17.4 17.4 0 0 1-2.4 3.2M14.1 14.1a3 3 0 1 1-4.2-4.2" /><path d="M5.4 5.4 2.5 12s3.5 6.5 9.5 6.5a9.6 9.6 0 0 0 4.6-1.2" transform="translate(0 0)" /><path d="M3 3l18 18" />',
   key: '<circle cx="8" cy="15" r="4.5" /><path d="m11.2 11.8 8.3-8.3M17 6l2.5 2.5M14 9l2 2" />',
+
+  // ---- inbound protocol glyphs (stroke, 24 grid) ----
+  protoVless: '<path d="M7 5h10l-5 14z" /><path d="M9.2 12h5.6" />',
+  protoVmess: '<path d="M12 3.5 19.5 8v8L12 20.5 4.5 16V8Z" /><circle cx="12" cy="12" r="2.2" />',
+  protoTrojan: '<path d="M12 3.5 19 6v5c0 4.4-2.9 7.8-7 9.5C7.9 18.8 5 15.4 5 11V6z" /><circle cx="12" cy="11" r="2" /><path d="M12 13v3.5" />',
+  protoShadowsocks: '<path d="M8 10V8a4 4 0 0 1 8 0v2" /><rect x="6" y="10" width="12" height="10" rx="2" /><path d="M12 14v2.5" />',
+  protoShadowtls: '<path d="M12 3.5 19 6v5c0 4.4-2.9 7.8-7 9.5C7.9 18.8 5 15.4 5 11V6z" /><path d="M9 11h6M12 11v4" />',
+  protoHysteria: '<path d="M4 16c3-1 5-5 5-5s2 4 5 5 5-5 5-5" /><path d="M4 11c3-1 5-5 5-5s2 4 5 5 5-5 5-5" />',
+  protoHysteria2: '<path d="M4 17c3-1 5-5 5-5s2 4 5 5 5-5 5-5" /><path d="M4 12c3-1 5-5 5-5s2 4 5 5 5-5 5-5" /><path d="M4 7c3-1 4.5-3 4.5-3" />',
+  protoTuic: '<circle cx="12" cy="12" r="8.5" /><path d="M8 12h8M12 8v8" /><circle cx="12" cy="12" r="2.5" />',
+  protoNaive: '<rect x="4" y="5" width="16" height="14" rx="2" /><path d="M4 9h16M8 5v4" />',
+  protoAnytls: '<path d="M12 3.5 19 6v5c0 4.4-2.9 7.8-7 9.5C7.9 18.8 5 15.4 5 11V6z" /><path d="M9 15 15 9" />',
+  protoMieru: '<path d="M4 14c2-4 4-6 8-6s6 2 8 6" /><path d="M7 14a5 5 0 0 0 10 0" /><circle cx="9.5" cy="13" r="1" fill="currentColor" stroke="none" /><circle cx="14.5" cy="13" r="1" fill="currentColor" stroke="none" />',
+  protoSnell: '<path d="M13 2 4 14h7l-1 8 9-12h-7z" />',
+  protoMixed: '<path d="M7 7h10v10H7z" /><path d="M4 4h10v10" opacity=".55" /><path d="M10 10h10v10" opacity=".55" />',
+  protoSocks: '<path d="M8 4h5a3 3 0 0 1 3 3v2" /><path d="M8 4v13a3 3 0 0 0 3 3h1" /><path d="M5 10h14" />',
+  protoHttp: '<path d="M8 5v14M16 5v14M6 9h12M6 15h12" />',
+  protoDirect: '<path d="M5 12h12" /><path d="m13 6 6 6-6 6" />',
+  protoTun: '<path d="M4 10h16v4H4z" /><path d="M4 12H2M22 12h-2" /><circle cx="8" cy="12" r="1.2" fill="currentColor" stroke="none" /><circle cx="16" cy="12" r="1.2" fill="currentColor" stroke="none" />',
+  protoRedirect: '<path d="M5 8h10a4 4 0 0 1 0 8H9" /><path d="m8 6 3 2-3 2" /><path d="m12 14-3 2 3 2" />',
+  protoTproxy: '<path d="M5 12h11" /><path d="m12 7 5 5-5 5" /><path d="M5 7v10" opacity=".45" />',
+  protoCloudflared: '<path d="M7 16a4.5 4.5 0 0 1 .6-8.9A5.5 5.5 0 0 1 18 9.5 3.5 3.5 0 0 1 18.5 16Z" />',
+  protoXvless: '<path d="M7 5h10l-5 14z" /><path d="M16.5 4.5 20 8M20 4.5 16.5 8" />',
+  protoQwdtt: '<path d="M8 4h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" /><path d="M10 16h4" /><circle cx="12" cy="10" r="2.2" />',
+  protoWg: '<circle cx="8" cy="12" r="3.2" /><circle cx="16" cy="12" r="3.2" /><path d="M11.2 12h1.6" />',
+  protoAwg: '<circle cx="8" cy="12" r="3.2" /><circle cx="16" cy="12" r="3.2" /><path d="M11.2 12h1.6" /><path d="M6 7c1.5-1 3-1 4 0M14 7c1.5-1 3-1 4 0" />',
 }
 
 export type IconName = keyof typeof ICONS

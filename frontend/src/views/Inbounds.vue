@@ -30,7 +30,7 @@
     <div class="entity-grid">
       <div v-for="item in rows" :key="item.id" class="card inb-card" :class="{ 'inb-off': !isEnabled(item) }">
         <div class="inb-head">
-          <div class="inb-ico" :style="iconStyle(item.type)"><Ico name="inbound" :size="19" /></div>
+          <div class="inb-ico" :style="iconStyle(item.type)" :title="item.type" :aria-label="item.type"><Ico :name="protoIcon(item.type)" :size="19" /></div>
           <div class="inb-title">
             <div class="inb-tag">{{ item.tag }}</div>
             <div class="inb-type" :style="{ color: protoColor(item.type) }">
@@ -108,6 +108,7 @@ import Data from '@/store/modules/data'
 import { createInbound, followListenPort, ExternalInTypes } from '@/types/inbounds'
 import RandomUtil from '@/plugins/randomUtil'
 import { protoColor } from '@/plugins/colors'
+import { protoIcon } from '@/plugins/protoIcon'
 import { HumanReadable } from '@/plugins/utils'
 import Btn from '@/components/ui/Btn.vue'
 import Ico from '@/components/ui/Ico.vue'

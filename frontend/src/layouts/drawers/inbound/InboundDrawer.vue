@@ -2,7 +2,7 @@
   <MDrawer
     :open="visible"
     :width="500"
-    icon="inbound"
+    :icon="protoIcon(inbound.type)"
     :color="protoColor(inbound.type)"
     :title="isNew ? $t('ui.newInbound') : originalTag"
     :sub="subTitle"
@@ -23,13 +23,13 @@
           @change="changeType"
         >
           <optgroup :label="$t('ui.protoGroupSingbox')">
-            <option v-for="p in singboxTypes" :key="p" :value="p">{{ p }}</option>
+            <option v-for="p in singboxTypes" :key="p" :value="p" :data-icon="protoIcon(p)">{{ p }}</option>
           </optgroup>
           <optgroup :label="$t('ui.protoGroupXray')">
-            <option v-for="p in xrayTypes" :key="p" :value="p">{{ p }}</option>
+            <option v-for="p in xrayTypes" :key="p" :value="p" :data-icon="protoIcon(p)">{{ p }}</option>
           </optgroup>
           <optgroup :label="$t('ui.protoGroupExternal')">
-            <option v-for="p in externalTypes" :key="p" :value="p">{{ p }}</option>
+            <option v-for="p in externalTypes" :key="p" :value="p" :data-icon="protoIcon(p)">{{ p }}</option>
           </optgroup>
         </Select>
       </Field>
@@ -160,6 +160,7 @@ import { checkHopInterval } from '@/types/hysteria2'
 import { push } from 'notivue'
 import RandomUtil from '@/plugins/randomUtil'
 import { protoColor } from '@/plugins/colors'
+import { protoIcon } from '@/plugins/protoIcon'
 import MDrawer from '@/components/ui/MDrawer.vue'
 import Field from '@/components/ui/Field.vue'
 import Segmented from '@/components/ui/Segmented.vue'
