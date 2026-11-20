@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"fmt"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -1311,4 +1312,66 @@ func canonical(v interface{}) interface{} {
 func mustJSON(v interface{}) []byte {
 	b, _ := json.Marshal(v)
 	return b
+}
+
+func (s *NodeSyncService) runBidirectionalSync(node *model.Node, client *http.Client) error {
+	// 1. Get remote catalog
+	obj, err := s.nodeGet(node, client, "syncCatalog", nil)
+	if err != nil {
+		return err
+	}
+	var remote bisync.Catalog
+	if err := json.Unmarshal(obj, &remote); err != nil {
+		return common.NewError("bad remote catalog: ", err.Error())
+	}
+
+	// 2. Ingest remote catalog locally
+	if err := bisync.IngestRemoteCatalog(node.Id, &remote); err != nil {
+		return err
+	}
+
+	// 3. Send local catalog to remote
+	local, err := bisync.BuildCatalog()
+	if err != nil {
+		return err
+	}
+	body, _ := json.Marshal(local)
+	form := url.Values{}
+	form.Set("nodeId", fmt.Sprint(node.Id))
+	_, err = s.nodePostRaw(node, client, "syncCatalogApply", body, form)
+	return err
+}
+
+func (s *NodeSyncService) nodePostRaw(n *model.Node, client *http.Client, action string, body []byte, form url.Values) (json.RawMessage, error) {
+	// Simplified: reuse nodePost style but with JSON body
+	req, err := http.NewRequest("POST", n.BaseURL+n.WebPath+"api/"+action, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	// Add token if needed
+	if n.Token != "" {
+		req.Header.Set("Authorization", "Bearer "+n.Token)
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	data, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != 200 {
+		return nil, common.NewError("node returned ", resp.Status)
+	}
+	var env struct {
+		Success bool            `json:"success"`
+		Msg     string          `json:"msg"`
+		Obj     json.RawMessage `json:"obj"`
+	}
+	if err := json.Unmarshal(data, &env); err != nil {
+		return nil, err
+	}
+	if !env.Success {
+		return nil, common.NewError(env.Msg)
+	}
+	return env.Obj, nil
 }
