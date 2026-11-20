@@ -73,6 +73,8 @@ func (a *APIHandler) postHandler(c *gin.Context) {
 		a.ApiService.ScanRealityTarget(c)
 	case "generateRealityKey":
 		a.ApiService.GenerateRealityKey(c)
+	case "generateSelfSigned":
+		a.ApiService.GenerateSelfSigned(c)
 	case "listTombstones":
 		a.ApiService.ListTombstones(c)
 	case "purgeTombstone":
