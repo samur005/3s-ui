@@ -1351,3 +1351,26 @@ func (a *ApiService) GenerateSelfSigned(c *gin.Context) {
 	}
 	jsonObj(c, map[string]string{"certFile": certPath, "keyFile": keyPath}, nil)
 }
+
+func (a *ApiService) SyncCatalog(c *gin.Context) {
+	cat, err := bisync.BuildCatalog()
+	if err != nil {
+		jsonMsg(c, "syncCatalog", err)
+		return
+	}
+	jsonObj(c, cat, nil)
+}
+
+func (a *ApiService) SyncCatalogApply(c *gin.Context) {
+	var remote bisync.Catalog
+	if err := c.ShouldBindJSON(&remote); err != nil {
+		jsonMsg(c, "syncCatalogApply", common.NewError("invalid catalog"))
+		return
+	}
+	nodeID, _ := strconv.ParseUint(c.PostForm("nodeId"), 10, 64)
+	if err := bisync.IngestRemoteCatalog(uint(nodeID), &remote); err != nil {
+		jsonMsg(c, "syncCatalogApply", err)
+		return
+	}
+	jsonMsg(c, "syncCatalogApply", nil)
+}
