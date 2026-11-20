@@ -356,3 +356,11 @@ func AnyRouteThroughCore(db *gorm.DB) bool {
 	}
 	return false
 }
+
+// ResetCoreFingerprintForTest clears the handoff fingerprint so CoreNeedsRestart
+// reports dirty. Tests only.
+func ResetCoreFingerprintForTest() {
+	coreMu.Lock()
+	coreFP = ""
+	coreMu.Unlock()
+}
