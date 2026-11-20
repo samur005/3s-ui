@@ -7,6 +7,7 @@ import (
 
 	"github.com/samur005/3s-ui/database"
 	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/logger"
 	"github.com/samur005/3s-ui/util/common"
 	"github.com/samur005/3s-ui/xray"
 
@@ -18,7 +19,7 @@ func init() {
 		Type:   xray.TypeVLESS,
 		Engine: EngineXray,
 		Normalize: func(tx *gorm.DB, id uint, options, stored json.RawMessage) (json.RawMessage, error) {
-			raw, err := xray.NormalizeVless(options, stored)
+			raw, err := xray.NormalizeVless(id, options, stored)
 			if err != nil {
 				return nil, err
 			}
@@ -53,16 +54,34 @@ type XrayService struct{}
 
 // ApplyStored restarts sing-box when the loopback handoff fragment changed,
 // then rebuilds the Xray process. Core first so SOCKS is listening before
-// Xray dials it.
+// Xray dials it. If the core cannot provide the handoff listeners while any
+// xvless has routeThroughCore, Xray is stopped (fail closed) — never left on
+// a freedom default for those inbounds.
 func (s *XrayService) ApplyStored() {
 	var cs ConfigService
-	if xray.CoreNeedsRestart() && cs.CoreRunning() {
-		if err := cs.RestartCore(); err != nil {
-			// Still try to Apply Xray; connections may fail until core is up.
+	db := database.GetDB()
+	needCore := xray.AnyRouteThroughCore(db)
+	if xray.CoreNeedsRestart() {
+		var err error
+		if cs.CoreRunning() {
+			err = cs.RestartCore()
+		} else if needCore {
+			err = cs.StartCore()
+		}
+		if err != nil && needCore {
+			logger.Warning("xray: sing-box handoff restart failed, stopping Xray: ", err)
+			xray.Get().Stop()
+			return
+		}
+	} else if needCore && !cs.CoreRunning() {
+		if err := cs.StartCore(); err != nil {
+			logger.Warning("xray: sing-box not running for handoff, stopping Xray: ", err)
+			xray.Get().Stop()
+			return
 		}
 	}
 	xray.Get().Apply(func() ([]byte, error) {
-		return xray.BuildConfig(database.GetDB())
+		return xray.BuildConfig(db)
 	})
 }
 

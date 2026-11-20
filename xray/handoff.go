@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net"
 	"strings"
 	"sync"
 
@@ -20,10 +21,15 @@ import (
 //
 // SOCKS cannot carry the original client IP or the VLESS user email into
 // sing-box; rules that depend on those see 127.0.0.1 and no user.
+//
+// The mixed inbound reuses the xvless row's tag so operator inbound-tag rules
+// match. Tags are unique across all panel inbound rows (tagFreeAcross), and
+// GetAllConfig already excludes xvless, so the injected mixed does not collide
+// with a sing-box inbound of the same tag under normal saves.
 
 const (
 	handoffPortBase = 41200
-	handoffPortSpan = 8000 // ports 41200..49199
+	handoffPortSpan = 8000 // 41200..49199
 )
 
 var (
@@ -31,8 +37,12 @@ var (
 	coreFP string
 )
 
-// HandoffPort is a stable loopback port for inbound id.
-func HandoffPort(id uint) int {
+// HandoffPort returns the stored loopback port, or a deterministic fallback
+// from id when older rows lack handoffPort (should be filled by Normalize).
+func HandoffPort(id uint, stored int) int {
+	if stored >= handoffPortBase && stored < handoffPortBase+handoffPortSpan {
+		return stored
+	}
 	if id == 0 {
 		return handoffPortBase
 	}
@@ -50,7 +60,6 @@ func randomSecret(n int) string {
 	return hex.EncodeToString(b)
 }
 
-// ensureHandoffAuth fills SOCKS credentials once; kept across edits.
 func ensureHandoffAuth(c *VlessConfig, prev VlessConfig) {
 	if c.HandoffUser == "" {
 		c.HandoffUser = prev.HandoffUser
@@ -66,6 +75,71 @@ func ensureHandoffAuth(c *VlessConfig, prev VlessConfig) {
 	}
 }
 
+// ensureHandoffPort keeps a stable port in options. It avoids colliding with
+// other xvless handoffs and with this inbound's own public listen_port when
+// that listen is on all interfaces or loopback.
+func ensureHandoffPort(c *VlessConfig, prev VlessConfig, id uint, others []handoffRow) error {
+	if c.HandoffPort == 0 {
+		c.HandoffPort = prev.HandoffPort
+	}
+	taken := map[int]bool{}
+	for _, o := range others {
+		if o.ID == id {
+			continue
+		}
+		oc, err := DecodeVless(o.Options)
+		if err != nil {
+			continue
+		}
+		taken[HandoffPort(o.ID, oc.HandoffPort)] = true
+		// Also reserve the sibling's public listen port if it binds loopback/all.
+		if oc.ListenPort > 0 && listenConflictsWithHandoff(oc.Listen) {
+			taken[oc.ListenPort] = true
+		}
+	}
+	if c.ListenPort > 0 && listenConflictsWithHandoff(c.Listen) {
+		taken[c.ListenPort] = true
+	}
+	port := c.HandoffPort
+	if port >= handoffPortBase && port < handoffPortBase+handoffPortSpan && !taken[port] && portFreeOnLoopback(port) {
+		c.HandoffPort = port
+		return nil
+	}
+	// Prefer id-based slot, then scan the span.
+	candidates := []int{}
+	if id != 0 {
+		candidates = append(candidates, handoffPortBase+int(id%uint(handoffPortSpan)))
+	}
+	for i := 0; i < handoffPortSpan; i++ {
+		candidates = append(candidates, handoffPortBase+i)
+	}
+	for _, p := range candidates {
+		if taken[p] {
+			continue
+		}
+		if !portFreeOnLoopback(p) {
+			continue
+		}
+		c.HandoffPort = p
+		return nil
+	}
+	return fmt.Errorf("no free loopback handoff port in %d–%d", handoffPortBase, handoffPortBase+handoffPortSpan-1)
+}
+
+func listenConflictsWithHandoff(listen string) bool {
+	l := strings.TrimSpace(listen)
+	return l == "" || l == "0.0.0.0" || l == "::" || l == "127.0.0.1" || l == "::1"
+}
+
+func portFreeOnLoopback(port int) bool {
+	ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	if err != nil {
+		return false
+	}
+	_ = ln.Close()
+	return true
+}
+
 type handoffRow struct {
 	ID      uint
 	Tag     string
@@ -74,6 +148,9 @@ type handoffRow struct {
 }
 
 func loadHandoffRows(db *gorm.DB) ([]handoffRow, error) {
+	if db == nil {
+		return nil, fmt.Errorf("no database")
+	}
 	var rows []handoffRow
 	err := db.Table("inbounds").
 		Select("id", "tag", "enable", "options").
@@ -82,12 +159,27 @@ func loadHandoffRows(db *gorm.DB) ([]handoffRow, error) {
 	return rows, err
 }
 
-// coreFragment builds the sing-box mixed inbounds and leading route rules for
-// every enabled xvless that routes through the core. The mixed inbound reuses
-// the panel inbound's tag so operator rules that match on that inbound apply.
-func coreFragment(rows []handoffRow) (mixed []json.RawMessage, rules []json.RawMessage) {
+// AllocateHandoffFields fills auth+port during Normalize (id may be 0 for new).
+func AllocateHandoffFields(c *VlessConfig, prev VlessConfig, id uint) error {
+	ensureHandoffAuth(c, prev)
+	if !c.RouteThroughCore {
+		// Keep prior port/auth so toggling back on is stable.
+		if c.HandoffPort == 0 {
+			c.HandoffPort = prev.HandoffPort
+		}
+		return nil
+	}
+	others, err := loadHandoffRows(database.GetDB())
+	if err != nil {
+		others = nil
+	}
+	return ensureHandoffPort(c, prev, id, others)
+}
+
+func coreFragment(rows []handoffRow) (mixed []json.RawMessage, rules []json.RawMessage, err error) {
 	var tags []string
 	var forced []json.RawMessage
+	ports := map[int]string{}
 	for _, row := range rows {
 		if !row.Enable {
 			continue
@@ -100,14 +192,19 @@ func coreFragment(rows []handoffRow) (mixed []json.RawMessage, rules []json.RawM
 		if tag == "" {
 			continue
 		}
-		port := HandoffPort(row.ID)
+		if cfg.HandoffUser == "" || cfg.HandoffPass == "" {
+			return nil, nil, fmt.Errorf("xray handoff: inbound %q missing SOCKS credentials", tag)
+		}
+		port := HandoffPort(row.ID, cfg.HandoffPort)
+		if other, ok := ports[port]; ok {
+			return nil, nil, fmt.Errorf("xray handoff: port %d used by %q and %q", port, other, tag)
+		}
+		ports[port] = tag
 		obj := map[string]any{
 			"type":        "mixed",
 			"tag":         tag,
 			"listen":      "127.0.0.1",
 			"listen_port": port,
-			// Auth stops other local processes from using the handoff; the
-			// listener is loopback-only as the primary boundary.
 			"users": []map[string]any{{
 				"username": cfg.HandoffUser,
 				"password": cfg.HandoffPass,
@@ -124,15 +221,18 @@ func coreFragment(rows []handoffRow) (mixed []json.RawMessage, rules []json.RawM
 		}
 	}
 	if len(mixed) == 0 {
-		return nil, nil
+		return nil, nil, nil
 	}
 	sniff, _ := json.Marshal(map[string]any{"inbound": tags, "action": "sniff"})
 	rules = append([]json.RawMessage{sniff}, forced...)
-	return mixed, rules
+	return mixed, rules, nil
 }
 
 func fingerprint(rows []handoffRow) string {
-	mixed, rules := coreFragment(rows)
+	mixed, rules, err := coreFragment(rows)
+	if err != nil {
+		return "err:" + err.Error()
+	}
 	var b strings.Builder
 	for _, m := range mixed {
 		b.Write(m)
@@ -155,7 +255,10 @@ func InjectCore(inbounds []json.RawMessage, route json.RawMessage) ([]json.RawMe
 }
 
 func injectInto(rows []handoffRow, inbounds []json.RawMessage, route json.RawMessage) ([]json.RawMessage, json.RawMessage, error) {
-	mixed, rules := coreFragment(rows)
+	mixed, rules, err := coreFragment(rows)
+	if err != nil {
+		return inbounds, route, err
+	}
 	coreMu.Lock()
 	coreFP = fingerprint(rows)
 	coreMu.Unlock()
@@ -213,4 +316,22 @@ func CoreNeedsRestart() bool {
 	coreMu.Lock()
 	defer coreMu.Unlock()
 	return coreFP != fingerprint(rows)
+}
+
+// AnyRouteThroughCore reports whether any enabled xvless hands off to sing-box.
+func AnyRouteThroughCore(db *gorm.DB) bool {
+	rows, err := loadHandoffRows(db)
+	if err != nil {
+		return false
+	}
+	for _, row := range rows {
+		if !row.Enable {
+			continue
+		}
+		cfg, err := DecodeVless(row.Options)
+		if err == nil && cfg.RouteThroughCore {
+			return true
+		}
+	}
+	return false
 }

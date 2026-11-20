@@ -22,8 +22,9 @@ type ClientCred struct {
 }
 
 // BuildConfig writes a full Xray JSON config from every local enabled xvless
-// inbound and their bound clients. outbounds are freedom+blackhole so traffic
-// leaves the box directly; reverse portal/bridge is not implemented.
+// inbound and their bound clients. Default outbound is blackhole (fail closed);
+// routeThroughCore hands traffic to sing-box over loopback SOCKS, otherwise an
+// explicit rule uses freedom. Reverse portal/bridge is not implemented.
 func BuildConfig(db *gorm.DB) ([]byte, error) {
 	var rows []model.Inbound
 	if err := db.Model(model.Inbound{}).
@@ -32,9 +33,11 @@ func BuildConfig(db *gorm.DB) ([]byte, error) {
 		return nil, err
 	}
 	inbounds := make([]map[string]any, 0, len(rows))
+	// blackhole is first so unmatched traffic never falls through to freedom
+	// when routeThroughCore is on (Xray's default outbound is the first one).
 	outbounds := []map[string]any{
-		{"protocol": "freedom", "tag": "direct"},
 		{"protocol": "blackhole", "tag": "block"},
+		{"protocol": "freedom", "tag": "direct"},
 	}
 	var routeRules []map[string]any
 	for _, row := range rows {
@@ -54,12 +57,21 @@ func BuildConfig(db *gorm.DB) ([]byte, error) {
 		}
 		inbounds = append(inbounds, ib)
 		if cfg.RouteThroughCore {
+			if cfg.HandoffUser == "" || cfg.HandoffPass == "" {
+				return nil, fmt.Errorf("xray: inbound %s: routeThroughCore needs handoff credentials", row.Tag)
+			}
 			otag := HandoffOutboundTag(row.Id)
 			outbounds = append(outbounds, socksOutbound(otag, row.Id, cfg))
 			routeRules = append(routeRules, map[string]any{
 				"type":        "field",
 				"inboundTag":  []string{row.Tag},
 				"outboundTag": otag,
+			})
+		} else {
+			routeRules = append(routeRules, map[string]any{
+				"type":        "field",
+				"inboundTag":  []string{row.Tag},
+				"outboundTag": "direct",
 			})
 		}
 	}
@@ -71,7 +83,8 @@ func BuildConfig(db *gorm.DB) ([]byte, error) {
 		"outbounds": outbounds,
 		// Panel route rules are NOT translated into Xray. When RouteThroughCore
 		// is on, traffic is handed to sing-box over loopback SOCKS; otherwise
-		// freedom/blackhole only. Reverse portal/bridge is not implemented.
+		// an explicit rule sends the inbound to freedom. Default outbound is
+		// blackhole (fail closed). Reverse portal/bridge is not implemented.
 		"routing": map[string]any{
 			"domainStrategy": "AsIs",
 			"rules":          routeRules,
@@ -83,14 +96,12 @@ func BuildConfig(db *gorm.DB) ([]byte, error) {
 func socksOutbound(tag string, id uint, c VlessConfig) map[string]any {
 	server := map[string]any{
 		"address": "127.0.0.1",
-		"port":    HandoffPort(id),
+		"port":    HandoffPort(id, c.HandoffPort),
 	}
-	if c.HandoffUser != "" {
-		server["users"] = []map[string]any{{
-			"user": c.HandoffUser,
-			"pass": c.HandoffPass,
-		}}
-	}
+	server["users"] = []map[string]any{{
+		"user": c.HandoffUser,
+		"pass": c.HandoffPass,
+	}}
 	return map[string]any{
 		"protocol": "socks",
 		"tag":      tag,

@@ -10,11 +10,11 @@ import (
 )
 
 func TestNormalizeVlessDefaultsAndRefuses(t *testing.T) {
-	raw, err := NormalizeVless(json.RawMessage(`{"listen_port":443,"method":"xhttp","security":"reality"}`), nil)
+	raw, err := NormalizeVless(0, json.RawMessage(`{"listen_port":443,"method":"xhttp","security":"reality"}`), nil)
 	if err == nil {
 		t.Fatal("reality without keys should fail")
 	}
-	raw, err = NormalizeVless(json.RawMessage(`{
+	raw, err = NormalizeVless(0, json.RawMessage(`{
 		"listen_port":443,"method":"xhttp","security":"reality",
 		"realityDest":"www.cloudflare.com:443","realityPrivateKey":"abc",
 		"realityServerNames":["www.cloudflare.com"],"path":"/api"
@@ -26,15 +26,15 @@ func TestNormalizeVlessDefaultsAndRefuses(t *testing.T) {
 	if cfg.XHTTPMode != "auto" || cfg.Method != "xhttp" || cfg.Decryption != "none" {
 		t.Fatalf("%+v", cfg)
 	}
-	_, err = NormalizeVless(json.RawMessage(`{"listen_port":443,"method":"mkcp","security":"reality"}`), nil)
+	_, err = NormalizeVless(0, json.RawMessage(`{"listen_port":443,"method":"mkcp","security":"reality"}`), nil)
 	if err == nil || !strings.Contains(err.Error(), "REALITY") {
 		t.Fatalf("mkcp+reality: %v", err)
 	}
-	_, err = NormalizeVless(json.RawMessage(`{"listen_port":443,"method":"ws","flow":"xtls-rprx-vision"}`), nil)
+	_, err = NormalizeVless(0, json.RawMessage(`{"listen_port":443,"method":"ws","flow":"xtls-rprx-vision"}`), nil)
 	if err == nil {
 		t.Fatal("vision on ws should fail")
 	}
-	_, err = NormalizeVless(json.RawMessage(`{"listen_port":443,"method":"tcp","security":"tls","certFile":"/c","keyFile":"/k","flow":"xtls-rprx-vision"}`), nil)
+	_, err = NormalizeVless(0, json.RawMessage(`{"listen_port":443,"method":"tcp","security":"tls","certFile":"/c","keyFile":"/k","flow":"xtls-rprx-vision"}`), nil)
 	if err != nil {
 		t.Fatal(err)
 	}

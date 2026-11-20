@@ -87,6 +87,7 @@ type VlessConfig struct {
 	// once; not shown in the UI and never put in share links.
 	HandoffUser string `json:"handoffUser,omitempty"`
 	HandoffPass string `json:"handoffPass,omitempty"`
+	HandoffPort int    `json:"handoffPort,omitempty"`
 }
 
 func DecodeVless(raw json.RawMessage) (VlessConfig, error) {
@@ -114,13 +115,12 @@ func oneOf(v string, list []string) bool {
 }
 
 // NormalizeVless fills defaults and validates against official Xray rules.
-func NormalizeVless(options, stored json.RawMessage) (json.RawMessage, error) {
+func NormalizeVless(id uint, options, stored json.RawMessage) (json.RawMessage, error) {
 	prev, _ := DecodeVless(stored)
 	c, err := DecodeVless(options)
 	if err != nil {
 		return nil, err
 	}
-	ensureHandoffAuth(&c, prev)
 	if !jsonHasKey(options, "routeThroughCore") {
 		if jsonHasKey(stored, "routeThroughCore") {
 			c.RouteThroughCore = prev.RouteThroughCore
@@ -135,6 +135,9 @@ func NormalizeVless(options, stored json.RawMessage) (json.RawMessage, error) {
 	}
 	if strings.ContainsAny(c.OutboundTag, "\r\n\t") {
 		return nil, fmt.Errorf("outboundTag must not contain whitespace control characters")
+	}
+	if err := AllocateHandoffFields(&c, prev, id); err != nil {
+		return nil, err
 	}
 	// Merge: empty string/0 from the form keeps the stored value for keys the
 	// operator is not editing. Port 0 means "unset" and falls back.

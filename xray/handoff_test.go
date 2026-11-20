@@ -7,7 +7,7 @@ import (
 )
 
 func TestNormalizeDefaultsRouteThroughCore(t *testing.T) {
-	raw, err := NormalizeVless(json.RawMessage(`{"listen_port":443,"method":"raw","security":"none"}`), nil)
+	raw, err := NormalizeVless(1, json.RawMessage(`{"listen_port":443,"method":"raw","security":"none"}`), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -18,8 +18,11 @@ func TestNormalizeDefaultsRouteThroughCore(t *testing.T) {
 	if c.HandoffUser == "" || c.HandoffPass == "" {
 		t.Fatal("expected handoff credentials")
 	}
-	// Explicit false sticks
-	raw, err = NormalizeVless(json.RawMessage(`{"listen_port":443,"method":"raw","routeThroughCore":false}`), raw)
+	if c.HandoffPort < handoffPortBase || c.HandoffPort >= handoffPortBase+handoffPortSpan {
+		t.Fatalf("handoff port %d", c.HandoffPort)
+	}
+	port := c.HandoffPort
+	raw, err = NormalizeVless(1, json.RawMessage(`{"listen_port":443,"method":"raw","routeThroughCore":false}`), raw)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -28,13 +31,13 @@ func TestNormalizeDefaultsRouteThroughCore(t *testing.T) {
 		t.Fatal("expected false")
 	}
 	user := c.HandoffUser
-	raw, err = NormalizeVless(json.RawMessage(`{"listen_port":443,"method":"raw","routeThroughCore":false}`), raw)
+	raw, err = NormalizeVless(1, json.RawMessage(`{"listen_port":443,"method":"raw","routeThroughCore":true}`), raw)
 	if err != nil {
 		t.Fatal(err)
 	}
 	c, _ = DecodeVless(raw)
-	if c.HandoffUser != user {
-		t.Fatal("handoff user must stay stable across edits")
+	if c.HandoffUser != user || c.HandoffPort != port {
+		t.Fatalf("handoff must stay stable: user %s→%s port %d→%d", user, c.HandoffUser, port, c.HandoffPort)
 	}
 }
 
@@ -43,7 +46,7 @@ func TestInjectCoreAddsMixedAndSniff(t *testing.T) {
 		ID: 7, Tag: "xv1", Enable: true,
 		Options: mustJSON(VlessConfig{
 			ListenPort: 443, Method: "raw", Security: "none", Decryption: "none",
-			RouteThroughCore: true, HandoffUser: "u", HandoffPass: "p", OutboundTag: "proxy",
+			RouteThroughCore: true, HandoffUser: "u", HandoffPass: "p", HandoffPort: 41207, OutboundTag: "proxy",
 		}),
 	}, {
 		ID: 8, Tag: "xv-off", Enable: true,
@@ -63,8 +66,13 @@ func TestInjectCoreAddsMixedAndSniff(t *testing.T) {
 	if mixed["type"] != "mixed" || mixed["tag"] != "xv1" || mixed["listen"] != "127.0.0.1" {
 		t.Fatalf("%v", mixed)
 	}
-	if int(mixed["listen_port"].(float64)) != HandoffPort(7) {
+	if int(mixed["listen_port"].(float64)) != 41207 {
 		t.Fatalf("port %v", mixed["listen_port"])
+	}
+	users := mixed["users"].([]any)
+	u0 := users[0].(map[string]any)
+	if u0["username"] != "u" || u0["password"] != "p" {
+		t.Fatalf("users %v", users)
 	}
 	var r struct {
 		Rules []map[string]any `json:"rules"`
@@ -84,10 +92,32 @@ func TestInjectCoreAddsMixedAndSniff(t *testing.T) {
 func TestInjectStepsAsideForTakenTag(t *testing.T) {
 	rows := []handoffRow{{
 		ID: 1, Tag: "taken", Enable: true,
-		Options: mustJSON(VlessConfig{ListenPort: 1, RouteThroughCore: true, HandoffUser: "u", HandoffPass: "p"}),
+		Options: mustJSON(VlessConfig{ListenPort: 1, RouteThroughCore: true, HandoffUser: "u", HandoffPass: "p", HandoffPort: 41201}),
 	}}
 	_, _, err := injectInto(rows, []json.RawMessage{json.RawMessage(`{"type":"mixed","tag":"taken"}`)}, nil)
 	if err == nil || !strings.Contains(err.Error(), "taken") {
+		t.Fatalf("got %v", err)
+	}
+}
+
+func TestInjectRejectsMissingCreds(t *testing.T) {
+	rows := []handoffRow{{
+		ID: 1, Tag: "xv", Enable: true,
+		Options: mustJSON(VlessConfig{ListenPort: 1, RouteThroughCore: true, HandoffPort: 41201}),
+	}}
+	_, _, err := injectInto(rows, nil, nil)
+	if err == nil || !strings.Contains(err.Error(), "credentials") {
+		t.Fatalf("got %v", err)
+	}
+}
+
+func TestInjectRejectsPortCollision(t *testing.T) {
+	rows := []handoffRow{
+		{ID: 1, Tag: "a", Enable: true, Options: mustJSON(VlessConfig{RouteThroughCore: true, HandoffUser: "u", HandoffPass: "p", HandoffPort: 41250})},
+		{ID: 2, Tag: "b", Enable: true, Options: mustJSON(VlessConfig{RouteThroughCore: true, HandoffUser: "u", HandoffPass: "p", HandoffPort: 41250})},
+	}
+	_, _, err := injectInto(rows, nil, nil)
+	if err == nil || !strings.Contains(err.Error(), "41250") {
 		t.Fatalf("got %v", err)
 	}
 }
