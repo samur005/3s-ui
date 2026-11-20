@@ -67,7 +67,13 @@
 
     <template v-if="data.security === 'tls'">
       <div class="grid2">
-        <Field :label="$t('xray.certFile')"><input class="input mono" v-model="data.certFile" /></Field>
+        <Field :label="$t('xray.certFile')">
+          <div style="display:flex; gap:6px;">
+            <input class="input mono" v-model="data.certFile" style="flex:1;" />
+            <Btn sm @click="usePanelCert">Панель</Btn>
+            <Btn sm :loading="genCert" @click="generateSelfSigned"><Ico name="key" :size="14" /></Btn>
+          </div>
+        </Field>
         <Field :label="$t('xray.keyFile')"><input class="input mono" v-model="data.keyFile" /></Field>
       </div>
       <Field label="SNI"><input class="input mono" v-model="data.serverName" /></Field>
