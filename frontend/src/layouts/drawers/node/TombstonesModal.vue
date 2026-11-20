@@ -22,7 +22,7 @@
         <div style="font-size:11px; color:var(--text-3);">{{ new Date(r.deletedAt * 1000).toLocaleDateString() }}</div>
       </div>
       <div style="margin-top:10px;">
-        <Btn sm variant="danger" :loading="purging === r.id" @click="purge(r)">
+        <Btn sm variant="primary" :loading="purging === r.id" @click="purge(r)">
           {{ $t('node.syncConfirmDelete') || 'Confirm permanent delete' }}
         </Btn>
       </div>
