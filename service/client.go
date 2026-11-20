@@ -147,6 +147,8 @@ func (s *ClientService) Save(tx *gorm.DB, act string, data json.RawMessage, host
 		}
 		if act == "new" {
 			defaultClientJSONFields(&client)
+			// Auto-bind synced inbounds if setting is on
+			autoBindSyncedInbounds(&client)
 		}
 		if act == "edit" {
 			// Only a name actually changing is validated, so a duplicate that
@@ -1857,4 +1859,32 @@ func linkRemark(prefix bool, remark string) string {
 		return ""
 	}
 	return remark
+}
+
+func autoBindSyncedInbounds(c *model.Client) {
+	db := database.GetDB()
+	var val string
+	db.Model(&model.Setting{}).Where("`key` = ?", "autoBindSyncedInbounds").Select("value").Scan(&val)
+	if val != "true" {
+		return
+	}
+	var ids []uint
+	db.Model(&model.Inbound{}).Where("sync_uid <> '' AND enable = 1 AND deleted_at = 0").Pluck("id", &ids)
+	if len(ids) == 0 {
+		return
+	}
+	// Merge with any already selected
+	var existing []uint
+	_ = json.Unmarshal(c.Inbounds, &existing)
+	seen := map[uint]bool{}
+	for _, id := range existing {
+		seen[id] = true
+	}
+	for _, id := range ids {
+		if !seen[id] {
+			existing = append(existing, id)
+		}
+	}
+	b, _ := json.Marshal(existing)
+	c.Inbounds = b
 }
