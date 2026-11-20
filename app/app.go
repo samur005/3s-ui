@@ -63,6 +63,10 @@ func (a *APP) Init() error {
 	var certService service.CertService
 	certService.ArchiveLegacy()
 
+	// qWDTT used to be configured on its own page; it is an inbound now.
+	var qwdttService service.QwdttService
+	qwdttService.MigrateToInbound()
+
 	a.core = core.NewCore()
 
 	a.cronJob = cronjob.NewCronJob()

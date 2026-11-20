@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/database/model"
 	"github.com/samur005/3s-ui/qwdtt"
 )
 
@@ -81,11 +83,12 @@ func TestGetConfigInjectsQwdttTun(t *testing.T) {
 func TestQwdttServiceSaveAndLink(t *testing.T) {
 	qwdttDB(t)
 	var svc QwdttService
+	alice := &model.Client{Name: "alice", Enable: true, Inbounds: json.RawMessage(`[]`)}
 
 	if err := svc.Save(`{"workers": 999}`); err == nil {
 		t.Error("an invalid config was accepted")
 	}
-	if got := svc.ClientLink("alice"); got != "" {
+	if got := svc.ClientLink(alice); got != "" {
 		t.Errorf("link while disabled: %q", got)
 	}
 
@@ -101,7 +104,11 @@ func TestQwdttServiceSaveAndLink(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Cleanup(qwdtt.Get().Shutdown)
-	link := svc.ClientLink("alice")
+	if got := svc.ClientLink(alice); got != "" {
+		t.Errorf("a client that does not ride the inbound got a link: %q", got)
+	}
+	alice.Inbounds = json.RawMessage(`[` + strconv.Itoa(int(qwdtt.InboundID())) + `]`)
+	link := svc.ClientLink(alice)
 	if !strings.HasPrefix(link, "qwdtt://config?") || !strings.Contains(link, "peer=1.2.3.4%3A56000") {
 		t.Errorf("link = %q", link)
 	}

@@ -12,7 +12,10 @@ import (
 	"github.com/samur005/3s-ui/qwdtt"
 )
 
-func qwdttFixture(t *testing.T, mut func(*qwdtt.Config)) {
+// qwdttFixture sets up two clients and a qWDTT inbound. The clients named in
+// bound ride the inbound (all of them when none is named): riding is how a
+// client gets the link now.
+func qwdttFixture(t *testing.T, mut func(*qwdtt.Config), bound ...string) {
 	t.Helper()
 	t.Setenv(qwdtt.EnvVkHash, "")
 	dir := t.TempDir()
@@ -39,6 +42,13 @@ func qwdttFixture(t *testing.T, mut func(*qwdtt.Config)) {
 		mut(&c)
 	}
 	if _, err := qwdtt.Save(c); err != nil {
+		t.Fatal(err)
+	}
+	if len(bound) == 0 {
+		bound = []string{"alice", "bob"}
+	}
+	ids, _ := json.Marshal([]uint{qwdtt.InboundID()})
+	if err := database.GetDB().Model(model.Client{}).Where("name IN ?", bound).Update("inbounds", json.RawMessage(ids)).Error; err != nil {
 		t.Fatal(err)
 	}
 }
@@ -102,9 +112,7 @@ func TestSubscriptionOmitsQwdttWhenOffOrNotGranted(t *testing.T) {
 		t.Errorf("disabled qWDTT still handed out a link: %q", l)
 	}
 
-	qwdttFixture(t, func(c *qwdtt.Config) {
-		c.AccessMode, c.Clients = qwdtt.AccessSelected, []string{"alice"}
-	})
+	qwdttFixture(t, nil, "alice")
 	if l := qwdttLines(t, "alice"); len(l) != 1 {
 		t.Errorf("selected client got %d links", len(l))
 	}

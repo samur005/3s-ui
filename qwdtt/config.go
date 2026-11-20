@@ -68,17 +68,7 @@ type Config struct {
 	RouteThroughCore bool `json:"routeThroughCore"`
 	// OutboundTag, when set, forces every qWDTT client through that outbound.
 	OutboundTag string `json:"outboundTag"`
-
-	// AccessMode is "all" (every enabled client gets the link) or "selected"
-	// (only the clients named in Clients).
-	AccessMode string   `json:"accessMode"`
-	Clients    []string `json:"clients"`
 }
-
-const (
-	AccessAll      = "all"
-	AccessSelected = "selected"
-)
 
 // Default returns the configuration of a fresh install.
 func Default() Config {
@@ -91,7 +81,6 @@ func Default() Config {
 		Workers:          16,
 		AutoVkHash:       true,
 		RouteThroughCore: true,
-		AccessMode:       AccessAll,
 	}
 }
 
@@ -112,12 +101,6 @@ func (c Config) Merge() Config {
 	}
 	if c.Workers == 0 {
 		c.Workers = d.Workers
-	}
-	if c.AccessMode != AccessSelected {
-		c.AccessMode = AccessAll
-	}
-	if c.Clients == nil {
-		c.Clients = []string{}
 	}
 	return c
 }
@@ -334,19 +317,6 @@ func (c Config) Subscription() (Subscription, error) {
 			Workers: c.Workers, Port: c.ClientPort, Password: pass,
 		}},
 	}, nil
-}
-
-// HasAccess reports whether the named client is given the qWDTT link.
-func (c Config) HasAccess(clientName string) bool {
-	if c.AccessMode != AccessSelected {
-		return true
-	}
-	for _, n := range c.Clients {
-		if n == clientName {
-			return true
-		}
-	}
-	return false
 }
 
 func (c Config) encode() string {
