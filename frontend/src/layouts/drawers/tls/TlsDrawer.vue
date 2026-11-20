@@ -161,6 +161,26 @@
           <Ico name="key" :size="14" /> {{ $t('actions.generate') }}
         </Btn>
       </div>
+      <Field label="Цель (Target)">
+        <div style="display:flex; gap:6px;">
+          <input class="input mono" v-model="scanDomain" placeholder="example.com" style="flex:1;" />
+          <Btn sm :loading="scanning" @click="scanTarget">Сканировать</Btn>
+        </div>
+      </Field>
+      <div v-if="scanResult" style="background:var(--surface-2); border-radius:8px; padding:12px; margin-bottom:12px; font-size:13px;">
+        <div style="font-weight:600; color: var(--emerald); margin-bottom:6px;" v-if="scanResult.ok">✓ Подходит</div>
+        <div style="font-weight:600; color: var(--rose);" v-else>✗ {{ scanResult.error }}</div>
+        <div v-if="scanResult.ok" class="mono" style="line-height:1.6; color:var(--text-2);">
+          SNI: {{ scanResult.sni }}<br>
+          TLS: {{ scanResult.tlsVersion }}<br>
+          ALPN: {{ scanResult.alpn || '—' }}<br>
+          Cipher: {{ scanResult.cipher }}<br>
+          Cert: {{ scanResult.certSubject }} ({{ scanResult.certIssuer }})<br>
+          Expires: {{ scanResult.certExpiry }}<br>
+          Chain: {{ scanResult.chainBytes }} B<br>
+          Latency: {{ scanResult.latencyMs }} ms
+        </div>
+      </div>
       <div class="grid2">
         <Field :label="$t('types.shdwTls.hs')">
           <input class="input mono" v-model="realityHandshakeServer" />
@@ -566,6 +586,20 @@ const clientKeyText = pemLines(outTls, 'client_key')
 const trustedClientCertText = pemLines(inTls, 'client_certificate')
 
 // ---------------- reality ----------------
+const scanDomain = ref('')
+const scanning = ref(false)
+const scanResult = ref<any>(null)
+
+const scanTarget = async () => {
+  if (!scanDomain.value) return
+  scanning.value = true
+  scanResult.value = null
+  const msg = await HttpUtils.post('api/scanRealityTarget', { domain: scanDomain.value })
+  scanning.value = false
+  if (msg?.success) scanResult.value = msg.obj
+  else scanResult.value = { ok: false, error: msg?.msg || 'error' }
+}
+
 const genRealityKey = async () => {
   loading.value = true
   const msg = await HttpUtils.get('api/keypairs', { k: 'reality' })
