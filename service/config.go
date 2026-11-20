@@ -454,6 +454,12 @@ func (s *ConfigService) restartQueuedCore() error {
 		restartQueued.Store(false)
 		return nil
 	}
+	// Tests (and a process mid-shutdown) may close the DB while a restart
+	// requested under Save's afterCommit is still waiting for startMu.
+	if database.GetDB() == nil {
+		restartQueued.Store(false)
+		return nil
+	}
 	startMu.Lock()
 	defer startMu.Unlock()
 	// From here on a request needs a restart of its own: this one may already

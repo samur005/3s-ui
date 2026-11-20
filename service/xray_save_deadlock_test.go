@@ -196,6 +196,7 @@ func TestApplyStoredUnderHoldCoreDoesNotDeadlock(t *testing.T) {
 	case <-time.After(10 * time.Second):
 		t.Fatal("ApplyStored under HoldCore (RLock) deadlocked")
 	}
+	waitQueuedRestarts(t, s, 15*time.Second)
 }
 
 func init() {
