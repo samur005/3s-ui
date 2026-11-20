@@ -319,6 +319,23 @@ const originalPort = ref<number | undefined>(undefined)
 const initUsers = ref<InitUsers>({ model: 'none', values: [] })
 
 const isNew = computed(() => props.id == 0)
+const selectedTemplate = ref('')
+
+const applyTemplate = () => {
+  const t = selectedTemplate.value
+  if (!t) return
+  if (t.startsWith('vless')) {
+    inbound.value.type = 'vless'
+    inbound.value.transport = inbound.value.transport || {}
+    if (t.includes('xhttp')) inbound.value.transport.type = 'http'
+    else if (t.includes('grpc')) inbound.value.transport.type = 'grpc'
+    else if (t.includes('ws')) inbound.value.transport.type = 'ws'
+    else if (t.includes('httpupgrade')) inbound.value.transport.type = 'httpupgrade'
+    else if (t.includes('kcp')) inbound.value.transport.type = 'kcp'
+    else delete inbound.value.transport.type
+    if (!inbound.value.tag) inbound.value.tag = t.replace('vless-', '')
+  }
+}
 const isExternal = computed(() => ExternalInTypes.includes(inbound.value.type))
 const hasInData = computed(() => HasInData.includes(inbound.value.type))
 const hasTls = computed(() => HasTls.includes(inbound.value.type))
