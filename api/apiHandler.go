@@ -65,6 +65,10 @@ func (a *APIHandler) postHandler(c *gin.Context) {
 		a.ApiService.EnrollSync(c)
 	case "unenrollSync":
 		a.ApiService.UnenrollSync(c)
+	case "setAutoEnroll":
+		a.ApiService.SetAutoEnroll(c)
+	case "getAutoEnroll":
+		a.ApiService.GetAutoEnroll(c)
 	case "listTombstones":
 		a.ApiService.ListTombstones(c)
 	case "purgeTombstone":
