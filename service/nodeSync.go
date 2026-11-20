@@ -514,6 +514,14 @@ func (s *NodeSyncService) runReconcile(nodeId uint, startGen uint64) error {
 		s.refreshNodeLinks(node)
 	}
 
+	// Opt-in bidirectional catalog exchange (does not replace @cluster push).
+	if node.SyncMode == "bidirectional" {
+		if err := s.runBidirectionalSync(node, client); err != nil {
+			logger.Warning("bisync: ", node.Name, ": ", err)
+			return err
+		}
+	}
+
 	expected, err := s.expectedClients(nodeId, tagToId)
 	if err != nil {
 		return err

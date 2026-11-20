@@ -18,6 +18,8 @@ export interface Node {
   // Phase 2 sync state
   dirty?: boolean
   lastSync?: number
+  // one_way (default) | bidirectional — never auto-enabled
+  syncMode?: string
 }
 
 export type NodeState = 'online' | 'offline' | 'core-stopped'
@@ -45,4 +47,5 @@ export const defaultNode: Node = {
   certPin: '',
   desc: '',
   lastSeen: 0,
+  syncMode: 'one_way',
 }

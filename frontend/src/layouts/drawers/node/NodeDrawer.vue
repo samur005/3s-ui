@@ -45,6 +45,14 @@
       <input class="input" v-model="nodeData.desc" />
     </Field>
 
+    <Field :label="$t('node.syncMode')" :hint="$t('node.syncModeHint')">
+      <select class="input" v-model="nodeData.syncMode">
+        <option value="one_way">{{ $t('node.syncOneWay') }}</option>
+        <option value="bidirectional">{{ $t('node.syncBidirectional') }}</option>
+      </select>
+    </Field>
+    <MHint v-if="nodeData.syncMode === 'bidirectional'">{{ $t('node.syncBiDiWarn') }}</MHint>
+
     <SwitchLabel v-model="nodeData.enable" :label="$t('enable')" />
 
     <hr class="form-divider" />

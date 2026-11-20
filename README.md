@@ -251,6 +251,12 @@ page with its address and an API token, and the master will:
   inbounds are pushed to that node and kept in sync, with each node's traffic
   folded back into the master's counters. Sync is scoped to a `@cluster` group,
   so a node's own local users are never touched.
+
+Opt-in **bidirectional sync** (`syncMode=bidirectional` on a node) exchanges
+enrolled clients/inbounds (`sync_uid`) both ways with conflict records instead
+of last-write-wins. Local listen/ports/TLS and WG/AWG/qWDTT secrets are not
+cloned — see [docs/bidirectional-sync.md](docs/bidirectional-sync.md). Default
+remains one-way.
 - **Fold its servers into one subscription** — a client's subscription link
   carries the master's servers and every bound node's servers together.
 

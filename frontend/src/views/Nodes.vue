@@ -11,14 +11,18 @@
     :node-name="importModal.nodeName"
     @close="importModal.visible = false"
   />
+  <SyncConflictsModal :visible="conflictsVisible" @close="conflictsVisible = false" />
 
   <!-- delete confirmation -->
   <DeleteConfirm :open="del.visible" :loading="deleting" @close="del.visible = false" @confirm="confirmDelete" />
 
   <div class="page-stack fade-up">
-    <div class="toolbar" style="justify-content: center;">
+    <div class="toolbar" style="justify-content: center; gap: 8px;">
       <Btn variant="primary" sm @click="openDrawer(0)">
         <Ico name="plus" :size="15" /> {{ $t('actions.add') }}
+      </Btn>
+      <Btn sm @click="conflictsVisible = true">
+        <Ico name="refresh" :size="15" /> {{ $t('node.syncConflicts') }}
       </Btn>
     </div>
 
@@ -36,6 +40,7 @@
       >
         <template #chip>
           <Chip v-if="item.dirty" color="amber" :title="$t('node.syncDirty')">{{ $t('node.syncDirty') }}</Chip>
+          <Chip v-if="item.syncMode === 'bidirectional'" color="sky" :title="$t('node.syncBidirectional')">{{ $t('node.syncBidirectional') }}</Chip>
           <Chip v-if="stateOf(item) === 'online'" color="emerald" dot>{{ $t('node.status.online') }}</Chip>
           <Chip v-else-if="stateOf(item) === 'core-stopped'" color="amber">{{ $t('node.status.coreStopped') }}</Chip>
           <Chip v-else-if="stateOf(item) === 'offline'" color="rose">{{ $t('node.status.offline') }}</Chip>
@@ -74,7 +79,10 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import EntityCard, { EntityRow } from '@/components/ui/EntityCard.vue'
 import NodeDrawer from '@/layouts/drawers/node/NodeDrawer.vue'
 import NodeImportModal from '@/layouts/drawers/node/NodeImportModal.vue'
+import SyncConflictsModal from '@/layouts/drawers/node/SyncConflictsModal.vue'
 import HttpUtils from '@/plugins/httputil'
+
+const conflictsVisible = ref(false)
 
 const { t } = useI18n({ useScope: 'global' })
 const dataStore = Data()

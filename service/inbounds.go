@@ -13,6 +13,7 @@ import (
 	"github.com/samur005/3s-ui/database/jsonsql"
 	"github.com/samur005/3s-ui/database/model"
 	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/service/bisync"
 	"github.com/samur005/3s-ui/util"
 	"github.com/samur005/3s-ui/util/common"
 
@@ -51,7 +52,7 @@ func (s *InboundService) getById(ids string) (*[]map[string]interface{}, error) 
 func (s *InboundService) GetAll() (*[]map[string]interface{}, error) {
 	db := database.GetDB()
 	inbounds := []model.Inbound{}
-	err := db.Model(model.Inbound{}).Scan(&inbounds).Error
+	err := db.Model(model.Inbound{}).Where("deleted_at = 0").Scan(&inbounds).Error
 	if err != nil {
 		return nil, err
 	}
@@ -67,6 +68,8 @@ func (s *InboundService) GetAll() (*[]map[string]interface{}, error) {
 			"volume": inbound.Volume,
 			"tls_id": inbound.TlsId,
 			"engine": engineOf(inbound.Type),
+			"syncUid": inbound.SyncUID,
+			"syncNeedsLocal": inbound.SyncNeedsLocal,
 		}
 		if inbound.NodeId != nil {
 			inbData["node_id"] = *inbound.NodeId
@@ -299,6 +302,14 @@ func (s *InboundService) save(tx *gorm.DB, act string, data json.RawMessage, ini
 			*afterCommit = removeFromCore(oldTag)
 		}
 
+		// Enrolled inbounds bump revision so peers see template changes.
+		if inbound.SyncUID != "" && inbound.NodeId == nil {
+			if pid, perr := bisync.PanelSyncID(); perr == nil {
+				n := bisync.BumpRev(bisync.Record{UID: inbound.SyncUID, Rev: inbound.SyncRev, Base: inbound.SyncBase, Origin: inbound.SyncOrigin}, pid)
+				inbound.SyncRev, inbound.SyncBase, inbound.SyncOrigin = n.Rev, n.Base, n.Origin
+				inbound.DeletedAt = 0
+			}
+		}
 		// The counters are the stats flush's alone (see model.Inbound).
 		err = tx.Omit("up", "down").Save(&inbound).Error
 		if err != nil {
@@ -320,7 +331,7 @@ func (s *InboundService) save(tx *gorm.DB, act string, data json.RawMessage, ini
 			return err
 		}
 		var old model.Inbound
-		err = tx.Model(model.Inbound{}).Select("id", "type", "node_id").Where("tag = ?", tag).Scan(&old).Error
+		err = tx.Model(model.Inbound{}).Select("id", "type", "node_id", "sync_uid", "sync_rev", "sync_base", "sync_origin").Where("tag = ?", tag).Scan(&old).Error
 		if err != nil {
 			return err
 		}
@@ -329,6 +340,20 @@ func (s *InboundService) save(tx *gorm.DB, act string, data json.RawMessage, ini
 			*afterCommit = drv.Apply
 			if err = s.ClientService.UpdateClientsOnInboundDelete(tx, old.Id, tag); err != nil {
 				return err
+			}
+			if old.SyncUID != "" {
+				pid, perr := bisync.PanelSyncID()
+				if perr != nil {
+					return perr
+				}
+				n := bisync.Tombstone(bisync.Record{UID: old.SyncUID, Rev: old.SyncRev, Base: old.SyncBase, Origin: old.SyncOrigin}, pid)
+				if err = tx.Model(model.Inbound{}).Where("id = ?", old.Id).Updates(map[string]any{
+					"enable": false, "deleted_at": n.DeletedAt,
+					"sync_rev": n.Rev, "sync_base": n.Base, "sync_origin": n.Origin,
+				}).Error; err != nil {
+					return err
+				}
+				return nil
 			}
 			if err = tx.Where("tag = ?", tag).Delete(model.Inbound{}).Error; err != nil {
 				return err
@@ -359,7 +384,19 @@ func (s *InboundService) save(tx *gorm.DB, act string, data json.RawMessage, ini
 		if err != nil {
 			return err
 		}
-		err = tx.Where("tag = ?", tag).Delete(model.Inbound{}).Error
+		if old.SyncUID != "" {
+			pid, perr := bisync.PanelSyncID()
+			if perr != nil {
+				return perr
+			}
+			n := bisync.Tombstone(bisync.Record{UID: old.SyncUID, Rev: old.SyncRev, Base: old.SyncBase, Origin: old.SyncOrigin}, pid)
+			err = tx.Model(model.Inbound{}).Where("id = ?", id).Updates(map[string]any{
+				"enable": false, "deleted_at": n.DeletedAt,
+				"sync_rev": n.Rev, "sync_base": n.Base, "sync_origin": n.Origin,
+			}).Error
+		} else {
+			err = tx.Where("tag = ?", tag).Delete(model.Inbound{}).Error
+		}
 		if err != nil {
 			return err
 		}
@@ -399,7 +436,7 @@ func (s *InboundService) GetAllConfig(db *gorm.DB) ([]json.RawMessage, error) {
 	// node_id IS NULL: replicas of remote inbounds must never reach the local
 	// core — their ports live on other machines and binding them here would
 	// wedge the core in its 15s restart loop. A disabled inbound stays out too.
-	err := db.Model(model.Inbound{}).Preload("Tls").Where("node_id IS NULL AND enable = ? AND type NOT IN ?", true, externalTypes()).Find(&inbounds).Error
+	err := db.Model(model.Inbound{}).Preload("Tls").Where("node_id IS NULL AND enable = ? AND deleted_at = 0 AND type NOT IN ?", true, externalTypes()).Find(&inbounds).Error
 	if err != nil {
 		return nil, err
 	}

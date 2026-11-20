@@ -36,6 +36,14 @@ type Inbound struct {
 	// (see the node_id IS NULL guards in service/inbounds.go).
 	NodeId *uint `json:"node_id,omitempty" form:"node_id" gorm:"index"`
 
+	// Bi-di template identity; empty = not enrolled. Local listen/TLS stay here.
+	SyncUID      string `json:"syncUid,omitempty" form:"syncUid" gorm:"index;default:'';size:36"`
+	SyncRev      int64  `json:"syncRev,omitempty" form:"syncRev" gorm:"default:0;not null"`
+	SyncBase     int64  `json:"syncBase,omitempty" form:"syncBase" gorm:"default:0;not null"`
+	SyncOrigin   string `json:"syncOrigin,omitempty" form:"syncOrigin" gorm:"default:'';size:64"`
+	DeletedAt    int64  `json:"deletedAt,omitempty" form:"deletedAt" gorm:"default:0;not null;index"`
+	SyncNeedsLocal bool `json:"syncNeedsLocal,omitempty" form:"syncNeedsLocal" gorm:"default:false;not null"`
+
 	Addrs   json.RawMessage `json:"addrs" form:"addrs"`
 	OutJson json.RawMessage `json:"out_json" form:"out_json"`
 	Options json.RawMessage `json:"-" form:"-"`
