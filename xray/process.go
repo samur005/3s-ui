@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/samur005/3s-ui/fdguard"
 	"github.com/samur005/3s-ui/logger"
 )
 
@@ -188,6 +189,7 @@ func (m *Manager) start() {
 	cmd.Stdout = &m.logs
 	cmd.Stderr = &m.logs
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	fdguard.BeforeChildStart()
 	if err := cmd.Start(); err != nil {
 		cancel()
 		m.setErr(err.Error())

@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/samur005/3s-ui/fdguard"
 	"github.com/samur005/3s-ui/logger"
 )
 
@@ -133,6 +134,8 @@ func (p *proc) start(bin string, args []string) error {
 	cmd.Stdout = &p.logs
 	cmd.Stderr = &p.logs
 	setProcAttr(cmd)
+	// Prevent inheriting sing-box TUN fds (no O_CLOEXEC in sing-tun).
+	fdguard.BeforeChildStart()
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("qwdtt: starting server: %w", err)
 	}

@@ -11,6 +11,7 @@ import (
 	"github.com/samur005/3s-ui/core"
 	"github.com/samur005/3s-ui/database"
 	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/fdguard"
 	"github.com/samur005/3s-ui/logger"
 	"github.com/samur005/3s-ui/network"
 	"github.com/samur005/3s-ui/qwdtt"
@@ -455,6 +456,8 @@ func startBox(rawConfig []byte) (up bool, err error) {
 	if err = corePtr.Start(rawConfig); err != nil {
 		return false, err
 	}
+	// sing-tun opens TUN without O_CLOEXEC; mark so sidecars cannot pin them.
+	fdguard.BeforeChildStart()
 	if maintenanceMode.Load() {
 		logger.Warning("maintenance switched on mid-start: stopping the core again")
 		if stopErr := corePtr.Stop(); stopErr != nil {
