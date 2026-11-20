@@ -70,6 +70,10 @@
           {{ $t('node.testOk') }} · {{ $t('node.status.coreStopped') }}
         </span>
         <span v-else style="color: var(--rose); font-weight: 600;">{{ testResult.error }}</span>
+
+    <MHint v-if="nodeData.syncMode === 'bidirectional' && testResult && testResult.state === 'online'" style="margin-top: 10px;">
+      {{ $t('node.syncBiDiVersionWarn') || 'Bidirectional sync requires both panels to support sync_proto=1. Older nodes will stay in one-way mode.' }}
+    </MHint>
       </div>
     </div>
   </MDrawer>
