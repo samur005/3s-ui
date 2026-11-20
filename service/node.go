@@ -478,6 +478,7 @@ func (s *NodeService) GetAll() ([]map[string]interface{}, error) {
 			"tokenSet": n.Token != "",
 			"dirty":    n.Dirty,
 			"lastSync": n.LastSync,
+			"syncMode": n.SyncMode,
 		})
 	}
 	return out, nil
