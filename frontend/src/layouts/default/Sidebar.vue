@@ -5,7 +5,7 @@
       <Logo :size="34" />
       <div style="flex: 1;">
         <div style="font-weight: 800; font-size: 16px; letter-spacing: -.02em; line-height: 1;">
-          2S<span style="color: var(--text-3); font-weight: 700;">-UI</span>
+          3S<span style="color: var(--text-3); font-weight: 700;">-UI</span>
         </div>
         <VersionMenu />
       </div>
@@ -74,6 +74,7 @@ const nav: (NavItem | NavSep)[] = [
   { title: 'ui.nav.outbounds', icon: 'outbound', path: '/outbounds' },
   { title: 'ui.nav.endpoints', icon: 'endpoint', path: '/endpoints' },
   { title: 'ui.nav.services', icon: 'services', path: '/services' },
+  { title: 'ui.nav.qwdtt', icon: 'shield', path: '/qwdtt' },
   { sep: 'ui.sec.configuration' },
   { title: 'ui.nav.tls', icon: 'tls', path: '/tls' },
   { title: 'ui.nav.basics', icon: 'basics', path: '/basics' },

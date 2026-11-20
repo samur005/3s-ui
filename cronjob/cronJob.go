@@ -75,6 +75,9 @@ func (c *CronJob) Start(loc *time.Location, statsBucketSeconds int64) error {
 	addJob("@daily", NewDelStatsJob(), "old stats cleanup")
 	// Start core if it is not running
 	addJob("@every 5s", NewCheckCoreJob(), "core watchdog")
+	// qWDTT: supervise the server and its routing, and keep the VK call hashes alive
+	addJob("@every 10s", NewQwdttJob(), "qwdtt supervisor")
+	addJob("@every 5m", NewQwdttHashJob(), "qwdtt VK hash check")
 	// Probe managed nodes (in-memory snapshot; no-op with zero nodes)
 	addJob("@every 5s", NewNodesJob(), "node probe")
 	// Pull + merge node traffic into the master's per-client totals

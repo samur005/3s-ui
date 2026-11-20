@@ -1,4 +1,4 @@
-// Generated from design_handoff_2s_ui_console dictionaries (gen-ui-locales.mjs)
+// Generated from design_handoff_3s_ui_console dictionaries (gen-ui-locales.mjs)
 export default {
   ruleNew: "New routing rule",
   ruleSub: "Match traffic and act on it",
@@ -224,6 +224,7 @@ export default {
     outbounds: "Outbounds",
     endpoints: "Endpoints",
     services: "Services",
+    qwdtt: "qWDTT",
     tls: "TLS Settings",
     rules: "Rules",
     dns: "DNS",
@@ -245,6 +246,7 @@ export default {
     outbounds: "Outbounds",
     endpoints: "Endpoints",
     services: "Services",
+    qwdtt: "qWDTT",
     tls: "TLS Settings",
     rules: "Routing",
     dns: "DNS",
@@ -260,6 +262,7 @@ export default {
     outbounds: "Where traffic is routed out",
     endpoints: "WireGuard & Tailscale endpoints",
     services: "Auxiliary sing-box services",
+    qwdtt: "VK call tunnel (qwdtt://) with automatic VK hash",
     tls: "Certificates & Reality keys",
     rules: "Connection match-and-act rules",
     dns: "Resolvers and DNS routing",

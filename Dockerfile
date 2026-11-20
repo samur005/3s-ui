@@ -44,7 +44,8 @@ COPY --from=front-builder /app/subscriber/dist/ /app/sub/dashboard/
 RUN if [ "$TARGETARCH" = "arm" ]; then export GOARM=7; [ "$TARGETVARIANT" = "v6" ] && export GOARM=6; fi; \
     go build -ldflags="-w -s" \
     -tags "with_quic,with_grpc,with_utls,with_acme,with_gvisor,with_naive_outbound,with_purego,with_tailscale,with_cloudflared,with_openconnect,with_openvpn,with_usbip" \
-    -o 3sui main.go
+    -o 3sui main.go && \
+    scripts/build-qwdtt.sh /app/qwdtt
 
 FROM alpine
 LABEL org.opencontainers.image.source="https://github.com/samur005/3s-ui"
@@ -53,11 +54,14 @@ ENV TZ=Asia/Tehran
 # the binary in the writable layer, then re-exec the entrypoint (no systemd
 # here). The update survives `docker restart` but recreating the container
 # reverts to the image's version — pull a new image to stay in sync.
-ENV S_UI_IN_DOCKER=1
+ENV S3UI_IN_DOCKER=1
 WORKDIR /app
 RUN set -ex && apk upgrade --no-cache --scripts=no apk-tools && \
-    apk add --no-cache --upgrade bash ca-certificates nftables openssl socat curl
-COPY --from=backend-builder /app/3sui /app/libcronet.so /app/
+    apk add --no-cache --upgrade bash ca-certificates nftables iproute2 openssl socat curl
+# qwdtt is the qWDTT sidecar (scripts/build-qwdtt.sh); the panel looks for it
+# next to its own binary. See the README (qWDTT) for the NET_ADMIN/host
+# networking it needs.
+COPY --from=backend-builder /app/3sui /app/qwdtt /app/libcronet.so /app/
 COPY --chmod=755 entrypoint.sh /app/
 # The port is read from the database, not written here: the operator can
 # change it from the panel, and a check with it baked in would go red on a

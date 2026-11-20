@@ -5,7 +5,7 @@
       <div class="login-brand-glow" />
       <div style="position: relative; display: flex; align-items: center; gap: 12px;">
         <Logo :size="40" />
-        <div style="font-weight: 800; font-size: 20px; letter-spacing: -.02em;">2S<span style="opacity: .6;">-UI</span></div>
+        <div style="font-weight: 800; font-size: 20px; letter-spacing: -.02em;">3S<span style="opacity: .6;">-UI</span></div>
       </div>
       <div style="position: relative;">
         <div style="font-size: 34px; font-weight: 800; letter-spacing: -.03em; line-height: 1.12; max-width: 420px;">{{ $t('ui.heroTitle') }}</div>
@@ -26,7 +26,7 @@
       <div class="fade-up" style="width: 100%; max-width: 360px;">
         <div class="login-mobile-logo">
           <Logo :size="38" />
-          <div style="font-weight: 800; font-size: 19px; letter-spacing: -.02em; white-space: nowrap;">2S<span style="color: var(--text-3);">-UI</span></div>
+          <div style="font-weight: 800; font-size: 19px; letter-spacing: -.02em; white-space: nowrap;">3S<span style="color: var(--text-3);">-UI</span></div>
         </div>
 
         <div style="font-size: 24px; font-weight: 800; letter-spacing: -.02em;">{{ $t('ui.welcomeBack') }}</div>

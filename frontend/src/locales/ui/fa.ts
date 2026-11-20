@@ -1,4 +1,4 @@
-// Generated from design_handoff_2s_ui_console dictionaries (gen-ui-locales.mjs)
+// Generated from design_handoff_3s_ui_console dictionaries (gen-ui-locales.mjs)
 export default {
   ruleNew: "قانون مسیریابی جدید",
   ruleSub: "تطبیق ترافیک و اقدام روی آن",

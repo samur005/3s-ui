@@ -292,6 +292,13 @@ func (s *UpdateService) run() {
 	}
 	// Best-effort refresh of the bundled management script; never fatal.
 	copyIfExists(filepath.Join(stageDir, "3s-ui", "3s-ui.sh"), filepath.Join(installDir, "3s-ui.sh"))
+	// The qWDTT sidecar ships next to the panel. It may be running right now
+	// (a running executable cannot be overwritten in place), so swap it by
+	// rename like the panel binary; the supervisor restarts it with the panel.
+	// A release without it, or a failed swap, leaves the old one untouched.
+	if err := swapSidecar(filepath.Join(stageDir, "3s-ui", "qwdtt"), filepath.Join(installDir, "qwdtt")); err != nil {
+		logger.Warning("update qwdtt sidecar: ", err)
+	}
 
 	// 6) Restart. In Docker there is no systemd: after a short delay (so the
 	// frontend can observe the "restarting" phase) the process re-execs the
@@ -346,7 +353,7 @@ func (s *UpdateService) LatestRelease() (string, error) {
 }
 
 func inDocker() bool {
-	if os.Getenv("S_UI_IN_DOCKER") != "" {
+	if os.Getenv("S3UI_IN_DOCKER") != "" {
 		return true
 	}
 	if _, err := os.Stat("/.dockerenv"); err == nil {
@@ -540,6 +547,25 @@ func swapBinary(newBin, curBin string) error {
 		return err
 	}
 	if err := os.Rename(staged, curBin); err != nil {
+		_ = os.Remove(staged)
+		return err
+	}
+	return nil
+}
+
+// swapSidecar atomically replaces dst with src when src exists. Unlike
+// swapBinary it keeps no .bak and tolerates a missing dst (first install of
+// the sidecar on a panel that predates it).
+func swapSidecar(src, dst string) error {
+	if _, err := os.Stat(src); err != nil {
+		return nil
+	}
+	staged := dst + ".new"
+	if err := copyFile(src, staged, 0o755); err != nil {
+		_ = os.Remove(staged)
+		return err
+	}
+	if err := os.Rename(staged, dst); err != nil {
 		_ = os.Remove(staged)
 		return err
 	}

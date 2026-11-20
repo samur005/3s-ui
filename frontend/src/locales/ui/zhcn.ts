@@ -1,4 +1,4 @@
-// Generated from design_handoff_2s_ui_console dictionaries (gen-ui-locales.mjs)
+// Generated from design_handoff_3s_ui_console dictionaries (gen-ui-locales.mjs)
 export default {
   ruleNew: "新建路由规则",
   ruleSub: "匹配流量并执行动作",

@@ -17,6 +17,9 @@ The 3S-UI frontend is rewritten in full, with a range of features added on top t
 - **Multi-protocol** — VLESS, VMess, Trojan, Shadowsocks, Hysteria2, TUIC,
   AnyTLS and more, inbound and outbound, plus WireGuard, WARP and Tailscale
   endpoints ([full list](#protocols)).
+- **qWDTT** — a built-in VK call tunnel server with automatic VK hash
+  generation, routed through your sing-box rules and shared as `qwdtt://`
+  subscription links ([details](#qwdtt-vk-call-tunnel)).
 - **Central TLS** — Reality, uTLS fingerprints, XTLS, and certificates
   registered once then picked per inbound.
 - **Routing rules** — matching on domain, IP, port, protocol, process, user and
@@ -393,6 +396,63 @@ Three things guard the login, all on by default:
 - **Session invalidation** — changing a password or username retires every
   session issued before it, including open WebSocket connections.
 
+## qWDTT (VK call tunnel)
+
+3S-UI can run a [qWDTT](https://github.com/SpaceNeuroX/proxy-turn-vk-android)
+server for you: clients reach it through the TURN relays of a VK call, and the
+hash of that call is generated and kept alive by the panel itself. There is no
+separate wdtt panel to install. Open **qWDTT** in the sidebar.
+
+- **Server** — the panel supervises the `qwdtt` sidecar (start, stop, restart on
+  a config change, crash back-off, log view). Settings live in the panel
+  database (`qwdtt_states`), so they are part of backups. Linux only; on other
+  systems the page says so and nothing runs.
+- **Routing** — with *Route through sing-box* (default) the panel adds a hidden
+  TUN inbound (`qwdtt-tun`, interface `qwdtt0`) to the core and policy-routes
+  the server's `wdtt0` / `wdttraw0` interfaces into it (`ip rule … lookup 1977`),
+  so your routing rules and outbounds apply to qWDTT clients. An optional
+  *Outbound* forces all of their traffic to one outbound tag. Switch it off and
+  the server NATs straight to the internet.
+- **VK hashes** — the *VK cookies* box takes the cookies of a VK account
+  (a JSON array of `{name, value}` exported from the browser, or a `Cookie:`
+  header; `remixsid` is required). They are stored in the database and never
+  sent back to the browser. *Generate hash* starts a VK call as that account and
+  stores its join hash. With *Automatic hashes* on, the panel creates one when
+  none is set and, every 5 minutes, asks `calls.getCallPreview` whether each
+  hash is still alive and replaces it after two dead answers in a row.
+  Set `S3UI_VK_HASH` (comma-separated, up to 4) to pin hashes from the
+  environment instead; it overrides the stored ones and disables generation.
+- **Subscriptions** — clients with access get one `qwdtt://config?…` line in
+  their link subscription (all clients, or a chosen list). The link is built on
+  the fly, so a rotated hash reaches every subscription at once. The page also
+  shows the link as a QR code and the JSON form.
+- **Firewall** — open the DTLS port (`56000/udp` by default) and, if you use
+  it, the raw-IP port (`56003/udp`).
+- **Needs** root (or `CAP_NET_ADMIN`) and `ip` (iproute2) for routing, and
+  `iptables` or `nft` for the server's own NAT.
+
+### The qwdtt binary
+
+The sidecar is the `server` command of SpaceNeuroX/proxy-turn-vk-android v1.4.4
+(pinned commit) with `scripts/patches/qwdtt-subnet.patch`, which moves its
+tunnel subnet to 10.68.0.0/16 so it can sit next to a wdtt server.
+`scripts/build-qwdtt.sh` builds it (pure Go, any `GOOS/GOARCH/GOARM`) and is the
+only place the version is pinned:
+
+- **install.sh / release tarball** — the release workflow builds it for each
+  architecture into `3s-ui/qwdtt`; it lands at `/usr/local/3s-ui/qwdtt` and the
+  panel's self-update refreshes it.
+- **Docker** — both Dockerfiles build it and put it at `/app/qwdtt`. qWDTT in a
+  container needs `network_mode: host` and `cap_add: [NET_ADMIN]` (see the
+  comments in `docker-compose.yml`).
+- **From source** — `scripts/build-qwdtt.sh /usr/local/3s-ui/qwdtt`.
+- **Custom binary** — point `S3UI_QWDTT_BIN` at it. Lookup order: that variable,
+  `<panel dir>/bin/qwdtt`, `<panel dir>/qwdtt`, then `PATH`.
+
+To update qWDTT, change `QWDTT_REF` in `scripts/build-qwdtt.sh` (re-create the
+patch if it no longer applies), rebuild, and restart it from the page.
+Per-client traffic accounting from other qWDTT panels is not implemented.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, coding
@@ -423,6 +483,8 @@ of that. Building by hand needs those same tags — see
 | S3UI_DEBUG      |                   `boolean`                    | `false`       |
 | S3UI_DB_FOLDER  |                    `string`                    | `"db"`        |
 | S3UI_BIN_FOLDER |                    `string`                    | `"bin"`       |
+| S3UI_VK_HASH    |                    `string`                    | `""`          |
+| S3UI_QWDTT_BIN  |                    `string`                    | `""`          |
 
 `S3UI_BIN_FOLDER` is only read while migrating a database from the old
 subprocess-based layout; sing-box is embedded in the binary and there is no

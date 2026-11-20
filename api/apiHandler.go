@@ -99,6 +99,20 @@ func (a *APIHandler) postHandler(c *gin.Context) {
 		a.ApiService.CloseSessions(c, true)
 	case "testNode":
 		a.ApiService.TestNode(c)
+	case "qwdttSave":
+		a.ApiService.SaveQwdtt(c)
+	case "qwdttRestart":
+		a.ApiService.RestartQwdtt(c)
+	case "qwdttCookies":
+		a.ApiService.SaveQwdttCookies(c)
+	case "qwdttCookiesClear":
+		a.ApiService.ClearQwdttCookies(c)
+	case "qwdttCookiesCheck":
+		a.ApiService.CheckQwdttCookies(c)
+	case "qwdttGenerate":
+		a.ApiService.GenerateQwdttHash(c)
+	case "qwdttHashesCheck":
+		a.ApiService.CheckQwdttHashes(c)
 	default:
 		jsonMsg(c, "failed", common.NewError("unknown action: ", action))
 	}
@@ -158,6 +172,12 @@ func (a *APIHandler) getHandler(c *gin.Context) {
 		a.ApiService.UpdateInfo(c)
 	case "updateStatus":
 		a.ApiService.UpdateStatus(c)
+	case "qwdtt":
+		a.ApiService.GetQwdtt(c)
+	case "qwdttLogs":
+		a.ApiService.GetQwdttLogs(c)
+	case "qwdttSubscription":
+		a.ApiService.GetQwdttSubscription(c)
 	default:
 		jsonMsg(c, "failed", common.NewError("unknown action: ", action))
 	}

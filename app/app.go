@@ -9,6 +9,7 @@ import (
 	"github.com/samur005/3s-ui/cronjob"
 	"github.com/samur005/3s-ui/database"
 	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/qwdtt"
 	"github.com/samur005/3s-ui/service"
 	"github.com/samur005/3s-ui/service/notify"
 	"github.com/samur005/3s-ui/service/tgbot"
@@ -146,6 +147,9 @@ func (a *APP) Start() error {
 
 	a.syncNginxProxy()
 
+	// After the core, so its TUN inbound exists when the routing goes in.
+	qwdtt.Get().Reconcile()
+
 	return nil
 }
 
@@ -208,6 +212,8 @@ func (a *APP) Stop() {
 	// While the core still runs: what it counted since the last flush has no
 	// next flush to go to once the process exits.
 	service.FlushStats()
+	// Before the core goes: the server's routing points into the core's TUN.
+	qwdtt.Get().Shutdown()
 	err = a.configService.RetireCore()
 	if err != nil {
 		logger.Warning("stop Core err:", err)

@@ -87,6 +87,7 @@ func GetDb(exclude string) ([]byte, error) {
 		&model.Changes{},
 		&model.Node{},
 		&model.Cert{},
+		&model.QwdttState{},
 	)
 	if err != nil {
 		return nil, err
@@ -205,6 +206,16 @@ func GetDb(exclude string) ([]byte, error) {
 			return nil, err
 		}
 		if err := keepDisabled(backupDb, &model.Node{}, off); err != nil {
+			return nil, err
+		}
+	}
+	// qWDTT config, VK cookies and the calls the panel created: a table missing
+	// from this copy is dropped on restore.
+	var qwdttRows []model.QwdttState
+	if err := db.Model(&model.QwdttState{}).Scan(&qwdttRows).Error; err != nil {
+		return nil, err
+	} else if len(qwdttRows) > 0 {
+		if err := backupDb.CreateInBatches(qwdttRows, backupBatchSize).Error; err != nil {
 			return nil, err
 		}
 	}

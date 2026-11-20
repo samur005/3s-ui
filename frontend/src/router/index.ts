@@ -41,6 +41,11 @@ const routes = [
         component: () => import('@/views/Services.vue'),
       },
       {
+        path: '/qwdtt',
+        name: 'pages.qwdtt',
+        component: () => import('@/views/Qwdtt.vue'),
+      },
+      {
         path: '/endpoints',
         name: 'pages.endpoints',
         component: () => import('@/views/Endpoints.vue'),

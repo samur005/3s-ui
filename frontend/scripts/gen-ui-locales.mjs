@@ -5,7 +5,7 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const handoff = process.argv[2] || join(here, '..', '..', 'design_handoff_2s_ui_console')
+const handoff = process.argv[2] || join(here, '..', '..', 'design_handoff_3s_ui_console')
 const outDir = join(here, '..', 'src', 'locales', 'ui')
 
 // --- extract a top-level `const NAME = {...}` object literal from a JSX file ---
@@ -89,6 +89,6 @@ function emit(obj, indent = '  ') {
 mkdirSync(outDir, { recursive: true })
 for (const lang of LANGS) {
   const body = emit(nest(flatFor(lang)))
-  writeFileSync(join(outDir, `${lang}.ts`), `// Generated from design_handoff_2s_ui_console dictionaries (gen-ui-locales.mjs)\nexport default ${body}\n`)
+  writeFileSync(join(outDir, `${lang}.ts`), `// Generated from design_handoff_3s_ui_console dictionaries (gen-ui-locales.mjs)\nexport default ${body}\n`)
   console.log(`ui/${lang}.ts written (${Object.keys(flatFor(lang)).length} keys)`)
 }
