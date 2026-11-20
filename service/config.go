@@ -317,16 +317,39 @@ func (s *ConfigService) startLocked(announce bool) error {
 		// first one through, and only lets the next one through after a
 		// recovery has been reported in between.
 		notify.Publish(notify.Event{Kind: notify.CoreCrash, Data: &notify.CoreData{Err: err.Error()}})
+		s.failClosedXray("sing-box start failed")
 		return err
 	}
 	if !up {
+		s.failClosedXray("sing-box start undone (maintenance)")
 		return nil
 	}
 	logger.Info("sing-box started")
+	// Handoff mixed listeners are in this config: rebuild Xray so socks
+	// outbounds match. Also covers xvless ApplyStored's async requestRestart.
+	s.applyXrayAfterCore()
 	if announce {
 		notify.Publish(notify.Event{Kind: notify.CoreUp})
 	}
 	return nil
+}
+
+// applyXrayAfterCore rebuilds the Xray process against the DB. Caller holds
+// startMu (write): handoff listeners from this start are already up.
+func (s *ConfigService) applyXrayAfterCore() {
+	xray.Get().Apply(func() ([]byte, error) {
+		return xray.BuildConfig(database.GetDB())
+	})
+}
+
+// failClosedXray stops Xray when sing-box cannot provide routeThroughCore
+// handoff listeners.
+func (s *ConfigService) failClosedXray(why string) {
+	if !xray.AnyRouteThroughCore(database.GetDB()) {
+		return
+	}
+	logger.Warning("xray: ", why, ", stopping Xray (fail closed)")
+	xray.Get().Stop()
 }
 
 // stopLocked stops the core, first leaving what it has counted since the last

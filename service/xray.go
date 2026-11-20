@@ -7,7 +7,6 @@ import (
 
 	"github.com/samur005/3s-ui/database"
 	"github.com/samur005/3s-ui/database/model"
-	"github.com/samur005/3s-ui/logger"
 	"github.com/samur005/3s-ui/util/common"
 	"github.com/samur005/3s-ui/xray"
 
@@ -52,33 +51,28 @@ func xrayOutboundTagExists(tx *gorm.DB, tag string) error {
 // XrayService is the panel-facing API for the supervised Xray-core process.
 type XrayService struct{}
 
-// ApplyStored restarts sing-box when the loopback handoff fragment changed,
-// then rebuilds the Xray process. Core first so SOCKS is listening before
-// Xray dials it. If the core cannot provide the handoff listeners while any
-// xvless has routeThroughCore, Xray is stopped (fail closed) — never left on
-// a freedom default for those inbounds.
+// ApplyStored brings Xray (and its sing-box handoff) in line with the DB after
+// an xvless save. It must not call RestartCore/StartCore synchronously: Save
+// holds startMu.RLock and runs afterCommit under that lock, so a nested Lock
+// deadlocks the panel (live on v2.4.3 after creating xvless).
+//
+// When the handoff fragment changed (or sing-box is down but required), queue
+// the same async restart qWDTT/WG use. startLocked reapplies Xray only after
+// the new mixed listeners exist. Otherwise rebuild Xray in place.
+// Fail-closed: if a queued restart cannot raise handoff listeners, startLocked
+// stops Xray rather than leaving it on freedom.
 func (s *XrayService) ApplyStored() {
 	var cs ConfigService
 	db := database.GetDB()
 	needCore := xray.AnyRouteThroughCore(db)
 	if xray.CoreNeedsRestart() {
-		var err error
-		if cs.CoreRunning() {
-			err = cs.RestartCore()
-		} else if needCore {
-			err = cs.StartCore()
-		}
-		if err != nil && needCore {
-			logger.Warning("xray: sing-box handoff restart failed, stopping Xray: ", err)
-			xray.Get().Stop()
+		if cs.CoreRunning() || needCore {
+			cs.requestRestart()
 			return
 		}
 	} else if needCore && !cs.CoreRunning() {
-		if err := cs.StartCore(); err != nil {
-			logger.Warning("xray: sing-box not running for handoff, stopping Xray: ", err)
-			xray.Get().Stop()
-			return
-		}
+		cs.requestRestart()
+		return
 	}
 	xray.Get().Apply(func() ([]byte, error) {
 		return xray.BuildConfig(db)
