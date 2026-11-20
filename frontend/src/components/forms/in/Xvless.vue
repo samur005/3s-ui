@@ -81,11 +81,21 @@
         <input class="input mono" :value="(data.realityServerNames||[]).join(',')" @input="onNames" />
       </Field>
       <div class="grid2">
-        <Field :label="$t('xray.realityPrivateKey')"><input class="input mono" v-model="data.realityPrivateKey" /></Field>
+        <Field :label="$t('xray.realityPrivateKey')">
+          <div style="display:flex; gap:6px;">
+            <input class="input mono" v-model="data.realityPrivateKey" style="flex:1;" />
+            <Btn sm :loading="genKey" @click="generateRealityKey"><Ico name="key" :size="14" /></Btn>
+          </div>
+        </Field>
         <Field :label="$t('xray.realityPublicKey')" :hint="$t('xray.realityPublicKeyHint')"><input class="input mono" v-model="data.realityPublicKey" /></Field>
       </div>
       <div class="grid2">
-        <Field label="shortIds"><input class="input mono" :value="(data.realityShortIds||[]).join(',')" @input="onShortIds" /></Field>
+        <Field label="shortIds">
+          <div style="display:flex; gap:6px;">
+            <input class="input mono" :value="(data.realityShortIds||[]).join(',')" @input="onShortIds" style="flex:1;" />
+            <Btn sm @click="generateShortId"><Ico name="refresh" :size="14" /></Btn>
+          </div>
+        </Field>
         <Field label="fingerprint"><input class="input mono" v-model="data.realityFingerprint" placeholder="chrome" /></Field>
       </div>
     </template>
@@ -146,6 +156,22 @@ const loadStatus = async () => {
   const msg = await HttpUtils.get('api/xrayStatus')
   if (msg.success) status.value = msg.obj
 }
+const genKey = ref(false)
+const generateRealityKey = async () => {
+  genKey.value = true
+  const msg = await HttpUtils.post('api/generateRealityKey', {})
+  genKey.value = false
+  if (msg?.success && msg.obj) {
+    data.realityPrivateKey = msg.obj.privateKey || ''
+    data.realityPublicKey = msg.obj.publicKey || ''
+  }
+}
+const generateShortId = () => {
+  const sid = Math.random().toString(16).slice(2, 10)
+  const cur = data.realityShortIds || []
+  data.realityShortIds = [...cur, sid]
+}
+
 const genEnc = async () => {
   generating.value = true
   try {
