@@ -1335,7 +1335,7 @@ func (a *ApiService) GenerateSelfSigned(c *gin.Context) {
 	if domain == "" {
 		domain = "localhost"
 	}
-	dir := filepath.Join(config.GetBinFolderPath(), "certs", "selfsigned")
+	dir := filepath.Join(os.TempDir(), "3s-ui-certs", "selfsigned")
 	_ = os.MkdirAll(dir, 0755)
 	certPath := filepath.Join(dir, domain+".crt")
 	keyPath := filepath.Join(dir, domain+".key")
