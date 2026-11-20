@@ -2,18 +2,7 @@ name: Build 3S-UI for Windows
 
 on:
   workflow_dispatch:
-  release:
-    types: [published]
-  push:
-    branches:
-      - main
-    paths:
-      - '.github/workflows/windows.yml'
-      - 'frontend/**'
-      - '**.go'
-      - 'go.mod'
-      - 'go.sum'
-      - 'windows/**'
+  # release and push triggers disabled per request
 
 # Same reasoning as release.yml: collapse the redundant push builds, never cancel
 # a publish. The group name has to stay distinct from release.yml's, or the two
