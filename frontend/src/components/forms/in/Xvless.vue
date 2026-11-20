@@ -157,6 +157,28 @@ const loadStatus = async () => {
   if (msg.success) status.value = msg.obj
 }
 const genKey = ref(false)
+const genCert = ref(false)
+
+const usePanelCert = async () => {
+  const msg = await HttpUtils.get('api/certs')
+  if (msg?.success && msg.obj?.length) {
+    const c = msg.obj[0]
+    data.certFile = c.certFile || ''
+    data.keyFile = c.keyFile || ''
+  }
+}
+
+const generateSelfSigned = async () => {
+  genCert.value = true
+  const msg = await HttpUtils.post('api/generateSelfSigned', { domain: data.serverName || data.endpoint || 'localhost' })
+  genCert.value = false
+  if (msg?.success && msg.obj) {
+    data.certFile = msg.obj.certFile || ''
+    data.keyFile = msg.obj.keyFile || ''
+  }
+}
+
+const genKey = ref(false)
 const generateRealityKey = async () => {
   genKey.value = true
   const msg = await HttpUtils.post('api/generateRealityKey', {})
