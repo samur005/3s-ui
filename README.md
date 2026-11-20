@@ -531,7 +531,7 @@ service) and each card shows which engine runs it.
 - **Through sing-box (default)** — decrypted TCP+UDP is handed to a loopback
   mixed inbound that reuses this inbound's tag, so panel route rules and
   outbounds apply. Optional forced outbound. Off = Xray `freedom` (no panel
-  rules). SOCKS handoff does **not** preserve original client IP or VLESS user.
+  rules). VLESS client name is mapped to the SOCKS username (`auth_user`). Original client IP is **not** preserved (loopback).
 - **Not done** — translating panel rules into Xray JSON, Xray reverse
   portal/bridge, other Xray protocols beyond VLESS, traffic counters for xvless.
 

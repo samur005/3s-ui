@@ -202,7 +202,7 @@ export default {
     outboundTag: "Force outbound",
     outboundTagHint: "Optional. Empty = follow panel routing rules for this inbound tag.",
     byRules: "By routing rules",
-    handoffLimitations: "Handoff uses SOCKS on 127.0.0.1: sing-box does not see the original client IP or VLESS user. Rules that depend on those will not match as on native sing-box inbounds. Panel rules are not copied into Xray JSON.",
+    handoffLimitations: "Handoff uses SOCKS on 127.0.0.1: the VLESS client name is the SOCKS username so auth_user rules work. Original client IP is not preserved (always 127.0.0.1). Panel rules are not copied into Xray JSON; each client gets its own Xray socks outbound.",
 
   },
   wg: {
