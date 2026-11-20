@@ -5,7 +5,7 @@
       <Logo :size="34" />
       <div style="flex: 1;">
         <div style="font-weight: 800; font-size: 16px; letter-spacing: -.02em; line-height: 1;">
-          2S<span style="color: var(--text-3); font-weight: 700;">-UI</span>
+          3S<span style="color: var(--text-3); font-weight: 700;">-UI</span>
         </div>
         <VersionMenu />
       </div>

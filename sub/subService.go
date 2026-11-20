@@ -15,6 +15,18 @@ import (
 type SubService struct {
 	service.SettingService
 	LinkService
+	qwdtt service.QwdttService
+}
+
+// withQwdtt appends the client's qwdtt:// link, when qWDTT is on and the client
+// has access to it. The link comes from the live qWDTT configuration rather
+// than from client.Links: its VK hashes are replaced as calls end, and every
+// subscription has to hand out the current ones.
+func (s *SubService) withQwdtt(client *model.Client, links []string) []string {
+	if link := s.qwdtt.ClientLink(client.Name); link != "" {
+		return append(links, link)
+	}
+	return links
 }
 
 func (s *SubService) GetSubs(subId string) (*string, []string, error) {
@@ -39,6 +51,7 @@ func (s *SubService) getSubs(subId string, transform func([]string) []string) (*
 	if transform != nil {
 		linksArray = transform(linksArray)
 	}
+	linksArray = s.withQwdtt(client, linksArray)
 	result := strings.Join(linksArray, "\n")
 
 	headers := s.getClientHeaders(client)
@@ -130,6 +143,7 @@ func (s *SubService) getClientInfoJSON(subId string) (*ClientInfo, error) {
 	}
 
 	info.Links = append(info.Links, s.LinkService.GetLinks(&client.Links, "all", "")...)
+	info.Links = s.withQwdtt(client, info.Links)
 
 	return info, nil
 }

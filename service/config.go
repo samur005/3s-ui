@@ -13,6 +13,7 @@ import (
 	"github.com/samur005/3s-ui/database/model"
 	"github.com/samur005/3s-ui/logger"
 	"github.com/samur005/3s-ui/network"
+	"github.com/samur005/3s-ui/qwdtt"
 	"github.com/samur005/3s-ui/service/notify"
 	"github.com/samur005/3s-ui/util"
 	"github.com/samur005/3s-ui/util/common"
@@ -137,6 +138,13 @@ func (s *ConfigService) GetConfig(data string) (*[]byte, error) {
 	singboxConfig.Endpoints, err = s.EndpointService.GetAllConfig(database.GetDB())
 	if err != nil {
 		return nil, err
+	}
+	// qWDTT's TUN inbound and route rules. A failure here must not keep the
+	// core from starting, so it is logged and the fragment is left out.
+	if in, rt, qerr := qwdtt.InjectCore(singboxConfig.Inbounds, singboxConfig.Route); qerr != nil {
+		logger.Warning(qerr)
+	} else {
+		singboxConfig.Inbounds, singboxConfig.Route = in, rt
 	}
 	rawConfig, err := json.MarshalIndent(singboxConfig, "", "  ")
 	if err != nil {

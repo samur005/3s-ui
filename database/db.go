@@ -152,6 +152,7 @@ func InitDB(dbPath string) error {
 		&model.Changes{},
 		&model.Node{},
 		&model.Cert{},
+		&model.QwdttState{},
 		&model.LoginAttempt{},
 	}
 	err = db.AutoMigrate(models...)
