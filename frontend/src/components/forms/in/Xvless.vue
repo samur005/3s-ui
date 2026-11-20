@@ -169,35 +169,34 @@ const usePanelCert = async () => {
   const msg = await HttpUtils.get('api/certs')
   if (msg?.success && msg.obj?.length) {
     const c = msg.obj[0]
-    data.certFile = c.certFile || ''
-    data.keyFile = c.keyFile || ''
+    props.data.certFile = c.certFile || ''
+    props.data.keyFile = c.keyFile || ''
   }
 }
 
 const generateSelfSigned = async () => {
   genCert.value = true
-  const msg = await HttpUtils.post('api/generateSelfSigned', { domain: data.serverName || data.endpoint || 'localhost' })
+  const msg = await HttpUtils.post('api/generateSelfSigned', { domain: props.data.serverName || props.data.endpoint || 'localhost' })
   genCert.value = false
   if (msg?.success && msg.obj) {
-    data.certFile = msg.obj.certFile || ''
-    data.keyFile = msg.obj.keyFile || ''
+    props.data.certFile = msg.obj.certFile || ''
+    props.data.keyFile = msg.obj.keyFile || ''
   }
 }
 
-const genKey = ref(false)
 const generateRealityKey = async () => {
   genKey.value = true
   const msg = await HttpUtils.post('api/generateRealityKey', {})
   genKey.value = false
   if (msg?.success && msg.obj) {
-    data.realityPrivateKey = msg.obj.privateKey || ''
-    data.realityPublicKey = msg.obj.publicKey || ''
+    props.data.realityPrivateKey = msg.obj.privateKey || ''
+    props.data.realityPublicKey = msg.obj.publicKey || ''
   }
 }
 const generateShortId = () => {
   const sid = Math.random().toString(16).slice(2, 10)
-  const cur = data.realityShortIds || []
-  data.realityShortIds = [...cur, sid]
+  const cur = props.data.realityShortIds || []
+  props.data.realityShortIds = [...cur, sid]
 }
 
 const genEnc = async () => {
