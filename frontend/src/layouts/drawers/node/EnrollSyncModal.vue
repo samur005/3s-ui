@@ -13,6 +13,10 @@
   >
     <Tabs v-model="tab" :tabs="tabs" />
 
+    <div style="display:flex; align-items:center; gap:10px; margin:12px 0; padding:10px; background:var(--surface-2); border-radius:8px;">
+      <SwitchLabel v-model="autoEnroll" :label="$t('node.autoEnroll') || 'Auto-enroll new clients and inbounds'" />
+    </div>
+
     <div style="display:flex; gap:8px; margin:12px 0;">
       <Btn sm :variant="mode === 'enroll' ? 'primary' : 'subtle'" @click="mode = 'enroll'">
         {{ $t('node.syncEnroll') || 'Enroll' }}
@@ -63,6 +67,7 @@ import MDrawer from '@/components/ui/MDrawer.vue'
 import Tabs from '@/components/ui/Tabs.vue'
 import Btn from '@/components/ui/Btn.vue'
 import Chip from '@/components/ui/Chip.vue'
+import SwitchLabel from '@/components/ui/SwitchLabel.vue'
 
 const props = defineProps<{ visible: boolean }>()
 defineEmits<{ close: [] }>()
@@ -70,6 +75,7 @@ defineEmits<{ close: [] }>()
 const { t } = useI18n({ useScope: 'global' })
 const tab = ref('inbounds')
 const mode = ref<'enroll' | 'unenroll'>('enroll')
+const autoEnroll = ref(false)
 const saving = ref(false)
 const selectedInbounds = ref<number[]>([])
 const selectedClients = ref<number[]>([])
@@ -100,12 +106,18 @@ const selectAllClients = () => {
   selectedClients.value = filteredClients.value.map((c: any) => c.id)
 }
 
-watch(() => props.visible, (v) => {
+watch(() => props.visible, async (v) => {
   if (v) {
     selectedInbounds.value = []
     selectedClients.value = []
     mode.value = 'enroll'
+    const msg = await HttpUtils.post('api/getAutoEnroll', {})
+    autoEnroll.value = msg?.obj?.value === 'true'
   }
+})
+
+watch(autoEnroll, async (v) => {
+  await HttpUtils.post('api/setAutoEnroll', { value: v ? 'true' : 'false' })
 })
 
 const apply = async () => {
