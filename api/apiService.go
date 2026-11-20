@@ -1220,3 +1220,26 @@ func (a *ApiService) PurgeTombstone(c *gin.Context) {
 	err = bisync.PurgeTombstone(kind, uint(id))
 	jsonMsg(c, "purgeTombstone", err)
 }
+
+func (a *ApiService) UnenrollSync(c *gin.Context) {
+	kind := c.PostForm("kind")
+	id, err := strconv.ParseUint(c.PostForm("id"), 10, 64)
+	if err != nil {
+		jsonMsg(c, "unenrollSync", common.NewError("invalid id"))
+		return
+	}
+	switch kind {
+	case "client":
+		err = bisync.UnenrollClient(uint(id))
+	case "inbound":
+		err = bisync.UnenrollInbound(uint(id))
+	default:
+		jsonMsg(c, "unenrollSync", common.NewError("kind must be client or inbound"))
+		return
+	}
+	if err == nil {
+		a.NodeSyncService.MarkAllDirty()
+		go a.NodeSyncService.ReconcileDirtyOnline()
+	}
+	jsonMsg(c, "unenrollSync", err)
+}
