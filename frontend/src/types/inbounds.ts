@@ -398,6 +398,8 @@ export interface Xvless extends InboundBasics {
   decryption: string
   encryption: string
   flow: string
+  routeThroughCore: boolean
+  outboundTag: string
 }
 export const XvlessMethods = ['raw', 'xhttp', 'mkcp', 'grpc', 'websocket', 'httpupgrade']
 export const XvlessSecurities = ['none', 'tls', 'reality']
@@ -499,6 +501,7 @@ const defaultValues: Record<InType, Inbound> = {
     realityDest: 'www.cloudflare.com:443', realityServerNames: ['www.cloudflare.com'],
     realityPrivateKey: '', realityPublicKey: '', realityShortIds: [''], realityFingerprint: 'chrome',
     realitySpiderX: '', decryption: 'none', encryption: '', flow: 'xtls-rprx-vision',
+    routeThroughCore: true, outboundTag: '',
   },
 }
 

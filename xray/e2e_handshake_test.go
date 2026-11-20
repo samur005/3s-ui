@@ -522,12 +522,13 @@ func TestShareLink_NoCredentialLeak(t *testing.T) {
 		RealityPublicKey:  "pub", RealityServerNames: []string{"www.example.com"},
 		RealityShortIds: []string{"abcd"}, RealityFingerprint: "chrome",
 		Decryption: "mlkem-SECRET-DEC", Encryption: "mlkem-CLIENT-ENC",
+		HandoffUser: "h-user", HandoffPass: "h-SECRET-pass",
 	}
 	link, err := ShareLink(cfg, "5783a3e7-e373-51cd-8642-c83782b807c5", "t")
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, bad := range []string{"SECRET_PRIVATE", "mlkem-SECRET-DEC", "privateKey"} {
+	for _, bad := range []string{"SECRET_PRIVATE", "mlkem-SECRET-DEC", "privateKey", "h-SECRET-pass", "h-user", "handoff"} {
 		if strings.Contains(link, bad) {
 			t.Fatalf("leaked %q in %s", bad, link)
 		}

@@ -32,6 +32,11 @@ func BuildConfig(db *gorm.DB) ([]byte, error) {
 		return nil, err
 	}
 	inbounds := make([]map[string]any, 0, len(rows))
+	outbounds := []map[string]any{
+		{"protocol": "freedom", "tag": "direct"},
+		{"protocol": "blackhole", "tag": "block"},
+	}
+	var routeRules []map[string]any
 	for _, row := range rows {
 		cfg, err := DecodeVless(row.Options)
 		if err != nil {
@@ -48,27 +53,51 @@ func BuildConfig(db *gorm.DB) ([]byte, error) {
 			continue
 		}
 		inbounds = append(inbounds, ib)
+		if cfg.RouteThroughCore {
+			otag := HandoffOutboundTag(row.Id)
+			outbounds = append(outbounds, socksOutbound(otag, row.Id, cfg))
+			routeRules = append(routeRules, map[string]any{
+				"type":        "field",
+				"inboundTag":  []string{row.Tag},
+				"outboundTag": otag,
+			})
+		}
 	}
 	doc := map[string]any{
 		"log": map[string]any{
 			"loglevel": "warning",
 		},
-		"inbounds": inbounds,
-		"outbounds": []map[string]any{
-			// Xray 26.x freedom applies built-in finalRules that block private
-			// destinations (SSRF protection). Panel route rules are NOT synced
-			// into this config yet — do not treat this as full routing support.
-			{"protocol": "freedom", "tag": "direct"},
-			{"protocol": "blackhole", "tag": "block"},
-		},
-		// Routing stays minimal on purpose: reverse portal/bridge and panel
-		// rule sync into Xray are not implemented yet.
+		"inbounds":  inbounds,
+		"outbounds": outbounds,
+		// Panel route rules are NOT translated into Xray. When RouteThroughCore
+		// is on, traffic is handed to sing-box over loopback SOCKS; otherwise
+		// freedom/blackhole only. Reverse portal/bridge is not implemented.
 		"routing": map[string]any{
 			"domainStrategy": "AsIs",
-			"rules":          []any{},
+			"rules":          routeRules,
 		},
 	}
 	return json.MarshalIndent(doc, "", "  ")
+}
+
+func socksOutbound(tag string, id uint, c VlessConfig) map[string]any {
+	server := map[string]any{
+		"address": "127.0.0.1",
+		"port":    HandoffPort(id),
+	}
+	if c.HandoffUser != "" {
+		server["users"] = []map[string]any{{
+			"user": c.HandoffUser,
+			"pass": c.HandoffPass,
+		}}
+	}
+	return map[string]any{
+		"protocol": "socks",
+		"tag":      tag,
+		"settings": map[string]any{
+			"servers": []any{server},
+		},
+	}
 }
 
 func buildInbound(tag string, c VlessConfig, clients []ClientCred) (map[string]any, error) {
@@ -245,4 +274,9 @@ func ConfigDir() string {
 		return p
 	}
 	return "db/xray"
+}
+
+// BuildInboundForTest exposes buildInbound for integration tests in other packages.
+func BuildInboundForTest(tag string, c VlessConfig, uuid string) (map[string]any, error) {
+	return buildInbound(tag, c, []ClientCred{{Email: "u", ID: uuid, Enable: true}})
 }

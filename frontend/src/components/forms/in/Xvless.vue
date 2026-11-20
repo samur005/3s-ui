@@ -104,16 +104,32 @@
         <option value="xtls-rprx-vision">xtls-rprx-vision</option>
       </Select>
     </Field>
+
+    <hr class="form-divider" />
+    <SectionLabel style="margin-bottom: 12px;">{{ $t('xray.routing') }}</SectionLabel>
+    <div style="margin-bottom: 12px;">
+      <SwitchLabel v-model="data.routeThroughCore" :label="$t('xray.routeThroughCore')" />
+      <MHint style="margin-top: 4px;">{{ $t('xray.routeThroughCoreDesc') }}</MHint>
+    </div>
+    <Field v-if="data.routeThroughCore" :label="$t('xray.outboundTag')" :hint="$t('xray.outboundTagHint')">
+      <Select v-model="data.outboundTag">
+        <option value="">{{ $t('xray.byRules') }}</option>
+        <option v-for="o in outboundTags" :key="o" :value="o">{{ o }}</option>
+      </Select>
+    </Field>
+    <MHint>{{ $t('xray.handoffLimitations') }}</MHint>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import Data from '@/store/modules/data'
 import HttpUtils from '@/plugins/httputil'
 import { XvlessMethods, XvlessSecurities, XhttpModes } from '@/types/inbounds'
 import Field from '@/components/ui/Field.vue'
 import Select from '@/components/ui/Select.vue'
 import SectionLabel from '@/components/ui/SectionLabel.vue'
+import SwitchLabel from '@/components/ui/SwitchLabel.vue'
 import MHint from '@/components/ui/MHint.vue'
 import Chip from '@/components/ui/Chip.vue'
 import Btn from '@/components/ui/Btn.vue'
@@ -122,6 +138,9 @@ import Ico from '@/components/ui/Ico.vue'
 const props = defineProps<{ data: any; isNew: boolean }>()
 const status = ref<any>(null)
 const generating = ref(false)
+const outboundTags = computed((): string[] =>
+  ((Data().outbounds ?? []) as any[]).map((o) => o.tag as string).filter(Boolean),
+)
 
 const loadStatus = async () => {
   const msg = await HttpUtils.get('api/xrayStatus')

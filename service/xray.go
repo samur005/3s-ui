@@ -2,6 +2,8 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 
 	"github.com/samur005/3s-ui/database"
 	"github.com/samur005/3s-ui/database/model"
@@ -16,18 +18,53 @@ func init() {
 		Type:   xray.TypeVLESS,
 		Engine: EngineXray,
 		Normalize: func(tx *gorm.DB, id uint, options, stored json.RawMessage) (json.RawMessage, error) {
-			return xray.NormalizeVless(options, stored)
+			raw, err := xray.NormalizeVless(options, stored)
+			if err != nil {
+				return nil, err
+			}
+			cfg, err := xray.DecodeVless(raw)
+			if err != nil {
+				return nil, err
+			}
+			if tag := strings.TrimSpace(cfg.OutboundTag); tag != "" {
+				if err := xrayOutboundTagExists(tx, tag); err != nil {
+					return nil, err
+				}
+			}
+			return raw, nil
 		},
-		Apply: func() {
-			xray.Get().Apply(func() ([]byte, error) {
-				return xray.BuildConfig(database.GetDB())
-			})
-		},
+		Apply: func() { (&XrayService{}).ApplyStored() },
 	})
+}
+
+func xrayOutboundTagExists(tx *gorm.DB, tag string) error {
+	var n int64
+	if err := tx.Table("outbounds").Where("tag = ?", tag).Count(&n).Error; err != nil {
+		return err
+	}
+	if n == 0 {
+		return fmt.Errorf("outbound %q does not exist: pick one from Outbounds, or leave it empty for routing rules", tag)
+	}
+	return nil
 }
 
 // XrayService is the panel-facing API for the supervised Xray-core process.
 type XrayService struct{}
+
+// ApplyStored restarts sing-box when the loopback handoff fragment changed,
+// then rebuilds the Xray process. Core first so SOCKS is listening before
+// Xray dials it.
+func (s *XrayService) ApplyStored() {
+	var cs ConfigService
+	if xray.CoreNeedsRestart() && cs.CoreRunning() {
+		if err := cs.RestartCore(); err != nil {
+			// Still try to Apply Xray; connections may fail until core is up.
+		}
+	}
+	xray.Get().Apply(func() ([]byte, error) {
+		return xray.BuildConfig(database.GetDB())
+	})
+}
 
 // Status returns the live state of the Xray process.
 func (s *XrayService) Status() xray.Status {
@@ -39,9 +76,7 @@ func (s *XrayService) Status() xray.Status {
 
 // Restart rebuilds the config and restarts the process.
 func (s *XrayService) Restart() xray.Status {
-	xray.Get().Apply(func() ([]byte, error) {
-		return xray.BuildConfig(database.GetDB())
-	})
+	s.ApplyStored()
 	return s.Status()
 }
 
