@@ -3,22 +3,31 @@
     :open="visible"
     icon="refresh"
     color="var(--brand)"
-    :title="$t('node.syncEnrollBulk') || 'Enroll for bidirectional sync'"
-    :sub="$t('node.syncEnrollBulkHint') || 'Select inbounds and clients to include in bidirectional sync'"
+    :title="$t('node.syncEnrollBulk') || 'Bidirectional sync membership'"
+    :sub="$t('node.syncEnrollBulkHint') || 'Select records to enroll or unenroll'"
     :save-label="$t('actions.save')"
     :width="640"
     :loading="saving"
     @close="$emit('close')"
-    @save="enrollSelected"
+    @save="apply"
   >
     <Tabs v-model="tab" :tabs="tabs" />
 
-    <div v-if="tab === 'inbounds'" style="margin-top: 12px;">
+    <div style="display:flex; gap:8px; margin:12px 0;">
+      <Btn sm :variant="mode === 'enroll' ? 'primary' : 'subtle'" @click="mode = 'enroll'">
+        {{ $t('node.syncEnroll') || 'Enroll' }}
+      </Btn>
+      <Btn sm :variant="mode === 'unenroll' ? 'primary' : 'subtle'" @click="mode = 'unenroll'">
+        {{ $t('node.syncUnenroll') || 'Unenroll' }}
+      </Btn>
+    </div>
+
+    <div v-if="tab === 'inbounds'">
       <div style="display:flex; gap:8px; margin-bottom:10px;">
         <Btn sm @click="selectAllInbounds">{{ $t('actions.selectAll') || 'Select all' }}</Btn>
         <Btn sm variant="subtle" @click="selectedInbounds = []">{{ $t('actions.clear') || 'Clear' }}</Btn>
       </div>
-      <div v-for="ib in localInbounds" :key="ib.id" class="row">
+      <div v-for="ib in filteredInbounds" :key="ib.id" class="row">
         <label style="display:flex; align-items:center; gap:10px; cursor:pointer; width:100%;">
           <input type="checkbox" :value="ib.id" v-model="selectedInbounds" />
           <span class="mono" style="flex:1;">{{ ib.tag }}</span>
@@ -26,15 +35,14 @@
           <Chip v-if="ib.syncUid" color="emerald" sm>{{ $t('node.enrolled') || 'enrolled' }}</Chip>
         </label>
       </div>
-      <div v-if="!localInbounds.length" style="color:var(--text-3); font-size:13px;">{{ $t('ui.none') }}</div>
     </div>
 
-    <div v-else style="margin-top: 12px;">
+    <div v-else>
       <div style="display:flex; gap:8px; margin-bottom:10px;">
         <Btn sm @click="selectAllClients">{{ $t('actions.selectAll') || 'Select all' }}</Btn>
         <Btn sm variant="subtle" @click="selectedClients = []">{{ $t('actions.clear') || 'Clear' }}</Btn>
       </div>
-      <div v-for="c in localClients" :key="c.id" class="row">
+      <div v-for="c in filteredClients" :key="c.id" class="row">
         <label style="display:flex; align-items:center; gap:10px; cursor:pointer; width:100%;">
           <input type="checkbox" :value="c.id" v-model="selectedClients" />
           <span style="flex:1;">{{ c.name }}</span>
@@ -42,7 +50,6 @@
           <Chip v-if="c.syncUid" color="emerald" sm>{{ $t('node.enrolled') || 'enrolled' }}</Chip>
         </label>
       </div>
-      <div v-if="!localClients.length" style="color:var(--text-3); font-size:13px;">{{ $t('ui.none') }}</div>
     </div>
   </MDrawer>
 </template>
@@ -62,6 +69,7 @@ defineEmits<{ close: [] }>()
 
 const { t } = useI18n({ useScope: 'global' })
 const tab = ref('inbounds')
+const mode = ref<'enroll' | 'unenroll'>('enroll')
 const saving = ref(false)
 const selectedInbounds = ref<number[]>([])
 const selectedClients = ref<number[]>([])
@@ -71,39 +79,47 @@ const tabs = computed(() => [
   ['clients', t('ui.nav.clients') || 'Clients'],
 ])
 
-const localInbounds = computed(() =>
-  (Data().inbounds ?? []).filter((i: any) => !i.node_id)
+const localInbounds = computed(() => (Data().inbounds ?? []).filter((i: any) => !i.node_id))
+const localClients = computed(() => (Data().clients ?? []).filter((c: any) => c.group !== '@cluster'))
+
+const filteredInbounds = computed(() =>
+  mode.value === 'unenroll'
+    ? localInbounds.value.filter((i: any) => i.syncUid)
+    : localInbounds.value
 )
-const localClients = computed(() =>
-  (Data().clients ?? []).filter((c: any) => c.group !== '@cluster')
+const filteredClients = computed(() =>
+  mode.value === 'unenroll'
+    ? localClients.value.filter((c: any) => c.syncUid)
+    : localClients.value
 )
 
 const selectAllInbounds = () => {
-  selectedInbounds.value = localInbounds.value.map((i: any) => i.id)
+  selectedInbounds.value = filteredInbounds.value.map((i: any) => i.id)
 }
 const selectAllClients = () => {
-  selectedClients.value = localClients.value.map((c: any) => c.id)
+  selectedClients.value = filteredClients.value.map((c: any) => c.id)
 }
 
 watch(() => props.visible, (v) => {
   if (v) {
     selectedInbounds.value = []
     selectedClients.value = []
+    mode.value = 'enroll'
   }
 })
 
-const enrollSelected = async () => {
+const apply = async () => {
   saving.value = true
+  const action = mode.value === 'enroll' ? 'enrollSync' : 'unenrollSync'
   const tasks: Promise<any>[] = []
   for (const id of selectedInbounds.value) {
-    tasks.push(HttpUtils.post('api/enrollSync', { kind: 'inbound', id }))
+    tasks.push(HttpUtils.post('api/' + action, { kind: 'inbound', id }))
   }
   for (const id of selectedClients.value) {
-    tasks.push(HttpUtils.post('api/enrollSync', { kind: 'client', id }))
+    tasks.push(HttpUtils.post('api/' + action, { kind: 'client', id }))
   }
   await Promise.all(tasks)
   saving.value = false
-  // Refresh data so enrolled badges appear
   await Data().loadData(true)
 }
 </script>
