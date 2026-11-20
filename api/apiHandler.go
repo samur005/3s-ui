@@ -69,6 +69,8 @@ func (a *APIHandler) postHandler(c *gin.Context) {
 		a.ApiService.SetAutoEnroll(c)
 	case "getAutoEnroll":
 		a.ApiService.GetAutoEnroll(c)
+	case "scanRealityTarget":
+		a.ApiService.ScanRealityTarget(c)
 	case "listTombstones":
 		a.ApiService.ListTombstones(c)
 	case "purgeTombstone":
