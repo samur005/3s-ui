@@ -508,6 +508,32 @@ side (every one gets its own UDP port, tunnel subnet and interface).
   `::/0` AllowedIPs sends clients' IPv6 into the tunnel, where it is dropped, so
   nothing leaks) and nftables-only hosts.
 
+## Xray-core (second core)
+
+3S-UI can supervise an official [Xray-core](https://github.com/XTLS/Xray-core)
+process next to sing-box. Add an inbound of type **xvless** (group *Xray* in the
+type picker). The Inbounds list can filter by engine (sing-box / Xray / panel
+service) and each card shows which engine runs it.
+
+- **Pinned release** — `v26.11.9` (`xray/version.go`, `scripts/fetch-xray.sh`).
+  The binary ships in the release tarball and Docker image as `xray` beside the
+  panel; override with `S3UI_XRAY_BIN`.
+- **VLESS transports** (official `streamSettings.method`): raw (TCP), xhttp,
+  mkcp, grpc, websocket, httpupgrade. REALITY only with raw, xhttp or grpc.
+  mKCP no longer has header/seed — use FinalMask (e.g. salamander).
+- **Security** — none, tls (cert/key files on the host), reality (x25519 keys).
+- **Vision** — `xtls-rprx-vision` only with raw+tls/reality, or with VLESS
+  Encryption.
+- **VLESS Encryption** — optional ML-KEM-768 pair from `xray vlessenc` (Generate
+  on the form). Set decryption to `none` to disable.
+- **Clients** — bind as usual; share links are `vless://…` in the subscription
+  and the QR window. The client's `xvless`/`vless` UUID is reused.
+- **Not done** — Xray reverse portal/bridge, syncing panel routing rules into
+  Xray, other Xray protocols beyond VLESS, traffic counters for xvless.
+
+AmneziaWG **2.5** uses the same parameter set as 2.0: there is no separate
+official 2.5 specification confirmed for this panel.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, coding

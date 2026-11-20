@@ -32,6 +32,8 @@ export const InTypes = {
   // Run by the panel as well: WireGuard and AmneziaWG servers (wgserver).
   Wg: 'wg',
   Awg: 'awg',
+  // Xray-core VLESS (second core). Not the sing-box "vless" type.
+  Xvless: 'xvless',
 }
 
 type InType = typeof InTypes[keyof typeof InTypes]
@@ -49,13 +51,25 @@ export const InboundTypesWithUsers: string[] = [
   'hysteria', 'shadowtls', 'tuic', 'hysteria2', 'vless', 'anytls', 'mieru',
   // Panel-driven types carry no credential in the client config, but clients
   // are still bound to them (takesUsers in service/inbounds.go).
-  'qwdtt', 'wg', 'awg',
+  'qwdtt', 'wg', 'awg', 'xvless',
 ]
 
 // Inbounds the panel runs itself rather than handing to sing-box. They have
 // their own form, no listen/TLS/transport sections and no client-side half.
 // Keep in step with the registered drivers (service/extinbound.go).
-export const ExternalInTypes: string[] = ['qwdtt', 'wg', 'awg']
+export const ExternalInTypes: string[] = ['qwdtt', 'wg', 'awg', 'xvless']
+
+// Engines the Inbounds page groups by. Keep in step with service/extinbound.go.
+export const EngineSingbox = 'singbox'
+export const EngineXray = 'xray'
+export const EngineExternal = 'external'
+export const engineOf = (item: { type?: string; engine?: string }): string => {
+  if (item.engine) return item.engine
+  if (item.type === 'xvless') return EngineXray
+  if (ExternalInTypes.includes(item.type ?? '')) return EngineExternal
+  return EngineSingbox
+}
+
 
 export interface Addr {
   server: string
@@ -356,6 +370,39 @@ export const AwgObfuscationKeys: string[] = [
   'randomTrailers', 'disableCookies',
 ]
 
+
+export interface Xvless extends InboundBasics {
+  endpoint: string
+  method: string
+  security: string
+  path: string
+  host: string
+  serviceName: string
+  xhttpMode: string
+  kcpMtu: number
+  kcpTti: number
+  kcpUplinkCapacity: number
+  kcpDownlinkCapacity: number
+  finalMaskType: string
+  finalMaskPassword: string
+  certFile: string
+  keyFile: string
+  serverName: string
+  realityDest: string
+  realityServerNames: string[]
+  realityPrivateKey: string
+  realityPublicKey: string
+  realityShortIds: string[]
+  realityFingerprint: string
+  realitySpiderX: string
+  decryption: string
+  encryption: string
+  flow: string
+}
+export const XvlessMethods = ['raw', 'xhttp', 'mkcp', 'grpc', 'websocket', 'httpupgrade']
+export const XvlessSecurities = ['none', 'tls', 'reality']
+export const XhttpModes = ['auto', 'packet-up', 'stream-up', 'stream-one']
+
 export interface Redirect extends InboundBasics {}
 // Only tproxy carries these: RedirectInboundOptions is ListenOptions and
 // nothing else.
@@ -388,6 +435,7 @@ type InterfaceMap = {
   qwdtt: Qwdtt
   wg: Wg
   awg: Awg
+  xvless: Xvless
 }
 
 // Create union type from InterfaceMap
@@ -441,6 +489,16 @@ const defaultValues: Record<InType, Inbound> = {
     i1: '', i2: '', i3: '', i4: '', i5: '', headerProtectionKey: '', contentPaddingAddition: '',
     rekeyAfterTime: '', rekeyTimeout: '', rejectAfterTime: '', keepaliveTimeout: '', maxHandshakeAttempts: '',
     randomTrailers: false, disableCookies: false,
+  },
+  xvless: <Xvless>{
+    type: InTypes.Xvless, listen: '0.0.0.0', listen_port: 443, endpoint: '',
+    method: 'raw', security: 'reality', path: '/', host: '', serviceName: '',
+    xhttpMode: 'auto', kcpMtu: 1350, kcpTti: 50, kcpUplinkCapacity: 5, kcpDownlinkCapacity: 20,
+    finalMaskType: '', finalMaskPassword: '',
+    certFile: '', keyFile: '', serverName: '',
+    realityDest: 'www.cloudflare.com:443', realityServerNames: ['www.cloudflare.com'],
+    realityPrivateKey: '', realityPublicKey: '', realityShortIds: [''], realityFingerprint: 'chrome',
+    realitySpiderX: '', decryption: 'none', encryption: '', flow: 'xtls-rprx-vision',
   },
 }
 

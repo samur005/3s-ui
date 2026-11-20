@@ -16,6 +16,7 @@ import (
 	"github.com/samur005/3s-ui/sub"
 	"github.com/samur005/3s-ui/web"
 	"github.com/samur005/3s-ui/wgserver"
+	"github.com/samur005/3s-ui/xray"
 
 	"github.com/op/go-logging"
 )
@@ -155,6 +156,9 @@ func (a *APP) Start() error {
 	// After the core, so its TUN inbound exists when the routing goes in.
 	qwdtt.Get().Reconcile()
 	wgserver.Get().Reconcile()
+	xray.Get().Apply(func() ([]byte, error) {
+		return xray.BuildConfig(database.GetDB())
+	})
 
 	return nil
 }
@@ -221,6 +225,7 @@ func (a *APP) Stop() {
 	// Before the core goes: the server's routing points into the core's TUN.
 	qwdtt.Get().Shutdown()
 	wgserver.Get().Shutdown()
+	xray.Get().Shutdown()
 	err = a.configService.RetireCore()
 	if err != nil {
 		logger.Warning("stop Core err:", err)

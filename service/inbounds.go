@@ -428,6 +428,7 @@ var inboundTypesWithUsers = []string{
 	"mixed", "socks", "http", "shadowsocks", "snell", "vmess", "trojan",
 	"naive", "hysteria", "shadowtls", "tuic", "hysteria2", "vless", "anytls",
 	"mieru",
+	"xvless",
 }
 
 func (s *InboundService) hasUser(inboundType string) bool {

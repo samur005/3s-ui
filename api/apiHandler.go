@@ -101,6 +101,8 @@ func (a *APIHandler) postHandler(c *gin.Context) {
 		a.ApiService.TestNode(c)
 	case "wgRestart":
 		a.ApiService.RestartWg(c)
+	case "xrayRestart":
+		a.ApiService.RestartXray(c)
 	case "qwdttSave":
 		a.ApiService.SaveQwdtt(c)
 	case "qwdttRestart":
@@ -180,6 +182,12 @@ func (a *APIHandler) getHandler(c *gin.Context) {
 		a.ApiService.GetWgClient(c)
 	case "wgGenerate":
 		a.ApiService.GetWgGenerate(c)
+	case "xrayStatus":
+		a.ApiService.GetXrayStatus(c)
+	case "xrayClient":
+		a.ApiService.GetXrayClient(c)
+	case "xrayVlessEnc":
+		a.ApiService.GetXrayVlessEnc(c)
 	case "qwdtt":
 		a.ApiService.GetQwdtt(c)
 	case "qwdttLogs":

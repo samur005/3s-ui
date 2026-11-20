@@ -502,6 +502,31 @@ Sidecar — это команда `server` из SpaceNeuroX/proxy-turn-vk-androi
   `::/0` по умолчанию отправляет IPv6 клиентов в туннель, где он отбрасывается,
   утечки нет) и хосты только с nftables.
 
+## Xray-core (второе ядро)
+
+3S-UI умеет запускать официальный [Xray-core](https://github.com/XTLS/Xray-core)
+рядом с sing-box. Добавьте входящее типа **xvless** (группа *Xray* в выборе
+типа). В списке входящих можно фильтровать по движку (sing-box / Xray / сервис
+панели), на карточке указан движок.
+
+- **Закреплённый релиз** — `v26.11.9` (`xray/version.go`, `scripts/fetch-xray.sh`).
+  Бинарник лежит в релизном архиве и Docker-образе рядом с панелью; можно
+  задать `S3UI_XRAY_BIN`.
+- **Транспорты VLESS** (официальный `streamSettings.method`): raw (TCP), xhttp,
+  mkcp, grpc, websocket, httpupgrade. REALITY только с raw, xhttp или grpc.
+  У mKCP больше нет header/seed — используйте FinalMask (например salamander).
+- **Защита** — none, tls (файлы сертификата на хосте), reality (ключи x25519).
+- **Vision** — `xtls-rprx-vision` только с raw+tls/reality или с VLESS Encryption.
+- **VLESS Encryption** — опциональная пара ML-KEM-768 из `xray vlessenc`
+  (кнопка «Создать пару»). `decryption=none` отключает.
+- **Клиенты** — привязка как обычно; в подписке и QR — ссылки `vless://…`.
+  Используется UUID из блоков `xvless`/`vless` клиента.
+- **Не сделано** — reverse portal/bridge Xray, перенос правил маршрутизации
+  панели в Xray, другие протоколы Xray кроме VLESS, счётчики трафика для xvless.
+
+AmneziaWG **2.5** использует тот же набор параметров, что и 2.0: отдельной
+официальной спецификации 2.5 для этой панели не подтверждено.
+
 ## Участие в разработке
 
 См. [CONTRIBUTING.md](CONTRIBUTING.md) — там описаны настройка среды разработки,

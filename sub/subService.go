@@ -17,6 +17,7 @@ type SubService struct {
 	LinkService
 	qwdtt service.QwdttService
 	wg    service.WgService
+	xray  service.XrayService
 }
 
 // withQwdtt appends the client's qwdtt:// link, when qWDTT is on and the client
@@ -34,6 +35,11 @@ func (s *SubService) withQwdtt(client *model.Client, links []string) []string {
 // (Amnezia vpn://) links, one per inbound the client is bound to.
 func (s *SubService) withWireguard(client *model.Client, links []string) []string {
 	return append(links, s.wg.ClientLinks(client)...)
+}
+
+// withXray appends vless:// links for every Xray VLESS inbound the client is bound to.
+func (s *SubService) withXray(client *model.Client, links []string) []string {
+	return append(links, s.xray.LinksForClient(client)...)
 }
 
 func (s *SubService) GetSubs(subId string) (*string, []string, error) {
@@ -60,6 +66,7 @@ func (s *SubService) getSubs(subId string, transform func([]string) []string) (*
 	}
 	linksArray = s.withQwdtt(client, linksArray)
 	linksArray = s.withWireguard(client, linksArray)
+	linksArray = s.withXray(client, linksArray)
 	result := strings.Join(linksArray, "\n")
 
 	headers := s.getClientHeaders(client)
@@ -153,6 +160,7 @@ func (s *SubService) getClientInfoJSON(subId string) (*ClientInfo, error) {
 	info.Links = append(info.Links, s.LinkService.GetLinks(&client.Links, "all", "")...)
 	info.Links = s.withQwdtt(client, info.Links)
 	info.Links = s.withWireguard(client, info.Links)
+	info.Links = s.withXray(client, info.Links)
 
 	return info, nil
 }

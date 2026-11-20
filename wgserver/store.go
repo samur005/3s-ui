@@ -203,6 +203,11 @@ func NormalizeOptions(tx *gorm.DB, typ string, id uint, options, stored json.Raw
 	if err := noControl("outbound", cfg.OutboundTag); err != nil {
 		return nil, err
 	}
+	if cfg.OutboundTag != "" {
+		if err := outboundTagExists(tx, cfg.OutboundTag); err != nil {
+			return nil, err
+		}
+	}
 
 	// Obfuscation.
 	if typ == TypeWG {
@@ -503,3 +508,17 @@ func Active(peers []Peer) []Peer {
 
 // DB is the panel's database handle.
 func DB() *gorm.DB { return database.GetDB() }
+
+// outboundTagExists refuses a forced outbound that the panel does not have.
+// An empty tag means "by routing rules" and is fine; a typo used to be saved
+// and then silently dropped traffic once the core TUN was up.
+func outboundTagExists(tx *gorm.DB, tag string) error {
+	var n int64
+	if err := tx.Table("outbounds").Where("tag = ?", tag).Count(&n).Error; err != nil {
+		return err
+	}
+	if n == 0 {
+		return fmt.Errorf("outbound %q does not exist: pick one from Outbounds, or leave it empty for routing rules", tag)
+	}
+	return nil
+}

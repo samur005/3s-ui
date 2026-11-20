@@ -160,6 +160,11 @@ export function randomConfigs(user: string): Config {
       uuid: uuid,
       flow: "xtls-rprx-vision",
     },
+    xvless: {
+      name: user,
+      uuid: uuid,
+      flow: "",
+    },
     anytls: {
       name: user,
       password: mixedPassword,

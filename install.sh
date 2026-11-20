@@ -685,6 +685,7 @@ install_3s-ui() {
     # binary; the panel finds it as /usr/local/3s-ui/qwdtt. Older tarballs do
     # not have it, which is fine: qWDTT then just reports the binary missing.
     [[ -f 3s-ui/qwdtt ]] && chmod +x 3s-ui/qwdtt
+    [[ -f 3s-ui/xray ]] && chmod +x 3s-ui/xray
     # 3s-ui.openrc rides along in the tarball and is copied under
     # /usr/local/3s-ui/ with the rest, so install_openrc_service can restore
     # it without re-embedding (mirrors how 3s-ui.service is shipped).
