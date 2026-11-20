@@ -566,6 +566,10 @@ func (a *ApiService) Save(c *gin.Context, loginUser string, fanout bool, hostnam
 		return
 	}
 	if fanout && (obj == "clients" || obj == "inbounds") {
+		// Auto-enroll new records when the setting is on.
+		if act == "new" {
+			a.maybeAutoEnroll(obj, result)
+		}
 		// Fire-and-forget: network IO must not block the save's DB txn (already
 		// committed) or the HTTP response. Unrelated nodes are a cheap no-op diff.
 		a.NodeSyncService.MarkAllDirty()
@@ -1242,4 +1246,23 @@ func (a *ApiService) UnenrollSync(c *gin.Context) {
 		go a.NodeSyncService.ReconcileDirtyOnline()
 	}
 	jsonMsg(c, "unenrollSync", err)
+}
+
+
+func (a *ApiService) maybeAutoEnroll(obj string, result *service.SaveResult) {
+	if result == nil || len(result.Ids) == 0 {
+		return
+	}
+	var row model.Setting
+	if database.GetDB().Where("`key` = ?", "autoEnrollSync").First(&row).Error != nil || row.Value != "true" {
+		return
+	}
+	for _, id := range result.Ids {
+		switch obj {
+		case "clients":
+			_ = bisync.EnrollClient(id)
+		case "inbounds":
+			_ = bisync.EnrollInbound(id)
+		}
+	}
 }
