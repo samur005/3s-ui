@@ -102,11 +102,12 @@ func ApplyInboundRecord(rec Record) error {
 				tryTag = fmt.Sprintf("%s-sync%d", baseTag, i)
 			}
 			var clash model.Inbound
-			if db.Where("tag = ?", tryTag).First(&clash).Error != nil {
+			err := db.Where("tag = ? AND deleted_at = 0", tryTag).First(&clash).Error
+			if err != nil {
 				tag = tryTag
 				break
 			}
-			if i > 20 {
+			if i > 30 {
 				return fmt.Errorf("could not find unique tag for %q", baseTag)
 			}
 		}
