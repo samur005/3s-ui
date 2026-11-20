@@ -69,6 +69,10 @@ func (a *APIHandler) postHandler(c *gin.Context) {
 		a.ApiService.SetAutoEnroll(c)
 	case "getAutoEnroll":
 		a.ApiService.GetAutoEnroll(c)
+	case "syncCatalog":
+		a.ApiService.SyncCatalog(c)
+	case "syncCatalogApply":
+		a.ApiService.SyncCatalogApply(c)
 	case "scanRealityTarget":
 		a.ApiService.ScanRealityTarget(c)
 	case "generateRealityKey":
