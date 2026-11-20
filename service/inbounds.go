@@ -134,7 +134,31 @@ func (s *InboundService) Save(tx *gorm.DB, act string, data json.RawMessage, ini
 	if err := s.save(tx, act, data, initUserIds, hostname, &afterCommit); err != nil {
 		return nil, err
 	}
+	// Auto-enroll if enabled
+	if act == "new" || act == "edit" {
+		go autoEnrollInboundIfEnabled(data)
+	}
 	return afterCommit, nil
+}
+
+func autoEnrollInboundIfEnabled(data json.RawMessage) {
+	db := database.GetDB()
+	var val string
+	db.Model(&model.Setting{}).Where("key = ?", "autoEnrollSync").Select("value").Scan(&val)
+	if val != "true" {
+		return
+	}
+	var ib model.Inbound
+	if err := json.Unmarshal(data, &ib); err != nil || ib.Id == 0 {
+		return
+	}
+	if ib.SyncUid != "" {
+		return // already enrolled
+	}
+	// Enroll it
+	uid := fmt.Sprintf("%x", time.Now().UnixNano())
+	db.Model(&model.Inbound{}).Where("id = ?", ib.Id).Update("sync_uid", uid)
+	logger.Info("auto-enrolled inbound ", ib.Tag, " sync_uid=", uid[:8])
 }
 
 // removeFromCore takes the inbound running as tag out of the core, and what
