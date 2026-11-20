@@ -152,7 +152,7 @@ func autoEnrollInboundIfEnabled(data json.RawMessage) {
 	if err := json.Unmarshal(data, &ib); err != nil || ib.Id == 0 {
 		return
 	}
-	if ib.SyncUid != "" {
+	if ib.SyncUID != "" {
 		return // already enrolled
 	}
 	// Enroll it
