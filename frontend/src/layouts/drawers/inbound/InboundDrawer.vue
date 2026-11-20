@@ -15,6 +15,17 @@
       {{ $t('loading') }}
     </div>
     <template v-else>
+      <Field v-if="isNew" label="Шаблоны">
+        <Select v-model="selectedTemplate" @change="applyTemplate">
+          <option value="">— без шаблона —</option>
+          <option value="vless-xhttp-reality">VLESS + XHTTP + Reality</option>
+          <option value="vless-grpc-reality">VLESS + gRPC + Reality</option>
+          <option value="vless-grpc-tls">VLESS + gRPC + TLS</option>
+          <option value="vless-ws-tls">VLESS + WS + TLS</option>
+          <option value="vless-httpupgrade-tls">VLESS + HTTPUpgrade + TLS</option>
+          <option value="vless-kcp">VLESS + KCP</option>
+        </Select>
+      </Field>
       <Field :label="$t('ui.protocolType')">
         <Select
           class="mono"
