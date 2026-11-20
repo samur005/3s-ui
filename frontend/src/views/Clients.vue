@@ -472,7 +472,9 @@ const inboundsOf = (c: any): any[] =>
   (c.inbounds ?? []).map((id: number) => inbounds.value.find((i: any) => i.id == id)).filter((i: any) => !!i)
 const protoSummary = (c: any): string => {
   const types = Array.from(new Set(inboundsOf(c).map((i: any) => i.type)))
-  return types.length > 0 ? types.join(', ') : '—'
+  if (types.length === 0) return '—'
+  if (types.length <= 3) return types.join(', ')
+  return types.slice(0, 3).join(', ') + ' +' + (types.length - 3)
 }
 const inbTitle = (c: any): string => inboundsOf(c).map((i: any) => i.tag).join('\n')
 
