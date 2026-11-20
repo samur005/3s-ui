@@ -34,6 +34,7 @@ export const InTypes = {
   Awg: 'awg',
   // Xray-core VLESS (second core). Not the sing-box "vless" type.
   Xvless: 'xvless',
+  TrustTunnel: 'trusttunnel',
 }
 
 type InType = typeof InTypes[keyof typeof InTypes]
@@ -57,7 +58,7 @@ export const InboundTypesWithUsers: string[] = [
 // Inbounds the panel runs itself rather than handing to sing-box. They have
 // their own form, no listen/TLS/transport sections and no client-side half.
 // Keep in step with the registered drivers (service/extinbound.go).
-export const ExternalInTypes: string[] = ['qwdtt', 'wg', 'awg', 'xvless']
+export const ExternalInTypes: string[] = ['qwdtt', 'wg', 'awg', 'xvless', 'trusttunnel']
 
 // Engines the Inbounds page groups by. Keep in step with service/extinbound.go.
 export const EngineSingbox = 'singbox'
@@ -299,6 +300,10 @@ export interface Cloudflared extends InboundBasics {
 // qWDTT: WireGuard over DTLS over the TURN relays of a VK call. The field
 // names are the server's own (qwdtt.Config); listen/listen_port are derived
 // from listenAddr by the panel and only read back.
+export interface TrustTunnel extends InboundBasics {
+  listen_port: number
+  credentials: string
+}
 export interface Qwdtt extends InboundBasics {
   remark?: string
   listenAddr: string
@@ -434,6 +439,7 @@ type InterfaceMap = {
   redirect: Redirect
   tproxy: TProxy
   cloudflared: Cloudflared
+  trusttunnel: TrustTunnel
   qwdtt: Qwdtt
   wg: Wg
   awg: Awg
@@ -475,6 +481,9 @@ const defaultValues: Record<InType, Inbound> = {
   redirect: <Redirect>{ type: InTypes.Redirect },
   tproxy: <TProxy>{ type: InTypes.TProxy },
   cloudflared: <Cloudflared>{ type: InTypes.Cloudflared, token: '', protocol: 'auto' },
+  trusttunnel: <TrustTunnel>{
+    type: InTypes.TrustTunnel, listen_port: 443, credentials: '',
+  },
   qwdtt: <Qwdtt>{
     type: InTypes.Qwdtt, listenAddr: '0.0.0.0:56000', wgPort: 56001, password: '', dns: '8.8.8.8',
     listenRaw: '0.0.0.0:56003', listenDirect: '', configDir: '', subHost: '', vkHashes: '', remark: '',
