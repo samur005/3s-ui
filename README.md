@@ -420,7 +420,10 @@ is bound to it). One qWDTT inbound is supported; sing-box never sees it.
   the server's `wdtt0` / `wdttraw0` interfaces into it (`ip rule … lookup 1977`),
   so your routing rules and outbounds apply to qWDTT clients. An optional
   *Outbound* forces all of their traffic to one outbound tag. Switch it off and
-  the server NATs straight to the internet.
+  the server NATs straight to the internet. Before starting the `qwdtt`/`xray`
+  sidecars the panel marks in-process TUN fds `CLOEXEC` so a core restart cannot
+  hit `TUNSETIFF EBUSY` from inherited descriptors (sing-tun opens TUN without
+  `O_CLOEXEC`; interface deletion is never used as a workaround).
 - **VK hashes** — the *VK cookies* box takes the cookies of a VK account
   (a JSON array of `{name, value}` exported from the browser, or a `Cookie:`
   header; `remixsid` is required). They are stored in the database and never
