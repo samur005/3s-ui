@@ -80,7 +80,7 @@ const saving = ref(false)
 const selectedInbounds = ref<number[]>([])
 const selectedClients = ref<number[]>([])
 
-const tabs = computed(() => [
+const tabs = computed((): [string, string][] => [
   ['inbounds', t('ui.nav.inbounds') || 'Inbounds'],
   ['clients', t('ui.nav.clients') || 'Clients'],
 ])
