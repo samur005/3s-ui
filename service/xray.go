@@ -2,9 +2,12 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 
 	"github.com/samur005/3s-ui/database"
 	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/logger"
 	"github.com/samur005/3s-ui/util/common"
 	"github.com/samur005/3s-ui/xray"
 
@@ -16,18 +19,71 @@ func init() {
 		Type:   xray.TypeVLESS,
 		Engine: EngineXray,
 		Normalize: func(tx *gorm.DB, id uint, options, stored json.RawMessage) (json.RawMessage, error) {
-			return xray.NormalizeVless(options, stored)
+			raw, err := xray.NormalizeVless(id, options, stored)
+			if err != nil {
+				return nil, err
+			}
+			cfg, err := xray.DecodeVless(raw)
+			if err != nil {
+				return nil, err
+			}
+			if tag := strings.TrimSpace(cfg.OutboundTag); tag != "" {
+				if err := xrayOutboundTagExists(tx, tag); err != nil {
+					return nil, err
+				}
+			}
+			return raw, nil
 		},
-		Apply: func() {
-			xray.Get().Apply(func() ([]byte, error) {
-				return xray.BuildConfig(database.GetDB())
-			})
-		},
+		Apply: func() { (&XrayService{}).ApplyStored() },
 	})
+}
+
+func xrayOutboundTagExists(tx *gorm.DB, tag string) error {
+	var n int64
+	if err := tx.Table("outbounds").Where("tag = ?", tag).Count(&n).Error; err != nil {
+		return err
+	}
+	if n == 0 {
+		return fmt.Errorf("outbound %q does not exist: pick one from Outbounds, or leave it empty for routing rules", tag)
+	}
+	return nil
 }
 
 // XrayService is the panel-facing API for the supervised Xray-core process.
 type XrayService struct{}
+
+// ApplyStored restarts sing-box when the loopback handoff fragment changed,
+// then rebuilds the Xray process. Core first so SOCKS is listening before
+// Xray dials it. If the core cannot provide the handoff listeners while any
+// xvless has routeThroughCore, Xray is stopped (fail closed) — never left on
+// a freedom default for those inbounds.
+func (s *XrayService) ApplyStored() {
+	var cs ConfigService
+	db := database.GetDB()
+	needCore := xray.AnyRouteThroughCore(db)
+	if xray.CoreNeedsRestart() {
+		var err error
+		if cs.CoreRunning() {
+			err = cs.RestartCore()
+		} else if needCore {
+			err = cs.StartCore()
+		}
+		if err != nil && needCore {
+			logger.Warning("xray: sing-box handoff restart failed, stopping Xray: ", err)
+			xray.Get().Stop()
+			return
+		}
+	} else if needCore && !cs.CoreRunning() {
+		if err := cs.StartCore(); err != nil {
+			logger.Warning("xray: sing-box not running for handoff, stopping Xray: ", err)
+			xray.Get().Stop()
+			return
+		}
+	}
+	xray.Get().Apply(func() ([]byte, error) {
+		return xray.BuildConfig(db)
+	})
+}
 
 // Status returns the live state of the Xray process.
 func (s *XrayService) Status() xray.Status {
@@ -39,9 +95,7 @@ func (s *XrayService) Status() xray.Status {
 
 // Restart rebuilds the config and restarts the process.
 func (s *XrayService) Restart() xray.Status {
-	xray.Get().Apply(func() ([]byte, error) {
-		return xray.BuildConfig(database.GetDB())
-	})
+	s.ApplyStored()
 	return s.Status()
 }
 

@@ -225,7 +225,7 @@ func TestE2E_PanelShareLink_RawAndXHTTP(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			raw, err := NormalizeVless(mustJSON(tc.cfg), nil)
+			raw, err := NormalizeVless(0, mustJSON(tc.cfg), nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -290,7 +290,7 @@ func TestE2E_VLESSEncryption_MLKEM(t *testing.T) {
 		Listen: "127.0.0.1", ListenPort: port, Endpoint: "127.0.0.1",
 		Method: "raw", Security: "none", Decryption: dec, Encryption: enc,
 	}
-	raw, err := NormalizeVless(mustJSON(cfg), nil)
+	raw, err := NormalizeVless(0, mustJSON(cfg), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -367,7 +367,7 @@ func TestE2E_Reality_IfReachable(t *testing.T) {
 		RealityPrivateKey:  priv, RealityPublicKey: pub,
 		RealityShortIds: []string{""}, RealityFingerprint: "chrome",
 	}
-	raw, err := NormalizeVless(mustJSON(cfg), nil)
+	raw, err := NormalizeVless(0, mustJSON(cfg), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -522,12 +522,13 @@ func TestShareLink_NoCredentialLeak(t *testing.T) {
 		RealityPublicKey:  "pub", RealityServerNames: []string{"www.example.com"},
 		RealityShortIds: []string{"abcd"}, RealityFingerprint: "chrome",
 		Decryption: "mlkem-SECRET-DEC", Encryption: "mlkem-CLIENT-ENC",
+		HandoffUser: "h-user", HandoffPass: "h-SECRET-pass",
 	}
 	link, err := ShareLink(cfg, "5783a3e7-e373-51cd-8642-c83782b807c5", "t")
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, bad := range []string{"SECRET_PRIVATE", "mlkem-SECRET-DEC", "privateKey"} {
+	for _, bad := range []string{"SECRET_PRIVATE", "mlkem-SECRET-DEC", "privateKey", "h-SECRET-pass", "h-user", "handoff"} {
 		if strings.Contains(link, bad) {
 			t.Fatalf("leaked %q in %s", bad, link)
 		}

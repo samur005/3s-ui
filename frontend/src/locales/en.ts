@@ -195,7 +195,15 @@ export default {
     encryptionDesc: "Optional post-quantum layer (ML-KEM-768). Generate a matching pair; set decryption=none to disable. Cannot be combined with fallbacks.",
     generateEnc: "Generate pair",
     flow: "Default flow",
-    flowHint: "Vision only with raw+TLS/REALITY, or with VLESS Encryption.",
+    flowHint: "Vision only with raw+TLS/REALITY or with VLESS Encryption.",
+    routing: "Routing",
+    routeThroughCore: "Through sing-box",
+    routeThroughCoreDesc: "Hands decrypted TCP+UDP to a loopback sing-box mixed inbound with this inbound's tag, so your panel route rules and outbounds apply. Off: Xray exits with freedom (no panel rules).",
+    outboundTag: "Force outbound",
+    outboundTagHint: "Optional. Empty = follow panel routing rules for this inbound tag.",
+    byRules: "By routing rules",
+    handoffLimitations: "Handoff uses SOCKS on 127.0.0.1: sing-box does not see the original client IP or VLESS user. Rules that depend on those will not match as on native sing-box inbounds. Panel rules are not copied into Xray JSON.",
+
   },
   wg: {
     wgDesc: "WireGuard server run by the panel. Every client bound to this inbound gets its own peer (keys and a tunnel address); the config, the wireguard:// link and a QR are in the client's links window and in the subscription.",

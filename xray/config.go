@@ -22,8 +22,9 @@ type ClientCred struct {
 }
 
 // BuildConfig writes a full Xray JSON config from every local enabled xvless
-// inbound and their bound clients. outbounds are freedom+blackhole so traffic
-// leaves the box directly; reverse portal/bridge is not implemented.
+// inbound and their bound clients. Default outbound is blackhole (fail closed);
+// routeThroughCore hands traffic to sing-box over loopback SOCKS, otherwise an
+// explicit rule uses freedom. Reverse portal/bridge is not implemented.
 func BuildConfig(db *gorm.DB) ([]byte, error) {
 	var rows []model.Inbound
 	if err := db.Model(model.Inbound{}).
@@ -32,6 +33,13 @@ func BuildConfig(db *gorm.DB) ([]byte, error) {
 		return nil, err
 	}
 	inbounds := make([]map[string]any, 0, len(rows))
+	// blackhole is first so unmatched traffic never falls through to freedom
+	// when routeThroughCore is on (Xray's default outbound is the first one).
+	outbounds := []map[string]any{
+		{"protocol": "blackhole", "tag": "block"},
+		{"protocol": "freedom", "tag": "direct"},
+	}
+	var routeRules []map[string]any
 	for _, row := range rows {
 		cfg, err := DecodeVless(row.Options)
 		if err != nil {
@@ -48,27 +56,59 @@ func BuildConfig(db *gorm.DB) ([]byte, error) {
 			continue
 		}
 		inbounds = append(inbounds, ib)
+		if cfg.RouteThroughCore {
+			if cfg.HandoffUser == "" || cfg.HandoffPass == "" {
+				return nil, fmt.Errorf("xray: inbound %s: routeThroughCore needs handoff credentials", row.Tag)
+			}
+			otag := HandoffOutboundTag(row.Id)
+			outbounds = append(outbounds, socksOutbound(otag, row.Id, cfg))
+			routeRules = append(routeRules, map[string]any{
+				"type":        "field",
+				"inboundTag":  []string{row.Tag},
+				"outboundTag": otag,
+			})
+		} else {
+			routeRules = append(routeRules, map[string]any{
+				"type":        "field",
+				"inboundTag":  []string{row.Tag},
+				"outboundTag": "direct",
+			})
+		}
 	}
 	doc := map[string]any{
 		"log": map[string]any{
 			"loglevel": "warning",
 		},
-		"inbounds": inbounds,
-		"outbounds": []map[string]any{
-			// Xray 26.x freedom applies built-in finalRules that block private
-			// destinations (SSRF protection). Panel route rules are NOT synced
-			// into this config yet — do not treat this as full routing support.
-			{"protocol": "freedom", "tag": "direct"},
-			{"protocol": "blackhole", "tag": "block"},
-		},
-		// Routing stays minimal on purpose: reverse portal/bridge and panel
-		// rule sync into Xray are not implemented yet.
+		"inbounds":  inbounds,
+		"outbounds": outbounds,
+		// Panel route rules are NOT translated into Xray. When RouteThroughCore
+		// is on, traffic is handed to sing-box over loopback SOCKS; otherwise
+		// an explicit rule sends the inbound to freedom. Default outbound is
+		// blackhole (fail closed). Reverse portal/bridge is not implemented.
 		"routing": map[string]any{
 			"domainStrategy": "AsIs",
-			"rules":          []any{},
+			"rules":          routeRules,
 		},
 	}
 	return json.MarshalIndent(doc, "", "  ")
+}
+
+func socksOutbound(tag string, id uint, c VlessConfig) map[string]any {
+	server := map[string]any{
+		"address": "127.0.0.1",
+		"port":    HandoffPort(id, c.HandoffPort),
+	}
+	server["users"] = []map[string]any{{
+		"user": c.HandoffUser,
+		"pass": c.HandoffPass,
+	}}
+	return map[string]any{
+		"protocol": "socks",
+		"tag":      tag,
+		"settings": map[string]any{
+			"servers": []any{server},
+		},
+	}
 }
 
 func buildInbound(tag string, c VlessConfig, clients []ClientCred) (map[string]any, error) {
@@ -245,4 +285,9 @@ func ConfigDir() string {
 		return p
 	}
 	return "db/xray"
+}
+
+// BuildInboundForTest exposes buildInbound for integration tests in other packages.
+func BuildInboundForTest(tag string, c VlessConfig, uuid string) (map[string]any, error) {
+	return buildInbound(tag, c, []ClientCred{{Email: "u", ID: uuid, Enable: true}})
 }

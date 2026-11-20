@@ -77,6 +77,17 @@ type VlessConfig struct {
 	// FlowDefault is applied to clients that do not set their own flow.
 	// Vision is only valid with raw+tls/reality, or when Encryption is set.
 	FlowDefault string `json:"flow"`
+
+	// RouteThroughCore sends decrypted traffic into a loopback sing-box mixed
+	// inbound (same tag as this row) so panel routing/outbounds apply.
+	// Default true. Off = Xray freedom outbound (no panel rules).
+	RouteThroughCore bool   `json:"routeThroughCore"`
+	OutboundTag      string `json:"outboundTag"`
+	// HandoffUser/Pass authenticate the loopback SOCKS/mixed handoff. Generated
+	// once; not shown in the UI and never put in share links.
+	HandoffUser string `json:"handoffUser,omitempty"`
+	HandoffPass string `json:"handoffPass,omitempty"`
+	HandoffPort int    `json:"handoffPort,omitempty"`
 }
 
 func DecodeVless(raw json.RawMessage) (VlessConfig, error) {
@@ -104,10 +115,28 @@ func oneOf(v string, list []string) bool {
 }
 
 // NormalizeVless fills defaults and validates against official Xray rules.
-func NormalizeVless(options, stored json.RawMessage) (json.RawMessage, error) {
+func NormalizeVless(id uint, options, stored json.RawMessage) (json.RawMessage, error) {
 	prev, _ := DecodeVless(stored)
 	c, err := DecodeVless(options)
 	if err != nil {
+		return nil, err
+	}
+	if !jsonHasKey(options, "routeThroughCore") {
+		if jsonHasKey(stored, "routeThroughCore") {
+			c.RouteThroughCore = prev.RouteThroughCore
+		} else {
+			c.RouteThroughCore = true
+		}
+	}
+	if jsonHasKey(options, "outboundTag") {
+		c.OutboundTag = strings.TrimSpace(c.OutboundTag)
+	} else {
+		c.OutboundTag = strings.TrimSpace(prev.OutboundTag)
+	}
+	if strings.ContainsAny(c.OutboundTag, "\r\n\t") {
+		return nil, fmt.Errorf("outboundTag must not contain whitespace control characters")
+	}
+	if err := AllocateHandoffFields(&c, prev, id); err != nil {
 		return nil, err
 	}
 	// Merge: empty string/0 from the form keeps the stored value for keys the
@@ -257,4 +286,16 @@ func (c VlessConfig) HostPort() (string, int, error) {
 		}
 	}
 	return host, port, nil
+}
+
+func jsonHasKey(raw json.RawMessage, key string) bool {
+	if len(raw) == 0 || string(raw) == "null" {
+		return false
+	}
+	var m map[string]json.RawMessage
+	if json.Unmarshal(raw, &m) != nil {
+		return false
+	}
+	_, ok := m[key]
+	return ok
 }

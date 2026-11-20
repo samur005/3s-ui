@@ -528,8 +528,12 @@ service) and each card shows which engine runs it.
   on the form). Set decryption to `none` to disable.
 - **Clients** — bind as usual; share links are `vless://…` in the subscription
   and the QR window. The client's `xvless`/`vless` UUID is reused.
-- **Not done** — Xray reverse portal/bridge, syncing panel routing rules into
-  Xray, other Xray protocols beyond VLESS, traffic counters for xvless.
+- **Through sing-box (default)** — decrypted TCP+UDP is handed to a loopback
+  mixed inbound that reuses this inbound's tag, so panel route rules and
+  outbounds apply. Optional forced outbound. Off = Xray `freedom` (no panel
+  rules). SOCKS handoff does **not** preserve original client IP or VLESS user.
+- **Not done** — translating panel rules into Xray JSON, Xray reverse
+  portal/bridge, other Xray protocols beyond VLESS, traffic counters for xvless.
 
 AmneziaWG **2.5** uses the same parameter set as 2.0: there is no separate
 official 2.5 specification confirmed for this panel.

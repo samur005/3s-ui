@@ -154,6 +154,13 @@ func (s *ConfigService) GetConfig(data string) (*[]byte, error) {
 	} else {
 		singboxConfig.Inbounds, singboxConfig.Route = in, rt
 	}
+	// Xray VLESS handoff: loopback mixed inbounds (same tag as xvless rows) so
+	// panel routing applies. Not a translation of rules into Xray.
+	if in, rt, xerr := xray.InjectCore(singboxConfig.Inbounds, singboxConfig.Route); xerr != nil {
+		logger.Warning(xerr)
+	} else {
+		singboxConfig.Inbounds, singboxConfig.Route = in, rt
+	}
 	rawConfig, err := json.MarshalIndent(singboxConfig, "", "  ")
 	if err != nil {
 		return nil, err
