@@ -44,7 +44,6 @@
       >
         <template #chip>
           <Chip v-if="item.dirty" color="amber" :title="$t('node.syncDirty')">{{ $t('node.syncDirty') }}</Chip>
-          <Chip v-if="item.syncMode === 'bidirectional'" color="sky" :title="$t('node.syncBidirectional')">{{ $t('node.syncBidirectional') }}</Chip>
           <Chip v-if="stateOf(item) === 'online'" color="emerald" dot>{{ $t('node.status.online') }}</Chip>
           <Chip v-else-if="stateOf(item) === 'core-stopped'" color="amber">{{ $t('node.status.coreStopped') }}</Chip>
           <Chip v-else-if="stateOf(item) === 'offline'" color="rose">{{ $t('node.status.offline') }}</Chip>
