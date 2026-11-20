@@ -267,6 +267,7 @@ const xrayTypes = [
 ]
 // Run by the panel itself rather than by sing-box or Xray.
 const externalTypes = [
+  InTypes.TrustTunnel,
   InTypes.Qwdtt,
   InTypes.Wg,
   InTypes.Awg,
