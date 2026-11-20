@@ -94,9 +94,21 @@ func ApplyInboundRecord(rec Record) error {
 		return fmt.Errorf("inbound payload missing type/tag")
 	}
 	if notFound {
-		var clash model.Inbound
-		if db.Where("tag = ? AND deleted_at = 0", tag).First(&clash).Error == nil {
-			return fmt.Errorf("duplicate inbound tag %q — resolve before sync", tag)
+		// Ensure tag is unique (including soft-deleted rows). Append suffix if needed.
+		baseTag := tag
+		for i := 0; ; i++ {
+			tryTag := baseTag
+			if i > 0 {
+				tryTag = fmt.Sprintf("%s-sync%d", baseTag, i)
+			}
+			var clash model.Inbound
+			if db.Where("tag = ?", tryTag).First(&clash).Error != nil {
+				tag = tryTag
+				break
+			}
+			if i > 20 {
+				return fmt.Errorf("could not find unique tag for %q", baseTag)
+			}
 		}
 		// Safe local stubs — operator must fill listen_port (needsLocal).
 		if opts == nil || string(opts) == "null" {
