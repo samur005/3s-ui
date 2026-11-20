@@ -17,6 +17,7 @@ import (
 	"github.com/samur005/3s-ui/service/notify"
 	"github.com/samur005/3s-ui/util"
 	"github.com/samur005/3s-ui/util/common"
+	"github.com/samur005/3s-ui/wgserver"
 )
 
 var (
@@ -143,6 +144,12 @@ func (s *ConfigService) GetConfig(data string) (*[]byte, error) {
 	// core from starting, so it is logged and the fragment is left out.
 	if in, rt, qerr := qwdtt.InjectCore(singboxConfig.Inbounds, singboxConfig.Route); qerr != nil {
 		logger.Warning(qerr)
+	} else {
+		singboxConfig.Inbounds, singboxConfig.Route = in, rt
+	}
+	// The same for the WireGuard / AmneziaWG inbounds that route through the core.
+	if in, rt, werr := wgserver.InjectCore(singboxConfig.Inbounds, singboxConfig.Route); werr != nil {
+		logger.Warning(werr)
 	} else {
 		singboxConfig.Inbounds, singboxConfig.Route = in, rt
 	}

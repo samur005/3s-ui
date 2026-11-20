@@ -10,13 +10,14 @@ import (
 	"github.com/samur005/3s-ui/logger"
 	"github.com/samur005/3s-ui/qwdtt"
 	"github.com/samur005/3s-ui/util/common"
+	"gorm.io/gorm"
 )
 
 func init() {
 	registerExtDriver(&extDriver{
 		Type:   qwdtt.InboundType,
 		Single: true,
-		Normalize: func(options, stored json.RawMessage) (json.RawMessage, error) {
+		Normalize: func(_ *gorm.DB, _ uint, options, stored json.RawMessage) (json.RawMessage, error) {
 			opts, _, err := qwdtt.NormalizeOptions(options, stored)
 			return opts, err
 		},

@@ -23,22 +23,50 @@ import (
 type extDriver struct {
 	// Type is the inbound type string stored in the row.
 	Type string
+	// Engine names what runs the inbound: EngineExternal for the panel's own
+	// supervised servers (qWDTT, WireGuard, AmneziaWG). The Inbounds page groups
+	// and labels rows by it; sing-box rows carry no driver and read as
+	// EngineSingbox, and a second core would register under its own name.
+	Engine string
 	// Single refuses a second row of this type (one server per host).
 	Single bool
 	// Normalize validates the options a form sent and returns them in the
 	// stored shape. stored holds the row's current options (nil for a new
 	// row): what the form leaves out keeps its stored value. The row's id, tag
-	// and enable switch are not part of them.
-	Normalize func(options, stored json.RawMessage) (json.RawMessage, error)
+	// and enable switch are not part of them. id is the row's id (0 for a new
+	// row) and tx the open transaction, for checks against the other rows.
+	Normalize func(tx *gorm.DB, id uint, options, stored json.RawMessage) (json.RawMessage, error)
+	// OnDelete runs inside the delete transaction, after the row is gone, to
+	// remove what hangs off it (nil when nothing does).
+	OnDelete func(tx *gorm.DB, id uint) error
 	// Apply makes the stored state take effect (start, stop or restart the
 	// process, adjust routing). It runs after the transaction committed, for
 	// a save, a switch and a delete alike, and must read the DB itself.
 	Apply func()
 }
 
+// Engines an inbound can run on.
+const (
+	EngineSingbox  = "singbox"
+	EngineExternal = "external"
+)
+
 var extDrivers = map[string]*extDriver{}
 
-func registerExtDriver(d *extDriver) { extDrivers[d.Type] = d }
+func registerExtDriver(d *extDriver) {
+	if d.Engine == "" {
+		d.Engine = EngineExternal
+	}
+	extDrivers[d.Type] = d
+}
+
+// engineOf says which engine runs an inbound type.
+func engineOf(inboundType string) string {
+	if d := extDriverFor(inboundType); d != nil {
+		return d.Engine
+	}
+	return EngineSingbox
+}
 
 func extDriverFor(inboundType string) *extDriver { return extDrivers[inboundType] }
 
@@ -84,7 +112,7 @@ func (s *InboundService) saveExternal(tx *gorm.DB, act string, inbound *model.In
 			return common.NewErrorf("only one %s inbound is supported: edit the existing one", drv.Type)
 		}
 	}
-	opts, err := drv.Normalize(inbound.Options, storedOptions)
+	opts, err := drv.Normalize(tx, inbound.Id, inbound.Options, storedOptions)
 	if err != nil {
 		return err
 	}

@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"net/http"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/samur005/3s-ui/logger"
@@ -92,6 +93,11 @@ func (s *SubHandler) subs(c *gin.Context) {
 		return
 	case isFormat && format == "info":
 		s.serveClientInfo(c, subId)
+		return
+	// A WireGuard / AmneziaWG .conf file, for the apps that import files
+	// rather than links; ?inbound=<id> picks one when the client has several.
+	case isFormat && format == "conf":
+		s.serveWgConf(c, subId)
 		return
 	case format == "json":
 		result, headers, err = s.JsonService.GetJson(subId, format)
@@ -275,4 +281,29 @@ func isRFC5987AttrChar(b byte) bool {
 	default:
 		return false
 	}
+}
+
+// serveWgConf answers ?format=conf with the client's wg-quick / awg-quick file.
+func (s *SubHandler) serveWgConf(c *gin.Context, subId string) {
+	client, err := s.SubService.getClientBySubId(subId)
+	if err != nil {
+		logger.Error(err)
+		c.String(400, "Error!")
+		return
+	}
+	inboundID, _ := strconv.ParseUint(c.Query("inbound"), 10, 32)
+	entries, err := s.SubService.wg.ClientConfFiles(client.Id, uint(inboundID))
+	if err != nil {
+		logger.Error(err)
+		c.String(400, "Error!")
+		return
+	}
+	if len(entries) == 0 {
+		c.String(404, "no WireGuard or AmneziaWG configuration for this client")
+		return
+	}
+	e := entries[0]
+	c.Header("Content-Disposition", `attachment; filename="`+e.Filename+`"`)
+	c.Header("Cache-Control", "no-store")
+	c.Data(200, "text/plain; charset=utf-8", []byte(e.Conf))
 }

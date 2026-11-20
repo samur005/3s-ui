@@ -153,6 +153,7 @@ func InitDB(dbPath string) error {
 		&model.Node{},
 		&model.Cert{},
 		&model.QwdttState{},
+		&model.WgPeer{},
 		&model.LoginAttempt{},
 	}
 	err = db.AutoMigrate(models...)
