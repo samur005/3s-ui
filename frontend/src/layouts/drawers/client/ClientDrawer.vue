@@ -486,10 +486,8 @@ const enrollSync = async () => {
   const msg = await HttpUtils.post('api/enrollSync', { kind: 'client', id: client.value.id })
   enrolling.value = false
   if (msg?.success) {
-    client.value.syncUid = 'enrolled' // optimistic; real uid comes on next load
-    // Force reload of this client
-    const arr = await Data().loadClients([client.value.id])
-    if (arr?.[0]) client.value = { ...client.value, ...arr[0] }
+    // Optimistic mark; full data reloads on next open
+    client.value.syncUid = 'enrolled'
   }
 }
 
