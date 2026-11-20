@@ -504,8 +504,7 @@ const enrollSync = async () => {
   const msg = await HttpUtils.post('api/enrollSync', { kind: 'inbound', id: inbound.value.id })
   enrolling.value = false
   if (msg?.success) {
-    const arr = await Data().loadInbounds([inbound.value.id])
-    if (arr?.[0]) inbound.value = { ...inbound.value, ...arr[0] }
+    inbound.value.syncUid = 'enrolled'
   }
 }
 
