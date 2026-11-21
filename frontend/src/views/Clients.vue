@@ -331,7 +331,7 @@ const clients = computed((): any[] => dataStore.clients)
 const inbounds = computed((): any[] => dataStore.inbounds ?? [])
 const inboundTags = computed((): { title: string; value: number }[] => {
   if (!inbounds.value) return []
-  return inbounds.value.filter((i: any) => i.tag != '' && i.users).map((i: any) => ({ title: i.tag, value: i.id }))
+  return inbounds.value.filter((i: any) => i.tag != '' && (i.users || i.sync_uid)).map((i: any) => ({ title: i.tag, value: i.id }))
 })
 const groups = computed((): string[] =>
   Array.from(new Set(clients.value.map((c: any) => String(c.group ?? '')))),
