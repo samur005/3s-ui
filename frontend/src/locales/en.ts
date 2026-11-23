@@ -680,6 +680,7 @@ export default {
     timeLoc: "Timezone Location",
     subEncode: "Enable Encoding",
     subInfo: "Enable Client Info",
+    qwdttSubLinks: "qWDTT links in the subscription",
     subRemarkPrefix: "Prefix node names with client remark",
     subCustomHeaders: "Custom Headers",
     subCustomHeadersHint: "Added to every subscription response, one \"Name: value\" per line; lines starting with # are ignored. Headers the panel sets itself cannot be overridden.",
