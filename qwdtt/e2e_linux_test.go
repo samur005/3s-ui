@@ -52,7 +52,9 @@ func startClient(t *testing.T, bin, turnURL, peer, hash, password, device string
 		"-peer", peer, "-vk", hash, "-password", password, "-device-id", device,
 		"-n", "1", "-diag-auto=false")
 	cmd.Env = append(os.Environ(), "E2E_TURN_URL="+turnURL)
-	logf, _ := os.Create(filepath.Join(t.TempDir(), device+".log"))
+	// The client writes its WireGuard config (wg-turn.conf) into its cwd.
+	cmd.Dir = t.TempDir()
+	logf, _ := os.Create(filepath.Join(cmd.Dir, device+".log"))
 	cmd.Stdout, cmd.Stderr = logf, logf
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
