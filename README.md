@@ -447,8 +447,9 @@ is bound to it). One qWDTT inbound is supported; sing-box never sees it.
   Set `S3UI_VK_HASH` (comma-separated, up to 4) to pin hashes from the
   environment instead; it overrides the stored ones and disables generation.
 - **Subscriptions** — clients bound to the qWDTT inbound (pick them when creating
-  it, or on the client's own page) get one `qwdtt://config?…` line in their link
-  subscription. The link is built on
+  it, or on the client's own page) get a `qwdtt://config?…` line per qWDTT
+  server (this panel's and every node's), with their own password in
+  per-client mode, in their link subscription. The link is built on
   the fly, so a rotated hash reaches every subscription at once. The page also
   shows the link as a QR code and the JSON form.
 - **Firewall** — open the DTLS port (`56000/udp` by default) and, if you use
@@ -476,7 +477,9 @@ only place the version is pinned:
 
 To update qWDTT, change `QWDTT_REF` in `scripts/build-qwdtt.sh` (re-create the
 patch if it no longer applies), rebuild, and restart it from the page.
-Per-client traffic accounting from other qWDTT panels is not implemented.
+Per-client passwords, device limits and traffic, node links, the
+`?format=qwdtt` app subscription and the remote WDTT hash source are described
+in [docs/qwdtt.md](docs/qwdtt.md).
 
 ## WireGuard and AmneziaWG inbounds
 
