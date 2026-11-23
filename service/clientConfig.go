@@ -66,6 +66,9 @@ func NewClientConfig(name string) (json.RawMessage, error) {
 		"hysteria":  {"name": name, "auth_str": shared},
 		"hysteria2": {"name": name, "password": shared},
 		"tuic":      {"name": name, "uuid": uid, "password": shared},
+		// qWDTT's per-client password (qwdtt/users.go): its own random value,
+		// since it is written into the server's passwords.json as the key.
+		"qwdtt": {"name": name, "password": common.Random(16)},
 	}
 	return json.Marshal(cfg)
 }

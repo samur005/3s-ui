@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"github.com/samur005/3s-ui/qwdtt"
 	"testing"
 )
 
@@ -37,7 +38,9 @@ func TestNewClientConfigCoversInboundTypesWithUsers(t *testing.T) {
 // The reverse direction: a block for something hasUser does not recognise is
 // dead weight in every client row. shadowsocks16 is the one deliberate
 // exception -- it is not an inbound type but the second config key
-// ShadowsocksClientConfigKey picks between, by the listener's method.
+// ShadowsocksClientConfigKey picks between, by the listener's method -- and
+// qwdtt the other: an external inbound, whose per-client password the panel
+// writes into the qWDTT server's own user file rather than a core config.
 func TestNewClientConfigCarriesNothingUnused(t *testing.T) {
 	raw, err := NewClientConfig("alice")
 	if err != nil {
@@ -50,7 +53,7 @@ func TestNewClientConfigCarriesNothingUnused(t *testing.T) {
 
 	service := &InboundService{}
 	for key := range config {
-		if key == "shadowsocks16" {
+		if key == "shadowsocks16" || key == qwdtt.ClientKey {
 			continue
 		}
 		if !service.hasUser(key) {

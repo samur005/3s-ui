@@ -25,3 +25,9 @@ func kill(cmd *exec.Cmd) {
 		_ = cmd.Process.Kill()
 	}
 }
+
+func hangup(cmd *exec.Cmd) {
+	if cmd != nil && cmd.Process != nil {
+		_ = cmd.Process.Signal(syscall.SIGHUP)
+	}
+}

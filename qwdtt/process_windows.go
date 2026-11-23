@@ -11,3 +11,5 @@ func terminate(cmd *exec.Cmd) {
 }
 
 func kill(cmd *exec.Cmd) { terminate(cmd) }
+
+func hangup(*exec.Cmd) {}

@@ -88,6 +88,7 @@ func GetDb(exclude string) ([]byte, error) {
 		&model.Node{},
 		&model.Cert{},
 		&model.QwdttState{},
+		&model.QwdttUsage{},
 		&model.WgPeer{},
 		&model.SyncConflict{},
 		&model.NodeOperation{},
@@ -219,6 +220,16 @@ func GetDb(exclude string) ([]byte, error) {
 		return nil, err
 	} else if len(qwdttRows) > 0 {
 		if err := backupDb.CreateInBatches(qwdttRows, backupBatchSize).Error; err != nil {
+			return nil, err
+		}
+	}
+	// qWDTT per-client traffic baselines: without them a restore onto the same
+	// host would credit every client its whole server-side counter again.
+	var qwdttUsage []model.QwdttUsage
+	if err := db.Model(&model.QwdttUsage{}).Scan(&qwdttUsage).Error; err != nil {
+		return nil, err
+	} else if len(qwdttUsage) > 0 {
+		if err := backupDb.CreateInBatches(qwdttUsage, backupBatchSize).Error; err != nil {
 			return nil, err
 		}
 	}

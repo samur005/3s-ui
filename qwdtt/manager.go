@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/samur005/3s-ui/database"
 	"github.com/samur005/3s-ui/logger"
 )
 
@@ -127,6 +128,22 @@ func (m *Manager) reconcileLocked(force bool) {
 			}
 		}
 	}
+	// Per-client passwords: passwords.json is written before a start, so the
+	// server reads the users in with its first load; a running server re-reads
+	// it on SIGHUP below.
+	usersChanged := false
+	if cfg.PerClient() {
+		if err := os.MkdirAll(cfg.ResolveConfigDir(), 0o700); err == nil {
+			if in, err := LoadInbound(database.GetDB()); err == nil && in != nil {
+				changed, err := syncUsers(database.GetDB(), in.Id, cfg)
+				if err != nil {
+					logger.Warning("qwdtt: syncing client passwords: ", err)
+				}
+				usersChanged = changed
+			}
+		}
+	}
+
 	args := cfg.BuildArgs()
 	fp := strings.Join(args, "\x00")
 
@@ -173,6 +190,9 @@ func (m *Manager) reconcileLocked(force bool) {
 		m.stateMu.Lock()
 		m.failStreak = 0
 		m.stateMu.Unlock()
+		if usersChanged {
+			m.proc.reload()
+		}
 	}
 
 	if cfg.RouteThroughCore {
@@ -203,6 +223,8 @@ type Status struct {
 	LastExit    string `json:"lastExit,omitempty"`
 	HashEnv     bool   `json:"hashEnv"`
 	HasCookies  bool   `json:"hasCookies"`
+	// HasRemote is whether a WDTT panel is set as a hash source.
+	HasRemote bool `json:"hasRemote"`
 }
 
 // Status snapshots the manager.
@@ -218,6 +240,7 @@ func (m *Manager) Status(cfg Config) Status {
 		BinaryFound: statErr == nil,
 		HashEnv:     EnvHashOverride() != "",
 		HasCookies:  HasCookies(),
+		HasRemote:   HasRemote(),
 	}
 	if st.Running {
 		m.proc.mu.Lock()

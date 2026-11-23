@@ -182,3 +182,14 @@ func (p *proc) lastExit() error {
 	defer p.mu.Unlock()
 	return p.exitErr
 }
+
+// reload tells a running server to re-read passwords.json (SIGHUP).
+func (p *proc) reload() {
+	p.mu.Lock()
+	cmd := p.cmd
+	alive := p.runningLocked()
+	p.mu.Unlock()
+	if alive {
+		hangup(cmd)
+	}
+}
