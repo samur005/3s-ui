@@ -334,6 +334,15 @@ func TestRemotePanelUpdateTreeAndStats(t *testing.T) {
 		Params: map[string][]string{"version": {"../x"}}}); !errors.Is(err, errRemoteRefused) {
 		t.Fatalf("bad version: %v", err)
 	}
+	f.mu.Lock()
+	f.down = true
+	f.mu.Unlock()
+	if out, err := s.Execute("admin", RemoteRequest{NodeId: n.Id, Op: "panel.update", Confirm: true, Queue: true}); err == nil {
+		t.Fatalf("a dangerous op was queued: %s", out)
+	}
+	f.mu.Lock()
+	f.down = false
+	f.mu.Unlock()
 	if lastOp(t, n.Id).Op != "panel.update" {
 		t.Fatal("update not audited")
 	}

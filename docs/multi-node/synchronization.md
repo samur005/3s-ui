@@ -43,3 +43,17 @@ them follow the node's new inbounds.
 * Subscriptions keep serving the node's stored links.
 * Client changes accumulate as the dirty flag and are applied on reconnect.
 * *Reconnect* clears the breaker and probes immediately.
+* The breaker state is stored in the `nodes` row, so a master restart keeps
+  backing off a failing node.
+* Writes can be queued instead of refused (`queue=true`, *Queue* tab switch):
+  stored sealed in `node_queued_ops`, replayed by the 5 s job in order per
+  node once it is online, with the original request id; backoff 30 s → 30 min,
+  20 attempts, then `failed` (retry / cancel from the Queue tab). Core stop,
+  panel restart/update and token rotation are never queued.
+
+## Edits made directly on a node
+
+The node's status carries `sys.inboundsRev` (a hash of its inbounds,
+recomputed only when its change counter moves). The master compares it on
+every heartbeat (5 s) and, when it changed, refreshes that node's replicas and
+the subscription links in the background — no wait for the hourly reconcile.

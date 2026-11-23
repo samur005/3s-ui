@@ -17,6 +17,12 @@ action as before; the new headers are optional).
    * one-shot migration `migratedNodeAllowPrivate`: existing nodes get
      *Allow private address* = on, so nodes on LAN/Tailscale/loopback keep
      working. Review it per node and switch it off for public nodes.
+   * this release also adds `client_hwids`, `idempotency_records`,
+     `node_queued_ops`, the columns `nodes.client_cert`, `client_key`,
+     `breaker_fails`, `breaker_until`, `clients.limit_hwid`, and seals the
+     existing node tokens with a key created at `<db dir>/secret.key`
+     (or taken from `SUI_SECRET_KEY`). **Back up `secret.key` together with
+     the database.**
    Migrations are idempotent (re-running is a no-op) and remove nothing.
 4. Open **Nodes**: health and API level appear within seconds.
 
@@ -32,3 +38,7 @@ action as before; the new headers are optional).
 The added columns and table are ignored by older releases; restoring the old
 binary works without a database restore. Settings rows (`migrated…`) are
 harmless.
+
+Since node tokens are sealed, an older binary would read ciphertext as the
+token. Before going back run `3sui secrets -decrypt` (with the new binary,
+panel stopped), then install the old binary.

@@ -42,3 +42,5 @@ brackets). Malformed stored links pass through unchanged.
 
 Exclusion is available per node (drawer, Settings tab) and in bulk
 (`subExclude` / `subInclude`).
+
+See also [subscription-headers.md](subscription-headers.md) for the profile headers (LucX set), Happ headers and the X-HWID device limit.

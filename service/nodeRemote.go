@@ -573,6 +573,11 @@ func (s *NodeRemoteService) Execute(actor string, req RemoteRequest) (json.RawMe
 	if requestID == "" {
 		requestID = newRequestID()
 	}
+	// Dangerous ops (core stop, panel restart/update, token rotation) are
+	// never deferred: running them later, unattended, is not what was asked.
+	if req.Queue && remoteOps[req.Op].dangerous {
+		req.Queue = false
+	}
 	if req.Queue && remoteOps[req.Op].write && node.Enable {
 		if open, _ := breakerOpen(node.Id); open {
 			return s.enqueue(node, actor, req, requestID, "node offline")
