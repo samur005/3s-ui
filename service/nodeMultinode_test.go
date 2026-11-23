@@ -8,6 +8,7 @@ import (
 	"net/netip"
 	"net/url"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -287,6 +288,9 @@ type fakeNode struct {
 	minted  int
 	revoked []string
 	badNew  bool // nodeHello rejects freshly minted tokens
+	// outServer, when set, is the address the node reports for inbound 7 in
+	// the full (by-id) inbounds shape the replica refresh reads.
+	outServer string
 }
 
 type fakeCall struct {
@@ -349,6 +353,14 @@ func (f *fakeNode) serve(w http.ResponseWriter, r *http.Request) {
 	case "nodeHealth":
 		f.ok(w, `{"cpu":3}`)
 	case "inbounds":
+		f.mu.Lock()
+		srv := f.outServer
+		f.mu.Unlock()
+		if r.URL.Query().Get("id") != "" && srv != "" {
+			f.ok(w, `{"inbounds":[{"id":7,"tag":"rep","type":"vless","enable":true,"listen_port":443,`+
+				`"out_json":{"type":"vless","tag":"rep","server":"`+srv+`","server_port":443}}]}`)
+			return
+		}
 		f.ok(w, `{"inbounds":[{"id":7,"tag":"rep","type":"vless"}]}`)
 	case "config":
 		f.mu.Lock()
@@ -785,5 +797,124 @@ func TestRotateAndRevokeCallerToken(t *testing.T) {
 	db.Model(model.Tokens{}).Where("token = ?", "caller-token").Count(&n)
 	if n != 0 {
 		t.Error("old token still stored")
+	}
+}
+
+// ---------- subscription links follow node updates without a reconcile ----------
+
+func seedReplicaAndClient(t *testing.T, nodeId uint, server string) (model.Inbound, model.Client) {
+	t.Helper()
+	db := database.GetDB()
+	rep := model.Inbound{Type: "vless", Tag: "rep", NodeId: &nodeId, Enable: true,
+		Options: json.RawMessage(`{"listen_port":443}`),
+		OutJson: json.RawMessage(`{"type":"vless","tag":"rep","server":"` + server + `","server_port":443}`)}
+	if err := db.Create(&rep).Error; err != nil {
+		t.Fatal(err)
+	}
+	cl := model.Client{Name: "alice", Remark: "alice", Enable: true,
+		Config:   json.RawMessage(`{"vless":{"uuid":"11111111-2222-3333-4444-555555555555"}}`),
+		Inbounds: json.RawMessage(`[` + strconv.FormatUint(uint64(rep.Id), 10) + `]`)}
+	if err := db.Create(&cl).Error; err != nil {
+		t.Fatal(err)
+	}
+	return rep, cl
+}
+
+func clientLinks(t *testing.T, id uint) string {
+	t.Helper()
+	var c model.Client
+	if err := database.GetDB().First(&c, id).Error; err != nil {
+		t.Fatal(err)
+	}
+	return string(c.Links)
+}
+
+// A host change made through the master (remote inbound edit) reaches the
+// stored subscription links before Execute returns -- no reconcile involved
+// (afterRemoteChange is stubbed by setupMasterForTest).
+func TestNodeLinksFollowRemoteAddressChangeWithoutReconcile(t *testing.T) {
+	dirty := setupMasterForTest(t)
+	f := newFakeNode(t, false)
+	n := addFakeNode(t, "alpha", f)
+	_, cl := seedReplicaAndClient(t, n.Id, "old.example")
+
+	RefreshNodeLinksFromReplicas(n.Id)
+	if l := clientLinks(t, cl.Id); !strings.Contains(l, "old.example:443") || !strings.Contains(l, "[alpha] rep") {
+		t.Fatalf("initial links = %s", l)
+	}
+
+	f.mu.Lock()
+	f.outServer = "new.example"
+	f.mu.Unlock()
+	var s NodeRemoteService
+	if _, err := s.Execute("admin", RemoteRequest{NodeId: n.Id, Op: "save.inbounds", Action: "edit",
+		Data: json.RawMessage(`{"id":7,"type":"vless","tag":"rep","listen_port":443}`)}); err != nil {
+		t.Fatalf("remote edit: %v", err)
+	}
+	l := clientLinks(t, cl.Id)
+	if !strings.Contains(l, "new.example:443") || strings.Contains(l, "old.example") {
+		t.Fatalf("links right after the edit = %s, want the new host only", l)
+	}
+	var rep model.Inbound
+	database.GetDB().Where("node_id = ? AND tag = ?", n.Id, "rep").First(&rep)
+	if !strings.Contains(string(rep.OutJson), "new.example") {
+		t.Errorf("replica row not refreshed: %s", rep.OutJson)
+	}
+	if len(*dirty) != 1 {
+		t.Errorf("client reconcile should still be scheduled once, got %v", *dirty)
+	}
+}
+
+// Editing the node on the master (here: a rename plus a new panel URL, with
+// the node unreachable) regenerates its links right after the commit, from
+// the stored replica rows. Driven the way ConfigService.Save drives it (own tx,
+// SaveWithLinks, hook after commit) without starting a core.
+func TestNodeEditRegeneratesLinksImmediatelyEvenOffline(t *testing.T) {
+	setupMasterForTest(t)
+	f := newFakeNode(t, false)
+	n := addFakeNode(t, "alpha", f)
+	_, cl := seedReplicaAndClient(t, n.Id, "node.example")
+	RefreshNodeLinksFromReplicas(n.Id)
+	f.srv.Close() // offline from here on
+
+	// Drop the link set to prove the edit rebuilds it rather than relying on
+	// the in-place prefix rewrite alone.
+	database.GetDB().Model(&model.Client{}).Where("id = ?", cl.Id).Update("links", json.RawMessage(`[]`))
+
+	edit, _ := json.Marshal(map[string]any{"id": n.Id, "name": "beta", "baseUrl": "https://moved.example:2095",
+		"webPath": "/app/", "token": "", "enable": true, "allowPrivate": true, "syncMode": "one_way"})
+	// The node branch of ConfigService.Save: its own tx, the hook after commit.
+	save := func(data []byte) error {
+		tx := database.GetDB().Begin()
+		after, err := (&NodeService{}).SaveWithLinks(tx, "edit", data)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+		if err := tx.Commit().Error; err != nil {
+			return err
+		}
+		if after != nil {
+			after()
+		}
+		return nil
+	}
+	if err := save(edit); err != nil {
+		t.Fatalf("edit node: %v", err)
+	}
+	l := clientLinks(t, cl.Id)
+	if !strings.Contains(l, "[beta] rep") || strings.Contains(l, "[alpha]") || !strings.Contains(l, "node.example:443") {
+		t.Fatalf("links right after the edit = %s", l)
+	}
+
+	// Rename path with links present: the prefix follows, nothing duplicated.
+	edit, _ = json.Marshal(map[string]any{"id": n.Id, "name": "gamma", "baseUrl": "https://moved.example:2095",
+		"webPath": "/app/", "token": "", "enable": true, "allowPrivate": true, "syncMode": "one_way"})
+	if err := save(edit); err != nil {
+		t.Fatalf("rename node: %v", err)
+	}
+	l = clientLinks(t, cl.Id)
+	if strings.Count(l, "[gamma] rep") != 1 || strings.Contains(l, "[beta]") {
+		t.Fatalf("links after rename = %s", l)
 	}
 }

@@ -586,28 +586,61 @@ func redactNodeToken(data json.RawMessage) json.RawMessage {
 }
 
 func (s *NodeService) Save(tx *gorm.DB, act string, data json.RawMessage) error {
+	_, err := s.save(tx, act, data)
+	return err
+}
+
+// SaveWithLinks is Save for callers that own the transaction: the returned
+// func, run after the commit, regenerates the node's aggregated subscription
+// links from the stored replica rows right away -- a rename or any other edit
+// shows in every bound client's subscription immediately instead of after the
+// next reconcile, and it works while the node is offline (no node call).
+func (s *NodeService) SaveWithLinks(tx *gorm.DB, act string, data json.RawMessage) (func(), error) {
+	id, err := s.save(tx, act, data)
+	if err != nil || act == "del" || id == 0 {
+		return nil, err
+	}
+	return func() { RefreshNodeLinksFromReplicas(id) }, nil
+}
+
+// RefreshNodeLinksFromReplicas rebuilds node id's "[name] " links in every
+// client from the master's replica rows, without contacting the node.
+func RefreshNodeLinksFromReplicas(id uint) {
+	db := database.GetDB()
+	if db == nil {
+		return
+	}
+	var node model.Node
+	if err := db.Model(model.Node{}).Where("id = ?", id).First(&node).Error; err != nil {
+		return
+	}
+	(&NodeSyncService{}).refreshNodeLinks(&node)
+}
+
+func (s *NodeService) save(tx *gorm.DB, act string, data json.RawMessage) (uint, error) {
 	var err error
+	var savedId uint
 
 	switch act {
 	case "new", "edit":
 		var node model.Node
 		err = json.Unmarshal(data, &node)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		node.Name = strings.TrimSpace(node.Name)
 		if node.Name == "" {
-			return common.NewError("node name is required")
+			return 0, common.NewError("node name is required")
 		}
 		node.BaseUrl, err = validateNodeBaseURL(node.BaseUrl)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		node.WebPath = normalizeWebPath(node.WebPath)
 		node.NodeGroup = strings.TrimSpace(node.NodeGroup)
 		node.Location = strings.TrimSpace(node.Location)
 		if len(node.NodeGroup) > 64 || len(node.Location) > 64 {
-			return common.NewError("node group and location are limited to 64 characters")
+			return 0, common.NewError("node group and location are limited to 64 characters")
 		}
 		node.CertPin = normalizeCertPin(node.CertPin)
 		switch node.SyncMode {
@@ -616,12 +649,12 @@ func (s *NodeService) Save(tx *gorm.DB, act string, data json.RawMessage) error 
 		case "bidirectional":
 			// ok — opt-in only via explicit save
 		default:
-			return common.NewError("unknown syncMode; use one_way or bidirectional")
+			return 0, common.NewError("unknown syncMode; use one_way or bidirectional")
 		}
 		var oldName string
 		if act == "edit" {
 			if node.Id == 0 {
-				return common.NewError("node id is required")
+				return 0, common.NewError("node id is required")
 			}
 			// Empty token on edit means "keep the stored one" — the UI never
 			// sees the token, so it cannot send it back.
@@ -629,7 +662,7 @@ func (s *NodeService) Save(tx *gorm.DB, act string, data json.RawMessage) error 
 				var oldToken string
 				err = tx.Model(model.Node{}).Select("token").Where("id = ?", node.Id).Find(&oldToken).Error
 				if err != nil {
-					return err
+					return 0, err
 				}
 				node.Token = oldToken
 			}
@@ -640,13 +673,13 @@ func (s *NodeService) Save(tx *gorm.DB, act string, data json.RawMessage) error 
 			}
 			err = tx.Model(model.Node{}).Select("name", "last_seen").Where("id = ?", node.Id).Find(&oldNode).Error
 			if err != nil {
-				return err
+				return 0, err
 			}
 			oldName = oldNode.Name
 			node.LastSeen = oldNode.LastSeen
 		}
 		if node.Token == "" {
-			return common.NewError("node API token is required")
+			return 0, common.NewError("node API token is required")
 		}
 		// The name is the aggregated-link marker (see nodeLinkPrefix), so a
 		// bracket in it would make one node's prefix match another's links — the
@@ -655,7 +688,7 @@ func (s *NodeService) Save(tx *gorm.DB, act string, data json.RawMessage) error 
 		// this rule must stay editable (token, baseUrl, enable) without being
 		// forced through a rename it did not ask for.
 		if (act == "new" || oldName != node.Name) && strings.ContainsAny(node.Name, "[]") {
-			return common.NewError("node name cannot contain [ or ]")
+			return 0, common.NewError("node name cannot contain [ or ]")
 		}
 		// Capabilities are heartbeat-owned and never part of the form; a plain
 		// Save would write their zero values over the cached answer.
@@ -665,23 +698,24 @@ func (s *NodeService) Save(tx *gorm.DB, act string, data json.RawMessage) error 
 			err = tx.Save(&node).Error
 		}
 		if err != nil {
-			return err
+			return 0, err
 		}
 		// A rename would orphan the "[old] " aggregated links (refreshNodeLinks
 		// keys the prefix on the current name); carry them over in place.
 		if oldName != "" && oldName != node.Name {
 			if err = renameNodeLinkPrefix(tx, oldName, node.Name); err != nil {
-				return err
+				return 0, err
 			}
 		}
 		invalidateNodeClient(node.Id)
 		resetProbeBreaker(node.Id)
 		forgetCapabilities(node.Id)
+		savedId = node.Id
 	case "del":
 		var id uint
 		err = json.Unmarshal(data, &id)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		// Refuse while replicas exist: deleting the node would strand them as
 		// uneditable orphan rows and leave their "[name] " links in every
@@ -690,14 +724,14 @@ func (s *NodeService) Save(tx *gorm.DB, act string, data json.RawMessage) error 
 		var replicas int64
 		err = tx.Model(model.Inbound{}).Where("node_id = ?", id).Count(&replicas).Error
 		if err != nil {
-			return err
+			return 0, err
 		}
 		if replicas > 0 {
-			return common.NewErrorf("node still has %d adopted inbound(s) — remove them on the Inbounds page first", replicas)
+			return 0, common.NewErrorf("node still has %d adopted inbound(s) — remove them on the Inbounds page first", replicas)
 		}
 		err = tx.Where("id = ?", id).Delete(model.Node{}).Error
 		if err != nil {
-			return err
+			return 0, err
 		}
 		invalidateNodeClient(id)
 		nodeStatusMu.Lock()
@@ -707,9 +741,9 @@ func (s *NodeService) Save(tx *gorm.DB, act string, data json.RawMessage) error 
 		forgetCapabilities(id)
 		forgetSyncState(id)
 	default:
-		return common.NewErrorf("unknown action: %s", act)
+		return 0, common.NewErrorf("unknown action: %s", act)
 	}
-	return nil
+	return savedId, nil
 }
 
 // renameNodeLinkPrefix rewrites the "[old] " prefix on aggregated node links to

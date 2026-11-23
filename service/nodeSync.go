@@ -1070,6 +1070,23 @@ func (s *NodeSyncService) refreshNodeLinks(node *model.Node) {
 	}
 }
 
+// RefreshReplicasAndLinks pulls the node's current shape of its adopted
+// inbounds (address, port, TLS/SNI, address book) into the replica rows and
+// regenerates the bound clients' links at once. Used right after a remote edit
+// made through the master, so the subscription does not wait for the next
+// reconcile. If the node cannot be read, the links are still rebuilt from
+// the stored replicas.
+func (s *NodeSyncService) RefreshReplicasAndLinks(node *model.Node) {
+	client := nodePushClient(node)
+	defer closeIdle(client)
+	if tagToId, err := s.nodeInboundTagMap(node, client); err == nil {
+		s.refreshReplicas(node, client, tagToId)
+	} else {
+		logger.Warning("nodes: refresh replicas of ", node.Name, ": ", err)
+	}
+	s.refreshNodeLinks(node)
+}
+
 // ---------- dirty tracking / triggers ----------
 
 func (s *NodeSyncService) MarkAllDirty() {

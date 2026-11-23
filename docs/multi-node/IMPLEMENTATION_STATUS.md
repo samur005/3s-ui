@@ -13,7 +13,7 @@ Branch `feat/multinode-pro`, based on `main` @ `23649508bbc76fb8189cb8e22dedf0f3
 | Monitoring | cpu, mem, swap, disk, net rates/totals, core and host uptime, latency, breaker state | `service/node.go`, `service/nodeCaps.go` |
 | Typed remote operations | 26-op allowlist, no shell; inbounds/outbounds/endpoints/services CRUD; route and DNS sections with pre-check; core/panel control; logs; port and config checks | `service/nodeRemote.go` |
 | User sync | existing state reconciliation, now with exponential backoff, sync state, `syncing`/`degraded`; local users untouched (`@cluster`) | `service/nodeSync.go`, `service/nodeHealth.go` |
-| Subscriptions | stored node links; exclusion; de-duplication; offline/disabled/delete policy | `service/nodeSubscription.go`, `sub/*` |
+| Subscriptions | stored node links; exclusion; de-duplication; offline/disabled/delete policy; links regenerated immediately after a node edit on the master (offline too) and after remote inbound edits — no wait for the reconcile | `service/nodeSubscription.go`, `sub/*` |
 | Security | SSRF guard, redirect policy, token write-only, rotation with rollback, constant-time compare (existing), request ids, replay window, idempotency, rate limit, payload/response caps, audit, no secret logging | `service/nodeNet.go`, `api/idempotency.go`, `service/user.go` |
 | Reliability | contexts and timeouts, retries with jitter, circuit breaker, bounded parallelism, pagination of the audit | `service/nodeRemote.go`, `service/nodeHealth.go` |
 | DB | additive columns, `node_operations`, one-shot `migratedNodeAllowPrivate`, backup of `sync_conflicts`/`node_operations` | `database/*` |

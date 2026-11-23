@@ -6,6 +6,25 @@ from the master's replica inbounds and stored in `client.links` as `external`
 entries with a `[<node name>] ` remark prefix; serving a subscription never
 calls a node.
 
+## When links are regenerated
+
+* **Reconcile** (heartbeat for dirty nodes, hourly safety net, *Sync now*) —
+  replicas refreshed from the node, links rebuilt.
+* **Immediately after a remote inbound edit made through the master**
+  (`save.inbounds`): before the call returns, the master re-reads the node's
+  adopted inbounds (address, port, TLS/SNI, address book) into the replica rows
+  and rebuilds every bound client's links (`RefreshReplicasAndLinks`).
+* **Immediately after editing a node on the master** (rename, URL, any field):
+  after the commit, links are rebuilt from the stored replica rows
+  (`NodeService.SaveWithLinks` → `RefreshNodeLinksFromReplicas`) — no node call,
+  so it also works while the node is offline. A rename additionally rewrites
+  the `[old] ` prefix in the same transaction (`renameNodeLinkPrefix`).
+
+The server host in node links comes from the node's own inbound snapshot
+(`out_json.server` / address book), not from the master's *Panel URL*. Edits
+made directly on the node's panel still reach the master at the next
+reconcile.
+
 Policy applied when serving (`service.FilterNodeLinks`, used by
 `sub/subService.go` and `sub/jsonService.go`), in memory only:
 

@@ -565,8 +565,13 @@ func (s *NodeRemoteService) Execute(actor string, req RemoteRequest) (json.RawMe
 		}
 	}
 	if strings.HasPrefix(req.Op, "save.") || strings.HasPrefix(req.Op, "config.") {
-		// The node's inbounds may have moved: let the reconcile refresh the
-		// master's replicas and the subscription links built from them.
+		// The node's inbounds may have moved (address, port, SNI, address
+		// book): refresh the master's replicas and the links built from them
+		// now, before answering, so subscriptions never serve the old host.
+		// The reconcile that follows pushes clients as usual.
+		if req.Op == "save.inbounds" {
+			(&NodeSyncService{}).RefreshReplicasAndLinks(node)
+		}
 		s.markNodeDirty(node.Id)
 	}
 	return obj, nil
