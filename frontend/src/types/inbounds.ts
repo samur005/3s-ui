@@ -320,6 +320,10 @@ export interface Qwdtt extends InboundBasics {
   autoVkHash: boolean
   routeThroughCore: boolean
   outboundTag?: string
+  // "perClient": every bound client has its own password on the server;
+  // "shared": one password for everyone (inbounds made before per-client).
+  userMode?: string
+  maxDevices?: number
 }
 // WireGuard and AmneziaWG (wgserver.Config). One engine serves both; "awg"
 // adds a version and the obfuscation fields that version has (AwgFields).
@@ -488,6 +492,7 @@ const defaultValues: Record<InType, Inbound> = {
     type: InTypes.Qwdtt, listenAddr: '0.0.0.0:56000', wgPort: 56001, password: '', dns: '8.8.8.8',
     listenRaw: '0.0.0.0:56003', listenDirect: '', configDir: '', subHost: '', vkHashes: '', remark: '',
     clientPort: 9000, workers: 16, autoVkHash: true, routeThroughCore: true, outboundTag: '',
+    userMode: 'perClient', maxDevices: 3,
   },
   wg: <Wg>{
     type: InTypes.Wg, listen_port: 51820, subnet: '', mtu: 0, dns: '1.1.1.1, 8.8.8.8', keepalive: 25,
