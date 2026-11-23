@@ -28,9 +28,14 @@ check('new master: legacy node online, apiVersion 1, not incompatible', st.get('
 # old master (main) -> new node
 O,OT=26095,tok('oldmaster')
 n2={'name':'new-node','baseUrl':'http://127.0.0.1:22095','webPath':'/app/','token':open('node.tok').read().strip(),'enable':True,'syncMode':'one_way'}
-# the node's token was rotated in e2e.py; read the current one from the new master's DB
-import sqlite3
-n2['token']=sqlite3.connect('master/3s-ui.db').execute("select token from nodes where name='local-node'").fetchone()[0]
+# the node's token was rotated in e2e.py; the new master stores it sealed
+# (enc:v1: + base64(nonce|AES-256-GCM), key in master/secret.key): open it.
+import sqlite3, base64
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+sealed=sqlite3.connect('master/3s-ui.db').execute("select token from nodes where name='local-node'").fetchone()[0]
+key=base64.b64decode(open('master/secret.key').read().strip())
+raw=base64.b64decode(sealed[len('enc:v1:'):]+'='*(-len(sealed[len('enc:v1:'):])%4))
+n2['token']=AESGCM(key).decrypt(raw[:12], raw[12:], b'3s-ui').decode()
 check('old master: add new node', call(O,OT,'save','POST',{'object':'nodes','action':'new','data':json.dumps(n2)})['success'])
 time.sleep(7)
 st=call(O,OT,'load')['obj'].get('nodesStatus',{})

@@ -90,6 +90,24 @@ b,hb=call(NODE,NT,'save','POST',{'object':'inbounds','action':'new','data':json.
 ni,_=call(NODE,NT,'inbounds'); cnt=[x['tag'] for x in ni['obj']['inbounds']].count('idem')
 check('node: same X-Request-Id applied once (replayed)', a['success'] and hb.get('X-Idempotent-Replay')=='1' and cnt==1, (a.get('msg'),hb.get('X-Idempotent-Replay'),cnt))
 call(NODE,NT,'save','POST',{'object':'inbounds','action':'del','data':json.dumps('idem')})
+# ---- hardening / extras ----
+import sqlite3
+raw=sqlite3.connect('master/3s-ui.db').execute('select token from nodes where id=?',(nid,)).fetchone()[0]
+check('master: node token sealed at rest (enc:v1:)', raw.startswith('enc:v1:') and NT not in raw, raw[:12])
+st,_=call(NODE,NT,'status',q={'r':'sys'}); rev1=(st['obj'].get('sys') or {}).get('inboundsRev')
+check('node: status carries sys.inboundsRev', bool(rev1), st['obj'].get('sys'))
+call(NODE,NT,'save','POST',{'object':'inbounds','action':'new','data':json.dumps(dict(ib,tag='direct-edit',listen_port=24445))})
+st,_=call(NODE,NT,'status',q={'r':'sys'}); rev2=(st['obj'].get('sys') or {}).get('inboundsRev')
+check('node: inboundsRev changes on a direct edit', rev2 and rev2!=rev1, (rev1,rev2))
+call(NODE,NT,'save','POST',{'object':'inbounds','action':'del','data':json.dumps('direct-edit')})
+for op,params in (('nodes.tree',None),('onlines',None),('panel.updateInfo',None),('panel.updateStatus',None),('stats',{'resource':'inbound','tag':'e2e-vless','period':'day'})):
+    f={'id':nid,'op':op}
+    if params: f['params']=json.dumps(params)
+    r,_=call(MASTER,MT,'nodeRemote','POST',f)
+    check('master->node: '+op, r['success'], r.get('msg'))
+r,_=call(MASTER,MT,'nodeRemote','POST',{'id':nid,'op':'panel.update'})
+check('master: panel.update needs confirm', not r['success'] and 'confirm' in r['msg'], r)
+q,_=call(MASTER,MT,'nodeQueue',q={'id':nid}); check('master: nodeQueue list', q['success'], q)
 # token rotation
 r,_=call(MASTER,MT,'nodeTokenRotate','POST',{'id':nid})
 check('master: token rotation', r['success'], r)
