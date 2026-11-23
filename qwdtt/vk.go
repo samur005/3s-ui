@@ -262,6 +262,9 @@ type CreatedCall struct {
 	JoinLink string `json:"joinLink"`
 	Hash     string `json:"hash"`
 	Started  int64  `json:"startedAt"`
+	// Remote marks a call a WDTT panel created (remote.go): it is not this
+	// panel's to end.
+	Remote bool `json:"remote,omitempty"`
 }
 
 // createCall starts a call on the account the cookies belong to.
@@ -432,11 +435,20 @@ func generateLocked(replaceOldest bool, replaceHash string) (Config, CreatedCall
 	if EnvHashOverride() != "" {
 		return Config{}, CreatedCall{}, fmt.Errorf("%s is set; the hash list is managed through the environment", EnvVkHash)
 	}
-	cookies, err := storedCookieHeader()
-	if err != nil {
-		return Config{}, CreatedCall{}, err
+	// Own VK cookies first; a remote WDTT panel otherwise.
+	var cookies string
+	var call CreatedCall
+	var err error
+	if HasCookies() {
+		if cookies, err = storedCookieHeader(); err != nil {
+			return Config{}, CreatedCall{}, err
+		}
+		call, err = createCall(cookies)
+	} else if rs := LoadRemote(); strings.TrimSpace(rs.URL) != "" {
+		call, err = remoteCreateHash(rs)
+	} else {
+		err = errors.New("no hash source: store VK cookies or set a WDTT panel")
 	}
-	call, err := createCall(cookies)
 	if err != nil {
 		return Config{}, CreatedCall{}, err
 	}
@@ -466,7 +478,9 @@ func generateLocked(replaceOldest bool, replaceHash string) (Config, CreatedCall
 	})
 	if err != nil {
 		// The call exists but is not wanted: do not leave it running.
-		_ = finishCall(cookies, call.CallID)
+		if !call.Remote {
+			_ = finishCall(cookies, call.CallID)
+		}
 		return cfg, call, err
 	}
 	calls, _ := loadCalls()
@@ -498,7 +512,9 @@ func finishDropped(cookies string, calls []CreatedCall, hash string) []CreatedCa
 	out := calls[:0]
 	for _, c := range calls {
 		if c.Hash == hash {
-			_ = finishCall(cookies, c.CallID)
+			if !c.Remote && cookies != "" {
+				_ = finishCall(cookies, c.CallID)
+			}
 			continue
 		}
 		out = append(out, c)
@@ -555,7 +571,7 @@ func MaintainHashes() (changed bool, err error) {
 	if !cfg.Enabled || !cfg.AutoVkHash || EnvHashOverride() != "" {
 		return false, nil
 	}
-	if !HasCookies() {
+	if !CanGenerate() {
 		return false, nil
 	}
 	hashGenMu.Lock()
@@ -604,7 +620,7 @@ func EnsureHashesNow() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if !cfg.AutoVkHash || EnvHashOverride() != "" || len(ParseHashes(cfg.VkHashes)) > 0 || !HasCookies() {
+	if !cfg.AutoVkHash || EnvHashOverride() != "" || len(ParseHashes(cfg.VkHashes)) > 0 || !CanGenerate() {
 		return false, nil
 	}
 	hashGenMu.Lock()
@@ -614,3 +630,7 @@ func EnsureHashesNow() (bool, error) {
 	}
 	return true, nil
 }
+
+// CanGenerate reports whether the panel has a way to create hashes: its own
+// VK cookies or a remote WDTT panel.
+func CanGenerate() bool { return HasCookies() || HasRemote() }
