@@ -269,6 +269,29 @@ func ResolveConflict(id uint, decision Decision) error {
 	if !ok {
 		return nil
 	}
+	// A stored conflict keeps only the local side's sync metadata, not its
+	// payload (lookupClient/lookupInbound read the revision fields alone). When
+	// the resolution keeps that local side there is nothing to rewrite: the row
+	// already holds the data, and applying the payload-less record would refuse
+	// it ("payload missing name"). Advance the revision only, so the next
+	// catalog exchange carries the kept local state as the newer one.
+	if res.Record.Payload == nil && res.Record.DeletedAt == 0 {
+		table := ""
+		switch row.Kind {
+		case "client":
+			table = "clients"
+		case "inbound":
+			table = "inbounds"
+		default:
+			return fmt.Errorf("unknown kind %s", row.Kind)
+		}
+		if err := db.Table(table).Where("sync_uid = ?", row.UID).Updates(map[string]any{
+			"sync_rev": res.Record.Rev, "sync_base": res.Record.Base, "sync_origin": res.Record.Origin,
+		}).Error; err != nil {
+			return err
+		}
+		return db.Model(&row).Update("resolved", true).Error
+	}
 	switch row.Kind {
 	case "client":
 		if err := ApplyClientRecord(res.Record); err != nil {

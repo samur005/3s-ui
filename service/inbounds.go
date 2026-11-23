@@ -144,6 +144,11 @@ func (s *InboundService) Save(tx *gorm.DB, act string, data json.RawMessage, ini
 
 func autoEnrollInboundIfEnabled(data json.RawMessage) {
 	db := database.GetDB()
+	// Runs detached from the save; under tests that drive Save with a private
+	// DB there is no global handle, and a nil one panics the whole process.
+	if db == nil {
+		return
+	}
 	var val string
 	db.Model(&model.Setting{}).Where("key = ?", "autoEnrollSync").Select("value").Scan(&val)
 	if val != "true" {

@@ -148,7 +148,7 @@ func (s *ClientService) Save(tx *gorm.DB, act string, data json.RawMessage, host
 		if act == "new" {
 			defaultClientJSONFields(&client)
 			// Auto-bind synced inbounds if setting is on
-			autoBindSyncedInbounds(&client)
+			autoBindSyncedInbounds(tx, &client)
 		}
 		if act == "edit" {
 			// Only a name actually changing is validated, so a duplicate that
@@ -1861,8 +1861,16 @@ func linkRemark(prefix bool, remark string) string {
 	return remark
 }
 
-func autoBindSyncedInbounds(c *model.Client) {
-	db := database.GetDB()
+func autoBindSyncedInbounds(db *gorm.DB, c *model.Client) {
+	// Reads through the save's own transaction: the package-level handle is
+	// nil under tests that hand Save a private DB, and outside a test it would
+	// read on a second pooled connection beside the open write transaction.
+	if db == nil {
+		db = database.GetDB()
+	}
+	if db == nil {
+		return
+	}
 	var val string
 	db.Model(&model.Setting{}).Where("`key` = ?", "autoBindSyncedInbounds").Select("value").Scan(&val)
 	if val != "true" {
