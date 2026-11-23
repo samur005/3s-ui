@@ -260,6 +260,13 @@ remains one-way.
 - **Fold its servers into one subscription** — a client's subscription link
   carries the master's servers and every bound node's servers together.
 
+- **Manage it remotely** — a details page per node (overview, inbounds,
+  outbounds, routing, DNS, capabilities, services, logs, audit) runs typed,
+  audited operations through the node's own API; health is derived as
+  online / degraded / syncing / incompatible / offline / disabled; groups,
+  bulk actions, token rotation and per-node exclusion from subscriptions.
+  Guide: [docs/multi-node/](docs/multi-node/architecture.md).
+
 A node is just another 3S-UI instance talking over the v2 API (`Token` header):
 no agent to install, and the only node-side setup is creating that API token in
 its own panel, so existing panels can be adopted as they are. Inbounds adopted
