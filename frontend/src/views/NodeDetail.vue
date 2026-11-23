@@ -203,7 +203,7 @@
               <td>{{ o.actor }}</td>
               <td :style="{ color: o.status === 'ok' ? 'var(--emerald)' : o.status === 'refused' ? 'var(--amber)' : 'var(--rose)' }">
                 {{ o.status }} <span v-if="o.error" style="color: var(--text-3);">— {{ o.error }}</span>
-                <span class="mono" style="color: var(--text-3); font-size: 11px;"> {{ o.durationMs }}ms ×{{ o.attempts }}</span>
+                <span class="mono" style="color: var(--text-3); font-size: 11px; margin-inline-start: 6px;">{{ o.durationMs }}ms ×{{ o.attempts }}</span>
               </td>
             </tr>
           </tbody>
@@ -257,7 +257,7 @@ import NodeDrawer from '@/layouts/drawers/node/NodeDrawer.vue'
 
 const { t } = useI18n({ useScope: 'global' })
 const route = useRoute()
-const nodeId = computed(() => Number(route.params.id) || 0)
+const nodeId = computed(() => Number(route.query.id) || 0)
 
 // ---------------- detail (master-side knowledge, no node call) ----------------
 const detail = ref<NodeDetail | null>(null)

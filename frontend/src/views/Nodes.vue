@@ -92,7 +92,6 @@
           <span v-if="selecting" style="cursor: pointer;" @click="toggleSelected(item.id)">
             <Check :checked="selected.includes(item.id)" />
           </span>
-          <Chip v-if="item.subExclude" :title="$t('node.subExcludeHint')">{{ $t('node.subExcluded') }}</Chip>
           <Chip v-if="item.dirty" color="amber" :title="$t('node.syncDirty')">{{ $t('node.syncDirty') }}</Chip>
           <Chip v-if="stateOf(item) === 'online'" color="emerald" dot>{{ $t('node.status.online') }}</Chip>
           <Chip v-else-if="stateOf(item) === 'degraded'" color="amber" :title="reasonsOf(item)">{{ $t('node.status.degraded') }}</Chip>
@@ -104,7 +103,7 @@
           <Chip v-else>{{ $t('node.status.pending') }}</Chip>
         </template>
         <template #actions>
-          <CardBtn icon="eye" :title="$t('node.details')" @click="$router.push('/nodes/' + item.id)" />
+          <CardBtn icon="eye" :title="$t('node.details')" @click="$router.push({ path: '/node', query: { id: item.id } })" />
           <CardBtn icon="edit" border :title="$t('actions.edit')" @click="openDrawer(item.id)" />
           <CardBtn icon="download" border :title="$t('node.import')" @click="openImport(item)" />
           <CardBtn
@@ -255,6 +254,7 @@ const cardRows = (n: Node): EntityRow[] => {
   const rows = baseRows(n)
   const place = [n.group, n.location].filter((v) => v && v.trim() !== '').join(' · ')
   if (place) rows.unshift({ k: t('node.group') + ' / ' + t('node.location'), v: place })
+  if (n.subExclude) rows.push({ k: t('node.subExclude'), v: t('node.subExcluded'), color: 'var(--amber)' })
   return rows
 }
 
