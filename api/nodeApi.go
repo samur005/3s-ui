@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/samur005/3s-ui/config"
 	"net/url"
 	"strconv"
 
@@ -82,6 +83,9 @@ func (a *ApiService) NodeRemote(c *gin.Context, loginUser string) {
 	if v := c.Request.FormValue("confirm"); v != "" {
 		req.Confirm, _ = strconv.ParseBool(v)
 	}
+	if v := c.Request.FormValue("queue"); v != "" {
+		req.Queue, _ = strconv.ParseBool(v)
+	}
 	var svc service.NodeRemoteService
 	obj, err := svc.Execute(loginUser, req)
 	if err != nil {
@@ -145,4 +149,85 @@ func (a *ApiService) NodeTokenRotate(c *gin.Context, loginUser string) {
 	var svc service.NodeRemoteService
 	err := svc.RotateToken(loginUser, id)
 	jsonMsg(c, "nodeTokenRotate", err)
+}
+
+// ---------- node side: update, tree ----------
+
+func (a *ApiService) NodeUpdateInfo(c *gin.Context) {
+	jsonObj(c, a.UpdateService.UpdateInfoForMaster(config.GetVersion()), nil)
+}
+
+func (a *ApiService) NodeUpdateStatus(c *gin.Context) {
+	jsonObj(c, a.UpdateService.GetStatus(), nil)
+}
+
+func (a *ApiService) NodeUpdate(c *gin.Context) {
+	err := a.UpdateService.StartUpdateExpect(c.Request.FormValue("version"))
+	jsonMsg(c, "nodeUpdate", err)
+}
+
+func (a *ApiService) NodeTree(c *gin.Context) {
+	rows, err := a.NodeService.NodeTreeInfo()
+	jsonObj(c, rows, err)
+}
+
+// ---------- master side: queued remote writes ----------
+
+func (a *ApiService) NodeQueue(c *gin.Context) {
+	var id uint
+	if v := c.Query("id"); v != "" {
+		var ok bool
+		if id, ok = parseNodeId(c, v); !ok {
+			return
+		}
+	}
+	limit, _ := strconv.Atoi(c.Query("limit"))
+	var svc service.NodeRemoteService
+	rows, err := svc.ListQueue(id, limit)
+	jsonObj(c, rows, err)
+}
+
+func (a *ApiService) NodeQueueAction(c *gin.Context, retry bool) {
+	id, err := strconv.ParseUint(c.Request.FormValue("id"), 10, 64)
+	if err != nil {
+		jsonMsg(c, "", common.NewError("invalid queue id"))
+		return
+	}
+	var svc service.NodeRemoteService
+	if retry {
+		err = svc.RetryQueued(id)
+	} else {
+		err = svc.CancelQueued(id)
+	}
+	jsonMsg(c, "nodeQueue", err)
+}
+
+// ---------- clients: subscription devices (X-HWID) ----------
+
+func (a *ApiService) ClientHwids(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Query("id"), 10, 32)
+	if err != nil {
+		jsonMsg(c, "", common.NewError("invalid client id"))
+		return
+	}
+	var cs service.ClientService
+	rows, err := cs.ListHwids(uint(id))
+	jsonObj(c, rows, err)
+}
+
+func (a *ApiService) ClientHwidsDel(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Request.FormValue("id"), 10, 32)
+	if err != nil {
+		jsonMsg(c, "", common.NewError("invalid client id"))
+		return
+	}
+	var device uint64
+	if v := c.Request.FormValue("device"); v != "" {
+		if device, err = strconv.ParseUint(v, 10, 32); err != nil {
+			jsonMsg(c, "", common.NewError("invalid device id"))
+			return
+		}
+	}
+	var cs service.ClientService
+	jsonMsg(c, "clientHwidsDel", cs.DeleteHwids(uint(id), uint(device)))
 }

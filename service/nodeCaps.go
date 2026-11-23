@@ -107,6 +107,9 @@ var NodeManagementOps = []string{
 	"core.restart", "core.stop", "core.start",
 	"panel.restart",
 	"token.rotate",
+	"onlines", "stats",
+	"panel.updateInfo", "panel.updateStatus", "panel.update",
+	"nodes.tree",
 }
 
 var (
@@ -208,6 +211,8 @@ func (s *ServerService) NodeCapabilitiesInfo() NodeCapabilities {
 		Features: []string{
 			"cluster-sync", "bidirectional-sync", "request-id-idempotency",
 			"token-rotation", "config-check", "port-check",
+			"persistent-idempotency", "inbounds-revision", "panel-update", "node-tree",
+			"mtls",
 		},
 	}
 	return caps

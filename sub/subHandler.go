@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/samur005/3s-ui/database/model"
 	"github.com/samur005/3s-ui/logger"
 	"github.com/samur005/3s-ui/service"
 
@@ -78,6 +79,16 @@ func (s *SubHandler) subs(c *gin.Context) {
 	// caches that honour it, and private for the ones that do not -- a CDN
 	// rule caching the sub path (Cloudflare ignores Vary outside images)
 	// would otherwise hand the first Clash client's YAML to everyone.
+	// Device limit (X-HWID) on everything that hands out a config; the
+	// dashboard and its info JSON stay reachable so a refused device can see
+	// why.
+	var client *model.Client
+	if !(isFormat && (format == "page" || format == "info")) {
+		var ok bool
+		if client, ok = s.enforceHwid(c, subId); !ok {
+			return
+		}
+	}
 	byAgent := false
 	if !isFormat {
 		c.Writer.Header().Add("Vary", "User-Agent")
@@ -124,6 +135,7 @@ func (s *SubHandler) subs(c *gin.Context) {
 	}
 
 	s.addHeaders(c, headers)
+	s.addProfileExtras(c, client)
 
 	c.String(200, *result)
 }
@@ -175,7 +187,9 @@ func (s *SubHandler) serveDashboard(c *gin.Context, subId string) {
 	// would hand them straight back on the very URL that was revoked.
 	if client.Enable {
 		s.addProfileHeaders(c, s.SubService.getClientHeaders(client))
+		s.addProfileExtras(c, client)
 	}
+	c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
 	c.Data(200, "text/html; charset=utf-8", page)
 }
 
@@ -190,6 +204,7 @@ func (s *SubHandler) subHeaders(c *gin.Context) {
 
 	headers := s.SubService.getClientHeaders(client)
 	s.addHeaders(c, headers)
+	s.addProfileExtras(c, client)
 
 	c.Status(200)
 }
@@ -216,7 +231,80 @@ func (s *SubHandler) addHeaders(c *gin.Context, headers []string) {
 func (s *SubHandler) addProfileHeaders(c *gin.Context, headers []string) {
 	c.Writer.Header().Set("Subscription-Userinfo", headers[0])
 	c.Writer.Header().Set("Profile-Update-Interval", headers[1])
-	c.Writer.Header().Set("Profile-Title", headers[2])
+	c.Writer.Header().Set("Profile-Title", encodeTitle(headers[2]))
+}
+
+// enforceHwid applies the client's device limit: the X-Hwid-* headers on
+// every answer, and 404 for a device over the limit. It returns the resolved
+// client (nil when the sub id does not resolve; the format handlers answer
+// that themselves).
+func (s *SubHandler) enforceHwid(c *gin.Context, subId string) (*model.Client, bool) {
+	client, err := s.SubService.getClientBySubId(subId)
+	if err != nil {
+		return nil, true
+	}
+	var cs service.ClientService
+	res, err := cs.EnforceHwid(client, service.HwidRequest{
+		Hwid:        c.GetHeader("X-HWID"),
+		UserAgent:   c.GetHeader("User-Agent"),
+		DeviceOS:    c.GetHeader("X-Device-OS"),
+		OsVersion:   c.GetHeader("X-Ver-OS"),
+		DeviceModel: c.GetHeader("X-Device-Model"),
+	})
+	if err != nil {
+		logger.Warning("sub: hwid check for ", subId, ": ", err)
+		return client, true // fail open on a database error, like the rest of sub
+	}
+	hwidHeaders(c.Writer.Header(), res)
+	if !res.Allowed {
+		c.Status(http.StatusNotFound)
+		return nil, false
+	}
+	return client, true
+}
+
+// addProfileExtras sets the configurable profile headers (Support-Url,
+// Announce, Routing, Happ...). A configured title also renames the saved
+// profile file.
+func (s *SubHandler) addProfileExtras(c *gin.Context, client *model.Client) {
+	if client == nil {
+		return
+	}
+	cfg, err := s.SettingService.GetSubProfileConfig()
+	if err != nil {
+		logger.Warning("sub: read profile header settings: ", err)
+		return
+	}
+	ua := ""
+	if c.Request != nil {
+		ua = c.Request.UserAgent()
+	}
+	extra := buildProfileHeaders(profileContext{
+		cfg: cfg, client: client, userAgent: ua, builtinURL: dashboardURL(c),
+	})
+	for k, v := range extra {
+		c.Writer.Header()[k] = v
+	}
+	if extra.Get("Profile-Title") != "" && c.Writer.Header().Get("Content-Disposition") != "" {
+		c.Writer.Header().Set("Content-Disposition", contentDispositionHeader(singleLine(renderPlaceholders(cfg.Title, client, false))))
+	}
+}
+
+// dashboardURL is this client's subscriber dashboard (?format=page) as the
+// client reached the sub server.
+func dashboardURL(c *gin.Context) string {
+	if c.Request == nil || c.Request.URL == nil {
+		return ""
+	}
+	scheme := "http"
+	if c.Request.TLS != nil || strings.EqualFold(c.GetHeader("X-Forwarded-Proto"), "https") {
+		scheme = "https"
+	}
+	host := c.Request.Host
+	if host == "" {
+		return ""
+	}
+	return scheme + "://" + host + c.Request.URL.EscapedPath() + "?format=page"
 }
 
 func contentDispositionHeader(name string) string {

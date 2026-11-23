@@ -156,7 +156,7 @@ func TestGetDbBacksUpEveryTable(t *testing.T) {
 	}
 
 	for _, table := range liveTables {
-		if table == loginAttemptsTable {
+		if table == loginAttemptsTable || table == "idempotency_records" || table == "node_queued_ops" {
 			continue
 		}
 		var live int64
@@ -229,6 +229,9 @@ func seedEveryTable(t *testing.T) {
 		&model.QwdttState{Id: 1, Config: `{"enabled":true}`, VkCookies: "remixsid=x", VkCalls: `{}`},
 		&model.SyncConflict{UID: "00000000-0000-0000-0000-000000000001", Kind: "client", LocalJSON: "{}", RemoteJSON: "{}", CreatedAt: now},
 		&model.NodeOperation{NodeId: 1, RequestId: "req-1", Op: "health", Status: "ok", StartedAt: now},
+		&model.ClientHwid{ClientId: 1, HwidHash: "abc", FirstSeen: now, LastSeen: now},
+		&model.IdempotencyRecord{Key: "k", Status: 200, Body: "{}", CreatedAt: now, ExpiresAt: now + 60},
+		&model.NodeQueuedOp{NodeId: 1, Op: "core.restart", RequestId: "q-1", Status: "pending", NextAt: now, CreatedAt: now, UpdatedAt: now},
 	}
 	for _, row := range rows {
 		if err := GetDB().Create(row).Error; err != nil {

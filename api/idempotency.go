@@ -2,6 +2,14 @@ package api
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
+	"sync/atomic"
+
+	"github.com/samur005/3s-ui/database"
+	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/util/secretbox"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -110,6 +118,14 @@ func withIdempotency(c *gin.Context, username string, handler func()) {
 	key := username + "\x00" + c.Param("postAction") + "\x00" + rid
 	now := time.Now()
 	idemMu.Lock()
+	if _, ok := idemCache[key]; !ok {
+		// Not in memory (e.g. the panel restarted since): the persisted answer
+		// still counts, so a master retrying across a node restart gets a
+		// replay rather than a second execution.
+		if e := loadIdem(key, now); e != nil {
+			idemCache[key] = e
+		}
+	}
 	if e, ok := idemCache[key]; ok && now.Sub(e.at) <= idempotencyTTL {
 		if e.inflight {
 			idemMu.Unlock()
@@ -137,6 +153,55 @@ func withIdempotency(c *gin.Context, username string, handler func()) {
 	if status == 0 {
 		status = http.StatusOK
 	}
-	idemCache[key] = &idemEntry{at: time.Now(), status: status, body: append([]byte(nil), cw.buf.Bytes()...)}
+	entry := &idemEntry{at: time.Now(), status: status, body: append([]byte(nil), cw.buf.Bytes()...)}
+	idemCache[key] = entry
 	idemMu.Unlock()
+	storeIdem(key, entry)
+}
+
+// idemDBKey hashes the cache key: it holds the token user's name, which the
+// table has no reason to keep.
+func idemDBKey(key string) string {
+	sum := sha256.Sum256([]byte(key))
+	return hex.EncodeToString(sum[:])
+}
+
+var idemStores atomic.Int64
+
+func storeIdem(key string, e *idemEntry) {
+	db := database.GetDB()
+	if db == nil {
+		return
+	}
+	body, err := secretbox.Seal(string(e.body)) // may carry a freshly minted token
+	if err != nil {
+		return
+	}
+	rec := model.IdempotencyRecord{
+		Key: idemDBKey(key), Status: e.status, Body: body,
+		CreatedAt: e.at.Unix(), ExpiresAt: e.at.Add(idempotencyTTL).Unix(),
+	}
+	if err := db.Save(&rec).Error; err != nil {
+		logger.Warning("idempotency: persist: ", err)
+		return
+	}
+	if idemStores.Add(1)%50 == 0 {
+		db.Where("expires_at < ?", time.Now().Unix()).Delete(&model.IdempotencyRecord{})
+	}
+}
+
+func loadIdem(key string, now time.Time) *idemEntry {
+	db := database.GetDB()
+	if db == nil {
+		return nil
+	}
+	var rec model.IdempotencyRecord
+	if err := db.Where("key = ? AND expires_at >= ?", idemDBKey(key), now.Unix()).Limit(1).Find(&rec).Error; err != nil || rec.Key == "" {
+		return nil
+	}
+	body, err := secretbox.Open(rec.Body)
+	if err != nil {
+		return nil
+	}
+	return &idemEntry{at: time.Unix(rec.CreatedAt, 0), status: rec.Status, body: []byte(body)}
 }

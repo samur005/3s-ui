@@ -67,6 +67,12 @@ func (s *SubService) getSubs(subId string, transform func([]string) []string) (*
 	linksArray = s.withQwdtt(client, linksArray)
 	linksArray = s.withWireguard(client, linksArray)
 	linksArray = s.withXray(client, linksArray)
+	// Incy reads its routing profile from a line in the body.
+	if cfg, err := s.SettingService.GetSubProfileConfig(); err == nil && cfg.IncyEnableRouting {
+		if line := service.IncyRoutingLine(cfg.IncyRoutingRules); line != "" {
+			linksArray = append(linksArray, line)
+		}
+	}
 	result := strings.Join(linksArray, "\n")
 
 	headers := s.getClientHeaders(client)

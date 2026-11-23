@@ -3,6 +3,7 @@ package web
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"embed"
 	"html/template"
 	"io"
@@ -37,6 +38,8 @@ type Server struct {
 	ctx            context.Context
 	cancel         context.CancelFunc
 	settingService service.SettingService
+	// clientCAs, when set, turns on optional mTLS for apiv2 (service/nodeMTLS.go).
+	clientCAs *x509.CertPool
 }
 
 func NewServer() *Server {
@@ -133,6 +136,14 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 	engine.StaticFS(assetsBasePath, http.FS(assetsFS))
 
 	group_apiv2 := engine.Group(base_url + "apiv2")
+	if pool, caErr := s.settingService.GetAPIClientCAs(); caErr != nil {
+		// Fail closed: the operator asked for mTLS and the CA is unreadable.
+		logger.Error("apiv2 mTLS: ", caErr, " -- apiv2 refuses every request until apiClientCA is fixed")
+		group_apiv2.Use(service.RequireClientCert())
+	} else if pool != nil {
+		s.clientCAs = pool
+		group_apiv2.Use(service.RequireClientCert())
+	}
 	apiv2 := api.NewAPIv2Handler(group_apiv2)
 
 	// SameOrigin goes on this group and not on apiv2: v1 authenticates with a
@@ -258,6 +269,7 @@ func (s *Server) Start() (err error) {
 		} else if tlsConfig, err := network.ACMETLSConfig(domain, email, config.GetCertFolderPath()); err != nil {
 			logger.Error("web ACME certificate error, falling back to HTTP:", err)
 		} else {
+			s.withClientCAs(tlsConfig)
 			listener = network.NewAutoHttpsListener(listener)
 			listener = tls.NewListener(listener, tlsConfig)
 			scheme = "https (ACME)"
@@ -281,6 +293,7 @@ func (s *Server) Start() (err error) {
 			listener.Close()
 			return err
 		}
+		s.withClientCAs(c)
 		listener = network.NewAutoHttpsListener(listener)
 		listener = tls.NewListener(listener, c)
 		scheme = "https"
@@ -312,6 +325,17 @@ func (s *Server) Start() (err error) {
 	}()
 
 	return nil
+}
+
+// withClientCAs asks TLS clients for a certificate when mTLS is configured.
+// VerifyClientCertIfGiven: browsers opening the UI are not prompted to present
+// one, and apiv2 (RequireClientCert) refuses requests that did not.
+func (s *Server) withClientCAs(c *tls.Config) {
+	if s.clientCAs == nil || c == nil {
+		return
+	}
+	c.ClientCAs = s.clientCAs
+	c.ClientAuth = tls.VerifyClientCertIfGiven
 }
 
 func (s *Server) Stop() error {
