@@ -72,17 +72,21 @@
       <!-- ============ Clients (read-only: clients are managed on the master and synced) ============ -->
       <div v-else-if="tab === 'clients'" class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 10px;">
         <MHint>{{ $t('node.detail.clientsHint') }}</MHint>
+        <div v-if="!remoteLoading && objects.length > 0" style="font-size: 12.5px; color: var(--text-3);">
+          {{ $t('node.detail.clientsSummary', { total: objects.length, enabled: objects.filter((c: any) => c.enable).length, online: onlineUsers.length }) }}
+        </div>
         <div v-if="remoteLoading" style="color: var(--text-3);">{{ $t('loading') }}</div>
         <div v-else-if="remoteError" style="color: var(--rose);">{{ remoteError }}</div>
         <div v-else-if="objects.length === 0" style="color: var(--text-3);">{{ $t('node.detail.empty') }}</div>
         <table v-else class="mn-table">
-          <thead><tr><th>{{ $t('node.name') }}</th><th>{{ $t('enable') }}</th><th>{{ $t('node.detail.group') }}</th><th>↑ / ↓</th></tr></thead>
+          <thead><tr><th>{{ $t('node.name') }}</th><th>{{ $t('enable') }}</th><th>{{ $t('node.detail.group') }}</th><th>↑ / ↓</th><th>{{ $t('online') }}</th></tr></thead>
           <tbody>
             <tr v-for="c in objects" :key="c.id ?? c.name">
               <td>{{ c.name }}</td>
               <td>{{ c.enable ? '✓' : '—' }}</td>
               <td class="mono">{{ c.group ?? '' }}</td>
               <td class="mono">{{ bytes(c.up) }} / {{ bytes(c.down) }}</td>
+              <td>{{ onlineUsers.includes(c.name) ? '●' : '' }}</td>
             </tr>
           </tbody>
         </table>
@@ -130,7 +134,89 @@
           <div class="kv-row"><span class="k">↑ {{ $t('node.detail.total') }}</span><span class="v mono">{{ bytes(detail.status.net.sent) }}</span></div>
           <div class="kv-row"><span class="k">↓ {{ $t('node.detail.total') }}</span><span class="v mono">{{ bytes(detail.status.net.recv) }}</span></div>
         </template>
+        <hr class="form-divider" />
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+          <select class="input" style="width: auto;" v-model="statsResource">
+            <option v-for="r in ['inbound', 'user', 'outbound']" :key="r" :value="r">{{ $t('node.detail.statsRes.' + r) }}</option>
+          </select>
+          <select class="input" style="width: auto; min-width: 160px;" v-model="statsTag">
+            <option v-for="tg in statsTags" :key="tg" :value="tg">{{ tg }}</option>
+          </select>
+          <select class="input" style="width: auto;" v-model="statsPeriod">
+            <option v-for="pr in ['hour', 'day', 'week', 'month']" :key="pr" :value="pr">{{ $t('node.detail.statsPeriod.' + pr) }}</option>
+          </select>
+          <Btn sm :loading="remoteLoading" @click="loadStats"><Ico name="refresh" :size="14" /></Btn>
+        </div>
+        <div v-if="remoteError" style="color: var(--rose);">{{ remoteError }}</div>
+        <template v-else-if="statsTag">
+          <div class="kv-row"><span class="k">↑ {{ statsTag }}</span><span class="v mono">{{ bytes(statsSum.up) }}</span></div>
+          <div class="kv-row"><span class="k">↓ {{ statsTag }}</span><span class="v mono">{{ bytes(statsSum.down) }}</span></div>
+          <table v-if="statsRows.length > 0" class="mn-table">
+            <thead><tr><th>{{ $t('node.detail.when') }}</th><th>↑</th><th>↓</th></tr></thead>
+            <tbody>
+              <tr v-for="r in statsRows.slice(-24).reverse()" :key="r.t"><td>{{ fmtTime(r.t) }}</td><td class="mono">{{ bytes(r.up) }}</td><td class="mono">{{ bytes(r.down) }}</td></tr>
+            </tbody>
+          </table>
+        </template>
         <MHint>{{ $t('node.detail.trafficHint') }}</MHint>
+      </div>
+
+      <!-- ============ Panel update ============ -->
+      <div v-else-if="tab === 'update'" class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+        <MHint>{{ $t('node.detail.updateHint') }}</MHint>
+        <div v-if="remoteLoading" style="color: var(--text-3);">{{ $t('loading') }}</div>
+        <div v-else-if="remoteError" style="color: var(--rose);">{{ remoteError }}</div>
+        <template v-else-if="updateInfo">
+          <div class="kv-row"><span class="k">{{ $t('node.detail.updCurrent') }}</span><span class="v mono">{{ updateInfo.current }}</span></div>
+          <div class="kv-row"><span class="k">{{ $t('node.detail.updLatest') }}</span><span class="v mono">{{ updateInfo.latest ?? updateInfo.latestError }}</span></div>
+          <div v-if="!updateInfo.canSelfUpdate" class="kv-row"><span class="k">{{ $t('node.detail.updCannot') }}</span><span class="v" style="color: var(--amber);">{{ updateInfo.reason }}</span></div>
+          <div v-if="updateStatus" class="kv-row"><span class="k">{{ $t('node.detail.updStatus') }}</span><span class="v mono">{{ updateStatus.state ?? '' }} {{ updateStatus.error ?? updateStatus.message ?? '' }}</span></div>
+          <div style="display: flex; gap: 8px;">
+            <Btn sm variant="primary" :disabled="!canWrite || !updateInfo.canSelfUpdate || !updateInfo.updateAvailable" :loading="busy === 'panel.update'" @click="ask('panel.update')">
+              {{ $t('node.detail.updRun', { version: updateInfo.latest ?? '' }) }}
+            </Btn>
+            <Btn sm @click="loadTab"><Ico name="refresh" :size="14" /></Btn>
+          </div>
+        </template>
+      </div>
+
+      <!-- ============ Node tree (the node's own nodes) ============ -->
+      <div v-else-if="tab === 'tree'" class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+        <MHint>{{ $t('node.detail.treeHint') }}</MHint>
+        <div v-if="remoteLoading" style="color: var(--text-3);">{{ $t('loading') }}</div>
+        <div v-else-if="remoteError" style="color: var(--rose);">{{ remoteError }}</div>
+        <div v-else-if="objects.length === 0" style="color: var(--text-3);">{{ $t('node.detail.treeEmpty') }}</div>
+        <table v-else class="mn-table">
+          <thead><tr><th>{{ $t('node.name') }}</th><th>Host</th><th>{{ $t('node.detail.group') }}</th><th>{{ $t('node.detail.result') }}</th><th>{{ $t('node.detail.updCurrent') }}</th></tr></thead>
+          <tbody>
+            <tr v-for="n in objects" :key="n.id"><td>{{ n.name }}</td><td class="mono">{{ n.host }}</td><td>{{ n.group }}</td><td>{{ n.state }}</td><td class="mono">{{ n.appVersion ?? '' }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ============ Offline queue ============ -->
+      <div v-else-if="tab === 'queue'" class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+        <MHint>{{ $t('node.detail.queueHint') }}</MHint>
+        <SwitchLabel v-model="queueWrites" :label="$t('node.detail.queueWrites')" />
+        <div style="display: flex; justify-content: flex-end;"><Btn sm :loading="remoteLoading" @click="loadQueue"><Ico name="refresh" :size="14" /></Btn></div>
+        <div v-if="queue.length === 0" style="color: var(--text-3);">{{ $t('node.detail.empty') }}</div>
+        <table v-else class="mn-table">
+          <thead><tr><th>{{ $t('node.detail.when') }}</th><th>{{ $t('node.detail.op') }}</th><th>{{ $t('node.detail.actor') }}</th><th>{{ $t('node.detail.result') }}</th><th></th></tr></thead>
+          <tbody>
+            <tr v-for="q in queue" :key="q.id">
+              <td>{{ fmtTime(q.createdAt) }}</td>
+              <td class="mono">{{ q.op }}{{ q.action ? ' · ' + q.action : '' }}</td>
+              <td>{{ q.actor }}</td>
+              <td :style="{ color: q.status === 'failed' ? 'var(--rose)' : q.status === 'done' ? 'var(--emerald)' : undefined }">
+                {{ $t('node.detail.qStatus.' + q.status) }} ({{ q.attempts }}){{ q.lastError ? ' — ' + q.lastError : '' }}
+              </td>
+              <td style="text-align: end; white-space: nowrap;">
+                <Btn sm v-if="q.status === 'failed' || q.status === 'cancelled'" @click="queueAction(q.id, true)">{{ $t('node.detail.qRetry') }}</Btn>
+                <Btn sm v-if="q.status === 'pending'" @click="queueAction(q.id, false)">{{ $t('actions.cancel') }}</Btn>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <!-- ============ Services ============ -->
@@ -252,6 +338,7 @@ import Chip from '@/components/ui/Chip.vue'
 import Tabs from '@/components/ui/Tabs.vue'
 import Modal from '@/components/ui/Modal.vue'
 import MHint from '@/components/ui/MHint.vue'
+import SwitchLabel from '@/components/ui/SwitchLabel.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import NodeDrawer from '@/layouts/drawers/node/NodeDrawer.vue'
 
@@ -294,10 +381,10 @@ const healthColor = computed(() => {
     default: return undefined
   }
 })
-const canWrite = computed(() => !!detail.value?.node?.enable && health.value !== 'offline' && health.value !== 'incompatible')
+const canWrite = computed(() => !!detail.value?.node?.enable && health.value !== 'incompatible' && (health.value !== 'offline' || queueWrites.value))
 
 // ---------------- tabs ----------------
-const tabKeys = ['overview', 'inbounds', 'outbounds', 'clients', 'routing', 'dns', 'capabilities', 'traffic', 'services', 'logs', 'settings', 'audit']
+const tabKeys = ['overview', 'inbounds', 'outbounds', 'clients', 'routing', 'dns', 'capabilities', 'traffic', 'services', 'logs', 'update', 'tree', 'queue', 'settings', 'audit']
 const tabLabel = (k: string) => t('node.detail.tabs.' + k)
 const tabList = computed((): [string, string][] => tabKeys.map((k) => [k, tabLabel(k)]))
 const tab = ref(typeof route.query.tab === 'string' && tabKeys.includes(route.query.tab) ? route.query.tab : 'overview')
@@ -316,12 +403,75 @@ const remote = async (op: string, extra: Record<string, any> = {}): Promise<any>
   if (extra.params) body.params = JSON.stringify(extra.params)
   if (extra.action) body.action = extra.action
   if (extra.confirm) body.confirm = 'true'
+  if (queueWrites.value && extra.queueable) body.queue = 'true'
   const msg = await HttpUtils.post('api/nodeRemote', body)
   if (!msg.success) throw new Error(msg.msg)
   return msg.obj
 }
 
 const objects = ref<any[]>([])
+// Writes made while the node is offline wait in the master's persistent queue.
+const queueWrites = ref(false)
+const queue = ref<any[]>([])
+const loadQueue = async () => {
+  const msg = await HttpUtils.get('api/nodeQueue', { id: nodeId.value, limit: 100 })
+  if (msg.success) queue.value = msg.obj ?? []
+}
+const queueAction = async (id: number, retry: boolean) => {
+  const msg = await HttpUtils.post(retry ? 'api/nodeQueueRetry' : 'api/nodeQueueCancel', { id })
+  if (msg.success) await loadQueue()
+}
+const onlineUsers = ref<string[]>([])
+const updateInfo = ref<any>(null)
+const updateStatus = ref<any>(null)
+// Traffic history from the node's own stats table.
+const statsResource = ref('inbound')
+const statsPeriod = ref('day')
+const statsTag = ref('')
+const statsTags = ref<string[]>([])
+const statsRows = ref<{ t: number, up: number, down: number }[]>([])
+const statsSum = computed(() => statsRows.value.reduce((a, r) => ({ up: a.up + r.up, down: a.down + r.down }), { up: 0, down: 0 }))
+const loadStatsTags = async () => {
+  try {
+    if (statsResource.value === 'user') {
+      const obj = await remote('clients')
+      statsTags.value = (obj?.clients ?? []).map((c: any) => c.name)
+    } else if (statsResource.value === 'inbound') {
+      const obj = await remote('inbounds')
+      statsTags.value = (obj?.inbounds ?? []).map((i: any) => i.tag)
+    } else {
+      const obj = await remote('outbounds')
+      statsTags.value = (obj?.outbounds ?? []).map((o: any) => o.tag)
+    }
+  } catch (e: any) {
+    statsTags.value = []
+    remoteError.value = e?.message ?? String(e)
+  }
+  if (!statsTags.value.includes(statsTag.value)) statsTag.value = statsTags.value[0] ?? ''
+}
+const loadStats = async () => {
+  remoteError.value = ''
+  statsRows.value = []
+  if (!statsTag.value) return
+  remoteLoading.value = true
+  try {
+    const rows = await remote('stats', { params: { resource: statsResource.value, tag: statsTag.value, period: statsPeriod.value } })
+    const by = new Map<number, { t: number, up: number, down: number }>()
+    for (const r of (Array.isArray(rows) ? rows : [])) {
+      const e = by.get(r.dateTime) ?? { t: r.dateTime, up: 0, down: 0 }
+      if (r.direction) e.up += r.traffic ?? 0
+      else e.down += r.traffic ?? 0
+      by.set(r.dateTime, e)
+    }
+    statsRows.value = [...by.values()].sort((a, b) => a.t - b.t)
+  } catch (e: any) {
+    remoteError.value = e?.message ?? String(e)
+  } finally {
+    remoteLoading.value = false
+  }
+}
+watch(statsResource, async () => { await loadStatsTags(); await loadStats() })
+watch([statsTag, statsPeriod], () => { if (tab.value === 'traffic') loadStats() })
 const logs = ref<string[]>([])
 const servicesInfo = ref<Record<string, any>>({})
 const sectionText = ref('')
@@ -332,8 +482,14 @@ const logCount = ref(100)
 const loadTab = async () => {
   remoteError.value = ''
   if (!detail.value) return
-  if (['overview', 'capabilities', 'traffic', 'settings'].includes(tab.value)) return
+  if (['overview', 'capabilities', 'settings'].includes(tab.value)) return
   if (tab.value === 'audit') return loadOps()
+  if (tab.value === 'queue') return loadQueue()
+  if (tab.value === 'traffic') {
+    if (detail.value.legacy) return
+    await loadStatsTags()
+    return loadStats()
+  }
   remoteLoading.value = true
   try {
     switch (tab.value) {
@@ -348,6 +504,20 @@ const loadTab = async () => {
       case 'clients': {
         const obj = await remote('clients')
         objects.value = obj?.clients ?? []
+        try {
+          const on = await remote('onlines')
+          onlineUsers.value = on?.user ?? []
+        } catch { onlineUsers.value = [] }
+        break
+      }
+      case 'update': {
+        updateInfo.value = await remote('panel.updateInfo')
+        try { updateStatus.value = await remote('panel.updateStatus') } catch { updateStatus.value = null }
+        break
+      }
+      case 'tree': {
+        const obj = await remote('nodes.tree')
+        objects.value = Array.isArray(obj) ? obj : []
         break
       }
       case 'routing':
@@ -405,7 +575,7 @@ const editObject = (o: any) => {
 const saveObject = async () => {
   busy.value = 'save'
   try {
-    await remote('save.' + writeObject.value, { action: editor.value.action, data: editor.value.text })
+    await remote('save.' + writeObject.value, { action: editor.value.action, data: editor.value.text, queueable: true })
     push.success({ message: t('success') })
     editor.value.open = false
     await loadTab()
@@ -459,6 +629,7 @@ const ask = (op: string) => {
     'config.route': t('node.detail.confirmSection', { name, section: 'route' }),
     'config.dns': t('node.detail.confirmSection', { name, section: 'dns' }),
     delete: t('node.detail.confirmDelete', { name, tag: pendingDelete.value }),
+    'panel.update': t('node.detail.confirmUpdate', { name, version: updateInfo.value?.latest ?? '' }),
   }
   confirm.value = { open: true, text: texts[op] ?? op, op }
 }
@@ -467,11 +638,14 @@ const confirmed = async () => {
   busy.value = op
   try {
     if (op === 'delete') {
-      await remote('save.' + writeObject.value, { action: 'del', data: JSON.stringify(pendingDelete.value) })
+      await remote('save.' + writeObject.value, { action: 'del', data: JSON.stringify(pendingDelete.value), queueable: true })
       await loadTab()
     } else if (op === 'config.route' || op === 'config.dns') {
-      await remote(op, { data: sectionText.value })
+      await remote(op, { data: sectionText.value, queueable: true })
       await loadTab()
+    } else if (op === 'panel.update') {
+      await remote(op, { confirm: true, params: { version: updateInfo.value?.latest ?? '' } })
+      setTimeout(loadTab, 3000)
     } else {
       await remote(op, { confirm: true })
       setTimeout(loadDetail, 1500)

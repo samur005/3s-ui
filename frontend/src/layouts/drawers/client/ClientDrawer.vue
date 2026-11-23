@@ -130,6 +130,22 @@
           <Field :label="$t('ui.ipLimit')" :hint="$t('ui.unlimitedHint')" :mb="0">
             <input class="input mono" type="number" min="0" v-model.number="limitIp" />
           </Field>
+          <Field :label="$t('ui.hwidLimit')" :hint="$t('ui.hwidLimitHint')" :mb="0">
+            <input class="input mono" type="number" min="0" v-model.number="limitHwid" />
+          </Field>
+        </div>
+
+        <div v-if="!isNew && (hwids.length > 0 || (client.limitHwid ?? 0) > 0)" style="margin-bottom: 15px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <SectionLabel style="flex: 1;">{{ $t('ui.hwidDevices') }} ({{ hwids.length }}<template v-if="(client.limitHwid ?? 0) > 0">/{{ client.limitHwid }}</template>)</SectionLabel>
+            <Btn sm :disabled="hwids.length == 0" @click="delHwid(0)">{{ $t('ui.hwidResetAll') }}</Btn>
+          </div>
+          <div v-for="d in hwids" :key="d.id" style="display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 4px 0; border-bottom: 1px solid var(--line);">
+            <span class="mono" dir="ltr" style="flex: 0 0 auto; color: var(--text-3);">{{ d.hwidHash }}</span>
+            <span style="flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ [d.deviceModel, d.deviceOs, d.osVersion].filter((x: string) => !!x).join(' · ') || d.userAgent }}</span>
+            <span class="mono" style="color: var(--text-3);">{{ new Date(d.lastSeen * 1000).toLocaleString() }}</span>
+            <IconBtn name="trash" danger :title="$t('actions.del')" @click="delHwid(d.id)" />
+          </div>
         </div>
 
         <template v-if="!isNew && client.autoReset">
@@ -404,6 +420,26 @@ const limitIp = computed({
     client.value.limitIp = n > 0 ? n : 0
   },
 })
+const limitHwid = computed({
+  get: () => client.value.limitHwid ?? 0,
+  set: (v: number | string | null) => {
+    const n = Math.floor(Number(v))
+    client.value.limitHwid = n > 0 ? n : 0
+  },
+})
+// Registered devices (X-HWID), loaded when an existing client opens.
+const hwids = ref<any[]>([])
+const loadHwids = async () => {
+  hwids.value = []
+  if (isNew.value || !client.value.id) return
+  const msg = await HttpUtils.get('api/clientHwids', { id: client.value.id })
+  if (msg.success) hwids.value = msg.obj ?? []
+}
+const delHwid = async (device: number) => {
+  const msg = await HttpUtils.post('api/clientHwidsDel', { id: client.value.id, device })
+  if (msg.success) await loadHwids()
+}
+watch(() => client.value.id, () => { loadHwids() }, { immediate: true })
 // 延迟启动只推迟重置周期的起点(首次连接时才开始算),到期日期照常生效。没开自动重置
 // 就没有周期可推迟,所以它跟着自动重置走:关自动重置时一起关,后端保存时也会清
 const delayStart = computed({

@@ -12,6 +12,11 @@ export interface Node {
   token?: string
   insecure: boolean
   certPin?: string
+  // Optional mTLS: the master's client certificate for this node (PEM). The
+  // key is write-only, like the token; the server reports clientKeySet.
+  clientCert?: string
+  clientKey?: string
+  clientKeySet?: boolean
   desc?: string
   lastSeen: number
   tokenSet?: boolean
@@ -130,6 +135,8 @@ export const defaultNode: Node = {
   token: '',
   insecure: false,
   certPin: '',
+  clientCert: '',
+  clientKey: '',
   desc: '',
   lastSeen: 0,
   syncMode: 'one_way',
