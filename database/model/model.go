@@ -1,6 +1,12 @@
 package model
 
-import "encoding/json"
+import (
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
+
+	"github.com/samur005/3s-ui/util/secretbox"
+)
 
 type Setting struct {
 	Id    uint   `json:"id" form:"id" gorm:"primaryKey;autoIncrement"`
@@ -82,6 +88,10 @@ type Client struct {
 	// Indexed because the scan runs every 10s asking for the rows above zero,
 	// which are the rare ones -- exactly the shape an index answers cheaply.
 	LimitIp int `json:"limitIp" form:"limitIp" gorm:"default:0;not null;index"`
+
+	// Cap on devices (distinct X-HWID values) that may fetch the
+	// subscription; 0 = no device limit (sub/hwid.go).
+	LimitHwid int `json:"limitHwid" form:"limitHwid" gorm:"default:0;not null"`
 
 	// Telegram user allowed to look this client up in the bot; 0 = nobody.
 	// Bound through the bot, so the panel's own client form does not carry it
@@ -187,15 +197,15 @@ type Tokens struct {
 // header). Only connection config and the last observed transition live in
 // the DB — live status is kept in an in-memory snapshot (service/node.go).
 type Node struct {
-	Id       uint   `json:"id" form:"id" gorm:"primaryKey;autoIncrement"`
-	Enable   bool   `json:"enable" form:"enable" gorm:"default:true;not null"`
-	Name     string `json:"name" form:"name" gorm:"unique"`
-	BaseUrl  string `json:"baseUrl" form:"baseUrl"` // scheme://host[:port], no path
-	WebPath  string `json:"webPath" form:"webPath"` // remote panel web path, default "/app/"
-	Token    string `json:"token,omitempty" form:"token"`
-	Insecure bool   `json:"insecure" form:"insecure" gorm:"default:false;not null"`
-	CertPin  string `json:"certPin" form:"certPin"` // leaf cert SHA-256, overrides Insecure
-	Desc     string `json:"desc" form:"desc"`
+	Id       uint         `json:"id" form:"id" gorm:"primaryKey;autoIncrement"`
+	Enable   bool         `json:"enable" form:"enable" gorm:"default:true;not null"`
+	Name     string       `json:"name" form:"name" gorm:"unique"`
+	BaseUrl  string       `json:"baseUrl" form:"baseUrl"` // scheme://host[:port], no path
+	WebPath  string       `json:"webPath" form:"webPath"` // remote panel web path, default "/app/"
+	Token    SecretString `json:"token,omitempty" form:"token"`
+	Insecure bool         `json:"insecure" form:"insecure" gorm:"default:false;not null"`
+	CertPin  string       `json:"certPin" form:"certPin"` // leaf cert SHA-256, overrides Insecure
+	Desc     string       `json:"desc" form:"desc"`
 	// Unix seconds of the last time the node was seen online; written only on
 	// online -> offline/core-stopped transitions, not every heartbeat.
 	LastSeen int64 `json:"lastSeen" form:"lastSeen" gorm:"default:0;not null"`
@@ -232,6 +242,100 @@ type Node struct {
 	// when it was fetched. Heartbeat-owned: never taken from a form.
 	Capabilities json.RawMessage `json:"-"`
 	CapsAt       int64           `json:"capsAt" gorm:"default:0;not null"`
+
+	// Optional mutual TLS: the client certificate (PEM) the master presents
+	// to this node, and its private key (PEM, write-only, sealed at rest).
+	// Used alongside CertPin / normal verification, never instead of it.
+	ClientCert string       `json:"clientCert" form:"clientCert" gorm:"type:text;default:'';not null"`
+	ClientKey  SecretString `json:"clientKey,omitempty" form:"clientKey" gorm:"type:text;default:'';not null"`
+
+	// Persisted circuit-breaker state, so a restart does not hammer a node
+	// that was failing (service/nodeHealth.go). Heartbeat-owned.
+	BreakerFails int   `json:"-" gorm:"default:0;not null"`
+	BreakerUntil int64 `json:"-" gorm:"default:0;not null"`
+}
+
+// SecretString is a string sealed with util/secretbox when written to the
+// database and opened when read, so the rest of the code handles plaintext
+// and the database never holds it (Node.Token, Node.ClientKey). Legacy
+// plaintext rows read as they are (database.migrateSealSecrets seals them).
+// A value that cannot be opened (database moved without its secret.key)
+// reads as empty: the node then shows "check the API token" and the operator
+// re-enters it, rather than ciphertext being sent as a token.
+type SecretString string
+
+func (s SecretString) Value() (driver.Value, error) {
+	return secretbox.Seal(string(s))
+}
+
+func (s *SecretString) Scan(src any) error {
+	var raw string
+	switch v := src.(type) {
+	case nil:
+		raw = ""
+	case string:
+		raw = v
+	case []byte:
+		raw = string(v)
+	default:
+		return fmt.Errorf("SecretString: unsupported type %T", src)
+	}
+	if v, err := secretbox.Open(raw); err == nil {
+		*s = SecretString(v)
+	} else {
+		*s = ""
+	}
+	return nil
+}
+
+func (s SecretString) String() string { return string(s) }
+
+// SealNodeSecret seals a value for a direct column update.
+func SealNodeSecret(v string) (string, error) { return secretbox.Seal(v) }
+
+// ClientHwid is one device (hashed X-HWID) seen fetching a client's
+// subscription; Client.LimitHwid caps how many may register.
+type ClientHwid struct {
+	Id          uint   `json:"id" gorm:"primaryKey;autoIncrement"`
+	ClientId    uint   `json:"clientId" gorm:"uniqueIndex:idx_client_hwid;not null"`
+	HwidHash    string `json:"hwidHash" gorm:"size:64;uniqueIndex:idx_client_hwid;not null"`
+	FirstSeen   int64  `json:"firstSeen" gorm:"not null"`
+	LastSeen    int64  `json:"lastSeen" gorm:"not null"`
+	UserAgent   string `json:"userAgent" gorm:"size:512;default:'';not null"`
+	DeviceOS    string `json:"deviceOs" gorm:"size:128;default:'';not null"`
+	OsVersion   string `json:"osVersion" gorm:"size:128;default:'';not null"`
+	DeviceModel string `json:"deviceModel" gorm:"size:128;default:'';not null"`
+}
+
+// IdempotencyRecord persists the answer to an apiv2 write that carried an
+// X-Request-Id (api/idempotency.go), so a master retrying after a node
+// restart still gets the replay instead of a second execution. Body is sealed.
+type IdempotencyRecord struct {
+	Key       string `gorm:"primaryKey;size:200"`
+	Status    int    `gorm:"not null"`
+	Body      string `gorm:"type:text;not null"`
+	CreatedAt int64  `gorm:"not null"`
+	ExpiresAt int64  `gorm:"index;not null"`
+}
+
+// NodeQueuedOp is a remote write that could not reach its node and was queued
+// to run when the node is back (service/nodeQueue.go). Data/Params are sealed:
+// they can carry inbound credentials.
+type NodeQueuedOp struct {
+	Id        uint64 `json:"id" gorm:"primaryKey;autoIncrement"`
+	NodeId    uint   `json:"nodeId" gorm:"index;not null"`
+	Op        string `json:"op" gorm:"size:32;not null"`
+	Action    string `json:"action" gorm:"size:16;default:'';not null"`
+	Data      string `json:"-" gorm:"type:text;default:'';not null"`
+	Params    string `json:"-" gorm:"type:text;default:'';not null"`
+	Actor     string `json:"actor" gorm:"size:64;default:'';not null"`
+	RequestId string `json:"requestId" gorm:"size:64;not null"`
+	Status    string `json:"status" gorm:"size:16;index;not null"` // pending | done | failed | cancelled
+	Attempts  int    `json:"attempts" gorm:"default:0;not null"`
+	NextAt    int64  `json:"nextAt" gorm:"index;not null"`
+	LastError string `json:"lastError" gorm:"size:512;default:'';not null"`
+	CreatedAt int64  `json:"createdAt" gorm:"not null"`
+	UpdatedAt int64  `json:"updatedAt" gorm:"not null"`
 }
 
 // NodeOperation is the master-side audit trail of typed remote operations
@@ -255,12 +359,12 @@ type NodeOperation struct {
 
 // SyncConflict holds a divergent bi-di edit until an operator resolves it.
 type SyncConflict struct {
-	Id        uint   `json:"id" gorm:"primaryKey;autoIncrement"`
-	UID       string `json:"uid" gorm:"index;size:36;not null"`
-	Kind      string `json:"kind" gorm:"size:16;not null"` // client|inbound
-	NodeId    uint   `json:"nodeId" gorm:"index;default:0"`
+	Id         uint   `json:"id" gorm:"primaryKey;autoIncrement"`
+	UID        string `json:"uid" gorm:"index;size:36;not null"`
+	Kind       string `json:"kind" gorm:"size:16;not null"` // client|inbound
+	NodeId     uint   `json:"nodeId" gorm:"index;default:0"`
 	LocalJSON  string `json:"localJson" gorm:"type:text"`
 	RemoteJSON string `json:"remoteJson" gorm:"type:text"`
-	CreatedAt int64  `json:"createdAt" gorm:"not null"`
-	Resolved  bool   `json:"resolved" gorm:"default:false;not null"`
+	CreatedAt  int64  `json:"createdAt" gorm:"not null"`
+	Resolved   bool   `json:"resolved" gorm:"default:false;not null"`
 }

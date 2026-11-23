@@ -291,6 +291,10 @@ type fakeNode struct {
 	// outServer, when set, is the address the node reports for inbound 7 in
 	// the full (by-id) inbounds shape the replica refresh reads.
 	outServer string
+	// down makes every request fail at the transport level (node offline).
+	down bool
+	// rev is the sys.inboundsRev the status answer carries.
+	rev string
 }
 
 type fakeCall struct {
@@ -320,6 +324,10 @@ func (f *fakeNode) serve(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	action := strings.TrimPrefix(r.URL.Path, "/app/apiv2/")
 	f.mu.Lock()
+	if f.down {
+		f.mu.Unlock()
+		panic(http.ErrAbortHandler)
+	}
 	f.calls = append(f.calls, fakeCall{action: action, requestID: r.Header.Get("X-Request-Id"),
 		token: r.Header.Get("Token"), form: r.PostForm, query: r.URL.Query()})
 	tokenOK := r.Header.Get("Token") == f.token || (!f.badNew && f.minted > 0 && r.Header.Get("Token") == "tok-new")
@@ -330,14 +338,32 @@ func (f *fakeNode) serve(w http.ResponseWriter, r *http.Request) {
 	}
 	v2only := map[string]bool{"nodeHello": true, "nodeCapabilities": true, "nodeHealth": true,
 		"nodeServices": true, "nodePortCheck": true, "nodeCheckConfig": true,
-		"nodeRotateToken": true, "nodeRevokeToken": true}
+		"nodeRotateToken": true, "nodeRevokeToken": true,
+		"nodeUpdateInfo": true, "nodeUpdate": true, "nodeUpdateStatus": true, "nodeTree": true}
 	if f.legacy && v2only[action] {
 		f.fail(w, "unknown action: "+action)
 		return
 	}
 	switch action {
 	case "status":
-		f.ok(w, `{"sbd":{"running":true},"cpu":1}`)
+		f.mu.Lock()
+		rev := f.rev
+		f.mu.Unlock()
+		f.ok(w, `{"sbd":{"running":true},"cpu":1,"sys":{"inboundsRev":"`+rev+`"}}`)
+	case "nodeUpdateInfo":
+		f.ok(w, `{"current":"v1.0.0","latest":"v1.1.0","updateAvailable":true,"canSelfUpdate":true}`)
+	case "nodeUpdate":
+		if v := r.PostForm.Get("version"); v != "" && v != "v1.1.0" {
+			f.fail(w, "latest release is v1.1.0, not "+v)
+			return
+		}
+		f.ok(w, `null`)
+	case "nodeUpdateStatus":
+		f.ok(w, `{"state":"idle"}`)
+	case "nodeTree":
+		f.ok(w, `[{"id":1,"name":"edge-1","host":"10.0.0.5","state":"online"}]`)
+	case "stats":
+		f.ok(w, `[{"dateTime":1700000000,"resource":"`+r.URL.Query().Get("resource")+`","tag":"x","direction":true,"traffic":10}]`)
 	case "onlines":
 		f.ok(w, `{"user":[]}`)
 	case "nodeHello":
@@ -417,7 +443,12 @@ func resetNodeGlobalsForTest(t *testing.T) {
 		breakerMu.Lock()
 		nodeFails = map[uint]int{}
 		nodeNextProbe = map[uint]time.Time{}
+		breakerPersisted = map[uint]bool{}
 		breakerMu.Unlock()
+		nodeRevMu.Lock()
+		nodeRevs = map[uint]string{}
+		nodeRevRunning = map[uint]bool{}
+		nodeRevMu.Unlock()
 		rateMu.Lock()
 		nodeBuckets = map[uint]*tokenBucket{}
 		rateMu.Unlock()
@@ -458,7 +489,7 @@ func setupMasterForTest(t *testing.T) (dirty *[]uint) {
 
 func addFakeNode(t *testing.T, name string, f *fakeNode) model.Node {
 	t.Helper()
-	n := model.Node{Name: name, BaseUrl: f.srv.URL, WebPath: "/app/", Token: f.token, Enable: true, AllowPrivate: true}
+	n := model.Node{Name: name, BaseUrl: f.srv.URL, WebPath: "/app/", Token: model.SecretString(f.token), Enable: true, AllowPrivate: true}
 	if err := database.GetDB().Create(&n).Error; err != nil {
 		t.Fatalf("seed node %s: %v", name, err)
 	}

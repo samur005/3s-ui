@@ -103,7 +103,10 @@ func probeHeld(id uint, now time.Time) (bool, NodeStatus) {
 	prev, had := nodeStatuses[id]
 	nodeStatusMu.RUnlock()
 	if !had {
-		return false, NodeStatus{}
+		// Breaker restored from the database after a restart: there is no
+		// snapshot to carry over, so hold the node as offline until its
+		// scheduled probe instead of probing at full rate.
+		prev = NodeStatus{State: "offline", CheckedAt: now.Unix(), Error: "backing off after repeated failures"}
 	}
 	prev.Stale = true
 	prev.Failures = fails
@@ -115,6 +118,9 @@ func probeHeld(id uint, now time.Time) (bool, NodeStatus) {
 // derived fields (failures, next probe, network rate).
 func recordProbeOutcome(id uint, status, prev NodeStatus, had bool) NodeStatus {
 	breakerMu.Lock()
+	persist := false
+	var pFails int
+	var pUntil int64
 	if status.State == "offline" {
 		nodeFails[id]++
 		fails := nodeFails[id]
@@ -122,13 +128,23 @@ func recordProbeOutcome(id uint, status, prev NodeStatus, had bool) NodeStatus {
 			next := time.Now().Add(jitter(d))
 			nodeNextProbe[id] = next
 			status.NextProbeAt = next.Unix()
+			persist, pFails, pUntil = true, fails, next.Unix()
 		}
 		status.Failures = fails
 	} else {
+		if nodeFails[id] >= breakerThreshold || breakerPersisted[id] {
+			persist = true
+		}
 		delete(nodeFails, id)
 		delete(nodeNextProbe, id)
 	}
+	if persist {
+		breakerPersisted[id] = pFails > 0
+	}
 	breakerMu.Unlock()
+	if persist {
+		persistBreaker(id, pFails, pUntil)
+	}
 
 	if had && prev.State != "offline" && status.State != "offline" && status.CheckedAt > prev.CheckedAt &&
 		prev.Net.Sent > 0 && status.Net.Sent >= prev.Net.Sent && status.Net.Recv >= prev.Net.Recv {
@@ -143,9 +159,62 @@ func recordProbeOutcome(id uint, status, prev NodeStatus, had bool) NodeStatus {
 // reconnect, an edit of its address or token).
 func resetProbeBreaker(id uint) {
 	breakerMu.Lock()
+	was := breakerPersisted[id]
 	delete(nodeFails, id)
 	delete(nodeNextProbe, id)
+	delete(breakerPersisted, id)
 	breakerMu.Unlock()
+	if was {
+		persistBreaker(id, 0, 0)
+	}
+}
+
+// breakerPersisted marks nodes whose open breaker is stored in the nodes row,
+// so recovery clears the row once and healthy nodes never write.
+var (
+	breakerPersisted = map[uint]bool{}
+	breakerLoadOnce  sync.Once
+)
+
+// persistBreaker stores the breaker so a master restart keeps backing off a
+// node that was failing instead of probing it at full rate again.
+func persistBreaker(id uint, fails int, until int64) {
+	db := database.GetDB()
+	if db == nil {
+		return
+	}
+	if err := db.Model(model.Node{}).Where("id = ?", id).
+		Updates(map[string]any{"breaker_fails": fails, "breaker_until": until}).Error; err != nil {
+		logger.Warning("nodes: persist breaker state: ", err)
+	}
+}
+
+// loadBreakerState restores the persisted breaker on the first heartbeat.
+func loadBreakerState() {
+	breakerLoadOnce.Do(func() {
+		db := database.GetDB()
+		if db == nil {
+			return
+		}
+		var rows []struct {
+			Id           uint
+			BreakerFails int
+			BreakerUntil int64
+		}
+		if err := db.Model(model.Node{}).Select("id", "breaker_fails", "breaker_until").
+			Where("breaker_fails > 0").Find(&rows).Error; err != nil {
+			return
+		}
+		breakerMu.Lock()
+		for _, r := range rows {
+			nodeFails[r.Id] = r.BreakerFails
+			if r.BreakerUntil > 0 {
+				nodeNextProbe[r.Id] = time.Unix(r.BreakerUntil, 0)
+			}
+			breakerPersisted[r.Id] = true
+		}
+		breakerMu.Unlock()
+	})
 }
 
 // breakerOpen reports whether remote operations should fail fast: the node is

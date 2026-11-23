@@ -1,6 +1,8 @@
 package service
 
 import (
+	"github.com/samur005/3s-ui/util/secretbox"
+
 	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
@@ -61,7 +63,9 @@ type NodeStatus struct {
 	ApiVersion  int        `json:"apiVersion"`
 	Sync        NodeSyncSt `json:"sync"`
 
-	onlineUsers     []string
+	onlineUsers []string
+	// inboundsRev is the node's sys.inboundsRev (nodeExtras.go); not exported.
+	inboundsRev     string
 	onlineCheckedAt int64
 }
 
@@ -131,6 +135,40 @@ func nodeApiURL(n *model.Node, action string) string {
 	return strings.TrimRight(n.BaseUrl, "/") + normalizeWebPath(n.WebPath) + "apiv2/" + action
 }
 
+// storedNodeSecret reads one node secret column (token, client_key) and opens
+// it: a column scanned into a plain string bypasses SecretString.
+func storedNodeSecret(tx *gorm.DB, id uint, column string) (model.SecretString, error) {
+	var raw string
+	if err := tx.Model(model.Node{}).Select(column).Where("id = ?", id).Find(&raw).Error; err != nil {
+		return "", err
+	}
+	v, err := secretbox.Open(raw)
+	if err != nil {
+		return "", common.NewErrorf("stored %s cannot be decrypted (database moved without its secret.key?) -- enter it again", column)
+	}
+	return model.SecretString(v), nil
+}
+
+// validateNodeClientCert checks the optional mTLS pair parses and matches.
+func validateNodeClientCert(n *model.Node) error {
+	n.ClientCert = strings.TrimSpace(n.ClientCert)
+	n.ClientKey = model.SecretString(strings.TrimSpace(string(n.ClientKey)))
+	if n.ClientCert == "" {
+		n.ClientKey = ""
+		return nil
+	}
+	if !strings.HasPrefix(strings.ToLower(n.BaseUrl), "https://") {
+		return common.NewError("a client certificate (mTLS) needs an https:// node address")
+	}
+	if n.ClientKey == "" {
+		return common.NewError("the client certificate needs its private key")
+	}
+	if _, err := tls.X509KeyPair([]byte(n.ClientCert), []byte(n.ClientKey)); err != nil {
+		return common.NewErrorf("client certificate / key: %v", err)
+	}
+	return nil
+}
+
 func pinVerifier(pin string) func([][]byte, [][]*x509.Certificate) error {
 	return func(rawCerts [][]byte, _ [][]*x509.Certificate) error {
 		if len(rawCerts) == 0 {
@@ -163,6 +201,15 @@ func buildNodeHTTPClient(n *model.Node) *http.Client {
 			tlsConfig.VerifyPeerCertificate = pinVerifier(pin)
 		} else if n.Insecure {
 			tlsConfig.InsecureSkipVerify = true
+		}
+		// Optional mTLS: present the client certificate in addition to (never
+		// instead of) verifying the node's certificate as configured above.
+		if n.ClientCert != "" && n.ClientKey != "" {
+			if pair, err := tls.X509KeyPair([]byte(n.ClientCert), []byte(n.ClientKey)); err == nil {
+				tlsConfig.Certificates = []tls.Certificate{pair}
+			} else {
+				logger.Warning("nodes: client certificate of ", n.Name, ": ", err)
+			}
 		}
 		transport.TLSClientConfig = tlsConfig
 	}
@@ -224,7 +271,7 @@ func (s *NodeService) nodeGet(n *model.Node, client *http.Client, action string,
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Token", n.Token)
+	req.Header.Set("Token", string(n.Token))
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("X-Request-Id", newRequestID())
 	resp, err := client.Do(req)
@@ -274,8 +321,9 @@ func (s *NodeService) probe(n *model.Node, client *http.Client) NodeStatus {
 			Total   int64 `json:"total"`
 		} `json:"mem"`
 		Sys struct {
-			AppVersion string `json:"appVersion"`
-			BootTime   uint64 `json:"bootTime"`
+			AppVersion  string `json:"appVersion"`
+			BootTime    uint64 `json:"bootTime"`
+			InboundsRev string `json:"inboundsRev"`
 		} `json:"sys"`
 		Sbd struct {
 			Running     bool   `json:"running"`
@@ -300,6 +348,7 @@ func (s *NodeService) probe(n *model.Node, client *http.Client) NodeStatus {
 	status.Cpu = payload.Cpu
 	status.Mem = NodeMem{Current: payload.Mem.Current, Total: payload.Mem.Total}
 	status.AppVersion = payload.Sys.AppVersion
+	status.inboundsRev = payload.Sys.InboundsRev
 	status.CoreVersion = payload.Sbd.Version
 	status.Swap = payload.Swp
 	status.Disk = payload.Dsk
@@ -332,6 +381,7 @@ func (s *NodeService) probe(n *model.Node, client *http.Client) NodeStatus {
 // RefreshAll probes every enabled node with bounded parallelism and atomically
 // swaps in a freshly built snapshot. Called by the @every 5s cron job.
 func (s *NodeService) RefreshAll() {
+	loadBreakerState()
 	var nodes []*model.Node
 	db := database.GetDB()
 	err := db.Model(model.Node{}).Where("enable = ?", true).Find(&nodes).Error
@@ -388,6 +438,14 @@ func (s *NodeService) RefreshAll() {
 	nodeStatusMu.Unlock()
 
 	s.refreshCapabilities(nodes, newStatuses)
+
+	// A node whose inbounds changed on its own panel: refresh its replicas
+	// and links now rather than at the hourly reconcile.
+	for _, n := range nodes {
+		if st, ok := newStatuses[n.Id]; ok && !st.Stale && st.State != "offline" {
+			noteInboundsRevision(n, st.inboundsRev)
+		}
+	}
 
 	// Persist last_seen only on online -> not-online transitions. `old` was
 	// swapped out under the lock, nothing writes it anymore.
@@ -508,12 +566,16 @@ func (s *NodeService) TestNode(data json.RawMessage) (NodeStatus, error) {
 		return NodeStatus{}, err
 	}
 	if node.Token == "" && node.Id > 0 {
-		var oldToken string
-		err = database.GetDB().Model(model.Node{}).Select("token").Where("id = ?", node.Id).Find(&oldToken).Error
+		node.Token, err = storedNodeSecret(database.GetDB(), node.Id, "token")
 		if err != nil {
 			return NodeStatus{}, err
 		}
-		node.Token = oldToken
+	}
+	if node.ClientCert != "" && node.ClientKey == "" && node.Id > 0 {
+		node.ClientKey, err = storedNodeSecret(database.GetDB(), node.Id, "client_key")
+		if err != nil {
+			return NodeStatus{}, err
+		}
 	}
 	client := buildNodeHTTPClient(&node)
 	defer closeIdle(client)
@@ -563,6 +625,9 @@ func (s *NodeService) GetAll() ([]map[string]interface{}, error) {
 			"allowPrivate": n.AllowPrivate,
 			"subExclude":   n.SubExclude,
 			"capsAt":       n.CapsAt,
+			// mTLS: the certificate is public, the key never leaves.
+			"clientCert":   n.ClientCert,
+			"clientKeySet": n.ClientKey != "",
 		})
 	}
 	return out, nil
@@ -659,12 +724,17 @@ func (s *NodeService) save(tx *gorm.DB, act string, data json.RawMessage) (uint,
 			// Empty token on edit means "keep the stored one" — the UI never
 			// sees the token, so it cannot send it back.
 			if node.Token == "" {
-				var oldToken string
-				err = tx.Model(model.Node{}).Select("token").Where("id = ?", node.Id).Find(&oldToken).Error
+				node.Token, err = storedNodeSecret(tx, node.Id, "token")
 				if err != nil {
 					return 0, err
 				}
-				node.Token = oldToken
+			}
+			// Same for the mTLS key; clearing the certificate clears both.
+			if node.ClientCert != "" && node.ClientKey == "" {
+				node.ClientKey, err = storedNodeSecret(tx, node.Id, "client_key")
+				if err != nil {
+					return 0, err
+				}
 			}
 			// last_seen is heartbeat-owned; don't let a stale form value clobber it.
 			var oldNode struct {
@@ -681,6 +751,9 @@ func (s *NodeService) save(tx *gorm.DB, act string, data json.RawMessage) (uint,
 		if node.Token == "" {
 			return 0, common.NewError("node API token is required")
 		}
+		if err = validateNodeClientCert(&node); err != nil {
+			return 0, err
+		}
 		// The name is the aggregated-link marker (see nodeLinkPrefix), so a
 		// bracket in it would make one node's prefix match another's links — the
 		// two would then strip and re-add each other's every reconcile. Only
@@ -693,7 +766,7 @@ func (s *NodeService) save(tx *gorm.DB, act string, data json.RawMessage) (uint,
 		// Capabilities are heartbeat-owned and never part of the form; a plain
 		// Save would write their zero values over the cached answer.
 		if act == "edit" {
-			err = tx.Omit("capabilities", "caps_at").Save(&node).Error
+			err = tx.Omit("capabilities", "caps_at", "breaker_fails", "breaker_until").Save(&node).Error
 		} else {
 			err = tx.Save(&node).Error
 		}
@@ -740,6 +813,7 @@ func (s *NodeService) save(tx *gorm.DB, act string, data json.RawMessage) (uint,
 		resetProbeBreaker(id)
 		forgetCapabilities(id)
 		forgetSyncState(id)
+		forgetInboundsRevision(id)
 	default:
 		return 0, common.NewErrorf("unknown action: %s", act)
 	}

@@ -14,9 +14,9 @@ import (
 	"github.com/samur005/3s-ui/database/jsonsql"
 	"github.com/samur005/3s-ui/database/model"
 	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/service/bisync"
 	"github.com/samur005/3s-ui/service/notify"
 	"github.com/samur005/3s-ui/util"
-	"github.com/samur005/3s-ui/service/bisync"
 	"github.com/samur005/3s-ui/util/common"
 
 	"gorm.io/gorm"
@@ -482,6 +482,12 @@ func (s *ClientService) Save(tx *gorm.DB, act string, data json.RawMessage, host
 		if err = tombstoneOrDeleteClients(tx, []uint{id}); err != nil {
 			return nil, err
 		}
+		// Free the client's device slots with it.
+		if tx.Migrator().HasTable(&model.ClientHwid{}) {
+			if err = tx.Where("client_id = ?", id).Delete(&model.ClientHwid{}).Error; err != nil {
+				return nil, err
+			}
+		}
 		savedIds = []uint{id}
 	default:
 		return nil, common.NewErrorf("unknown action: %s", act)
@@ -489,7 +495,6 @@ func (s *ClientService) Save(tx *gorm.DB, act string, data json.RawMessage, host
 
 	return &ClientWrite{Ids: savedIds, InboundIds: inboundIds}, nil
 }
-
 
 // tombstoneOrDeleteClients soft-deletes enrolled (sync_uid) clients so peers
 // see a tombstone; unenrolled rows are removed as before.
@@ -601,7 +606,7 @@ func (s *ClientService) ensureNameAvailable(tx *gorm.DB, name string, excludeId 
 // watching their own usage through the bot.
 func (s *ClientService) preserveServerManagedFields(tx *gorm.DB, client *model.Client) error {
 	var existing model.Client
-	err := tx.Model(model.Client{}).Select("created_at", "online_at", "up", "down", "total_up", "total_down", "tg_id").
+	err := tx.Model(model.Client{}).Select("created_at", "online_at", "up", "down", "total_up", "total_down", "tg_id", "limit_hwid").
 		Where("id = ?", client.Id).First(&existing).Error
 	if err != nil {
 		// ErrRecordNotFound included, deliberately: failing open here would write
@@ -614,6 +619,8 @@ func (s *ClientService) preserveServerManagedFields(tx *gorm.DB, client *model.C
 	client.Up, client.Down = existing.Up, existing.Down
 	client.TotalUp, client.TotalDown = existing.TotalUp, existing.TotalDown
 	client.TgId = existing.TgId
+	// The list projection does not carry the device limit either.
+	client.LimitHwid = existing.LimitHwid
 	return nil
 }
 

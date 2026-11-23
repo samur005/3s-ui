@@ -92,6 +92,10 @@ func GetDb(exclude string) ([]byte, error) {
 		&model.WgPeer{},
 		&model.SyncConflict{},
 		&model.NodeOperation{},
+		&model.ClientHwid{},
+		// Not copied: idempotency_records (replay cache, minutes long) and
+		// node_queued_ops (pending remote writes -- restoring a stale queue
+		// would replay old edits onto nodes).
 	)
 	if err != nil {
 		return nil, err
@@ -187,6 +191,14 @@ func GetDb(exclude string) ([]byte, error) {
 		return nil, err
 	} else if len(clients) > 0 {
 		if err := backupDb.CreateInBatches(clients, backupBatchSize).Error; err != nil {
+			return nil, err
+		}
+	}
+	var hwids []model.ClientHwid
+	if err := db.Model(&model.ClientHwid{}).Scan(&hwids).Error; err != nil {
+		return nil, err
+	} else if len(hwids) > 0 {
+		if err := backupDb.CreateInBatches(hwids, backupBatchSize).Error; err != nil {
 			return nil, err
 		}
 	}

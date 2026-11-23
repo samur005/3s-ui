@@ -133,6 +133,12 @@ func (a *APIHandler) postHandler(c *gin.Context) {
 		a.ApiService.NodeReconnect(c)
 	case "nodeTokenRotate":
 		a.ApiService.NodeTokenRotate(c, loginUser)
+	case "clientHwidsDel":
+		a.ApiService.ClientHwidsDel(c)
+	case "nodeQueueCancel":
+		a.ApiService.NodeQueueAction(c, false)
+	case "nodeQueueRetry":
+		a.ApiService.NodeQueueAction(c, true)
 	case "wgRestart":
 		a.ApiService.RestartWg(c)
 	case "xrayRestart":
@@ -208,6 +214,10 @@ func (a *APIHandler) getHandler(c *gin.Context) {
 		a.ApiService.NodeDetail(c)
 	case "nodeOps":
 		a.ApiService.NodeOps(c)
+	case "nodeQueue":
+		a.ApiService.NodeQueue(c)
+	case "clientHwids":
+		a.ApiService.ClientHwids(c)
 	case "detectNginx":
 		a.ApiService.DetectNginx(c)
 	case "certs":

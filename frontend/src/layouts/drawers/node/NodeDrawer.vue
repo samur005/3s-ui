@@ -38,6 +38,13 @@
       <Field :label="$t('node.certPin')" :hint="$t('node.certPinHint')">
         <input class="input mono" v-model="nodeData.certPin" placeholder="sha256 hex" />
       </Field>
+      <Field :label="$t('node.clientCert')" :hint="$t('node.clientCertHint')">
+        <textarea class="input mono" rows="3" spellcheck="false" dir="ltr" v-model="nodeData.clientCert" placeholder="-----BEGIN CERTIFICATE-----"></textarea>
+      </Field>
+      <Field :label="$t('node.clientKey')">
+        <textarea class="input mono" rows="3" spellcheck="false" dir="ltr" v-model="nodeData.clientKey"
+                  :placeholder="!isNew && nodeData.clientKeySet ? $t('node.clientKeyKeep') : '-----BEGIN PRIVATE KEY-----'"></textarea>
+      </Field>
     </template>
     <MHint v-else-if="nodeData.baseUrl.startsWith('http://')">{{ $t('node.httpWarn') }}</MHint>
 

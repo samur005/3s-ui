@@ -112,6 +112,8 @@ func (a *APIv2Handler) post(c *gin.Context, username string) {
 			a.ReloadTokens()
 		}
 		jsonObj(c, map[string]interface{}{"token": token, "id": newId, "previousId": prevId}, err)
+	case "nodeUpdate":
+		a.ApiService.NodeUpdate(c)
 	case "nodeRevokeToken":
 		id, err := strconv.ParseUint(c.Request.FormValue("id"), 10, 32)
 		if err != nil {
@@ -132,6 +134,12 @@ func (a *APIv2Handler) post(c *gin.Context, username string) {
 		a.ApiService.NodeReconnect(c)
 	case "nodeTokenRotate":
 		a.ApiService.NodeTokenRotate(c, username)
+	case "clientHwidsDel":
+		a.ApiService.ClientHwidsDel(c)
+	case "nodeQueueCancel":
+		a.ApiService.NodeQueueAction(c, false)
+	case "nodeQueueRetry":
+		a.ApiService.NodeQueueAction(c, true)
 	default:
 		jsonMsg(c, "failed", common.NewError("unknown action: ", action))
 	}
@@ -188,11 +196,21 @@ func (a *APIv2Handler) getHandler(c *gin.Context) {
 		a.ApiService.NodeServices(c)
 	case "nodePortCheck":
 		a.ApiService.NodePortCheck(c)
+	case "nodeUpdateInfo":
+		a.ApiService.NodeUpdateInfo(c)
+	case "nodeUpdateStatus":
+		a.ApiService.NodeUpdateStatus(c)
+	case "nodeTree":
+		a.ApiService.NodeTree(c)
 	// node management (master side)
 	case "nodeDetail":
 		a.ApiService.NodeDetail(c)
 	case "nodeOps":
 		a.ApiService.NodeOps(c)
+	case "nodeQueue":
+		a.ApiService.NodeQueue(c)
+	case "clientHwids":
+		a.ApiService.ClientHwids(c)
 	default:
 		jsonMsg(c, "failed", common.NewError("unknown action: ", action))
 	}

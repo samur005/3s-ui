@@ -29,4 +29,6 @@ func (s *NodesJob) Run() {
 	// Offline-period edits converge here: any node that is now online and still
 	// dirty gets reconciled (own single-flight + backoff inside).
 	s.NodeSyncService.ReconcileDirtyOnline()
+	// Remote writes queued while their node was unreachable (nodeQueue.go).
+	service.DrainNodeQueue()
 }

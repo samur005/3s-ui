@@ -100,7 +100,7 @@ func (s *NodeSyncService) nodePost(n *model.Node, client *http.Client, action st
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Token", n.Token)
+	req.Header.Set("Token", string(n.Token))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
 	resp, err := client.Do(req)

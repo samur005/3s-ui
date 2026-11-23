@@ -230,6 +230,8 @@ func (s *ServerService) GetSystemInfo() map[string]interface{} {
 	info["cpuCount"] = runtime.NumCPU()
 	info["hostName"], _ = os.Hostname()
 	info["appVersion"] = config.GetVersion()
+	// Lets a managing master notice direct inbound edits within one heartbeat.
+	info["inboundsRev"] = InboundsRevision()
 	ipv4 := make([]string, 0)
 	ipv6 := make([]string, 0)
 	// get ip address

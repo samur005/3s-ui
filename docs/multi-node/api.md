@@ -17,6 +17,18 @@ Every answer is `{"success": bool, "msg": string, "obj": any}`.
 | POST | `nodeBulk` | `ids` (JSON array), `op` (`enable`, `disable`, `reconnect`, `reconcile`, `subExclude`, `subInclude`, `refreshCaps`, `setGroup`), `value` (group) | `[{nodeId, ok, error?}]` |
 | POST | `nodeReconnect` | `id` | fresh `NodeStatus` |
 | POST | `nodeTokenRotate` | `id` | — |
+| GET | `nodeQueue` | `id` (optional), `limit` | queued operations (no payloads) |
+| POST | `nodeQueueCancel` / `nodeQueueRetry` | `id` (queue row) | — |
+| GET | `clientHwids` | `id` (client) | registered devices (hash shortened) |
+| POST | `clientHwidsDel` | `id` (client), `device` (row id, empty/0 = all) | — |
+
+`nodeRemote` also takes `queue=true`: if the node is unreachable the write is
+queued and the answer is `{queued: true, queueId}`.
+
+New ops: `onlines`, `stats` (`resource` = inbound/outbound/user/endpoint,
+`tag`, `period` = hour/day/week/month/60day/90day), `panel.updateInfo`,
+`panel.updateStatus`, `panel.update` (confirm; `version` = the release you
+approved), `nodes.tree`.
 
 Existing endpoints kept: `save` with `object=nodes` (CRUD), `testNode`,
 `reconcileNode`, `nodeInbounds`, `adoptInbounds`, `load` (`nodes`, `nodesStatus`).
@@ -42,6 +54,12 @@ Refusals by the master's guard rails come back as `success:false` with a
 | POST | `nodeCheckConfig` | `data` (full sing-box config JSON) | validates without saving |
 | POST | `nodeRotateToken` | — | `{token, id, previousId}` — a new token for the caller's admin; the old one stays valid |
 | POST | `nodeRevokeToken` | `id` | revokes a token of the same admin, never the calling one |
+| GET | `nodeUpdateInfo` | — | `{current, latest, updateAvailable, canSelfUpdate, reason, docker}` |
+| GET | `nodeUpdateStatus` | — | updater state |
+| POST | `nodeUpdate` | `version` (optional, must equal the latest release) | starts the checksum-verified self-update |
+| GET | `nodeTree` | — | this panel's own nodes: id, name, host, group, location, state, version |
+
+`status` with `r=sys` now includes `inboundsRev`.
 
 ## Headers on apiv2 POSTs (all nodes of this release)
 

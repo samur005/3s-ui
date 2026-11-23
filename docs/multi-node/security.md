@@ -17,16 +17,35 @@
 | Flooding a node | per-node token bucket (burst 20, 2/s); breaker stops probes to a dead node |
 | Silent changes | every remote write and refusal is audited (`node_operations`: who, what, when, result, attempts, duration, request id); bulk changes also write `changes` rows |
 | Plain HTTP | allowed for compatibility, warned in the UI; use HTTPS or a pinned certificate |
+| Master database or backup stolen | node tokens and mTLS keys are sealed (AES-256-GCM, `enc:v1:`); the key is `secret.key` next to the database (0600) or `SUI_SECRET_KEY` — keep it out of the backups you hand around |
+| Stolen node token used from another host | optional mTLS: the node (setting *Master client CA*) only accepts apiv2 requests with a client certificate signed by that CA; the master sends the per-node client cert |
+| Queued payload exposure | queued writes and stored idempotent answers are sealed too |
+
+## Encryption at rest
+
+* Sealed columns: `nodes.token`, `nodes.client_key`, `node_queued_ops.data/params`,
+  `idempotency_records.body` (its key is a SHA-256 of user, action and request id).
+* Key: `SUI_SECRET_KEY` (base64 of 32 bytes) or `<db dir>/secret.key`, created
+  on first start. Without a key nothing is sealed (and nothing breaks).
+* Plaintext rows from older releases are sealed on start; they still read
+  correctly before that.
+* Downgrade: `3sui secrets -decrypt` writes the secrets back as plaintext.
+
+## mTLS (optional)
+
+1. Create a CA and a client certificate for the master (any PKI).
+2. Node: *Settings → Interface → Master client CA* = the CA's PEM. The panel
+   must terminate TLS itself; apiv2 then answers only verified clients
+   (403 otherwise). The browser UI does not need a certificate.
+3. Master: node drawer → *Client certificate* / *Client key* (key write-only,
+   sealed). The pair is checked on save.
 
 ## Limitations
 
-* Node tokens are stored in plaintext in the master's database (as before).
-  Protect the database file and backups.
-* No mTLS between master and node (LucX has it; not ported). Use HTTPS with a
-  verified or pinned certificate and a firewall rule for the master's IP.
-* Idempotency state is in memory: a node restart forgets it (a retry after a
-  restart may re-apply; client sync is idempotent anyway).
-* The rate limit and breaker are per master process.
+* mTLS does not work behind a TLS-terminating proxy (fail closed).
+* A database moved without its key reads node tokens as empty: re-enter them.
+* The rate limit is per master process; the breaker and idempotency records
+  survive restarts (stored in the database).
 
 ## Logging
 

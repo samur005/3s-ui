@@ -51,6 +51,13 @@ type RemoteRequest struct {
 	Data    json.RawMessage `json:"data,omitempty"`
 	Params  url.Values      `json:"-"`
 	Confirm bool            `json:"confirm,omitempty"`
+	// Queue: a write that cannot reach the node (offline, breaker open,
+	// transport failure) is stored and run when the node is back
+	// (service/nodeQueue.go) instead of failing.
+	Queue bool `json:"queue,omitempty"`
+	// RequestId reuses a request id (queued retries), so the node's
+	// idempotency turns a write whose answer was lost into a replay.
+	RequestId string `json:"-"`
 }
 
 type remoteOp struct {
@@ -98,7 +105,20 @@ var remoteOps = map[string]remoteOp{
 	"core.stop":      {method: "POST", action: "maintenance", write: true, legacy: true, dangerous: true, timeout: remoteWriteTimeout},
 	"core.start":     {method: "POST", action: "maintenance", write: true, legacy: true, timeout: remoteWriteTimeout},
 	"panel.restart":  {method: "POST", action: "restartApp", write: true, legacy: true, dangerous: true, timeout: remoteWriteTimeout},
+
+	// Fuller Traffic / Clients tabs.
+	"onlines": {method: "GET", action: "onlines", legacy: true, timeout: remoteReadTimeout},
+	"stats":   {method: "GET", action: "stats", legacy: true, timeout: remoteReadTimeout},
+	// Panel self-update through the node's own checksum-verified updater.
+	"panel.updateInfo":   {method: "GET", action: "nodeUpdateInfo", timeout: remoteReadTimeout},
+	"panel.updateStatus": {method: "GET", action: "nodeUpdateStatus", timeout: remoteReadTimeout},
+	"panel.update":       {method: "POST", action: "nodeUpdate", write: true, dangerous: true, timeout: remoteWriteTimeout},
+	// The node's own nodes (it may be a master itself): one level of the tree.
+	"nodes.tree": {method: "GET", action: "nodeTree", timeout: remoteReadTimeout},
 }
+
+var statsResources = map[string]bool{"inbound": true, "outbound": true, "user": true, "endpoint": true}
+var statsPeriods = map[string]bool{"hour": true, "day": true, "week": true, "month": true, "60day": true, "90day": true}
 
 // RemoteOpNames lists the allowlist (for the UI and docs).
 func RemoteOpNames() []string {
@@ -175,7 +195,7 @@ func (s *NodeService) nodeCall(ctx context.Context, n *model.Node, client *http.
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Token", n.Token)
+	req.Header.Set("Token", string(n.Token))
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("X-Request-Id", requestID)
 	req.Header.Set("X-Request-Timestamp", strconv.FormatInt(time.Now().Unix(), 10))
@@ -436,6 +456,33 @@ func (s *NodeRemoteService) buildParams(node *model.Node, client *http.Client, r
 		form.Set("object", object)
 		form.Set("action", req.Action)
 		form.Set("data", string(req.Data))
+	case "stats":
+		res := p.Get("resource")
+		if !statsResources[res] {
+			return nil, nil, refused("resource must be inbound, outbound, user or endpoint")
+		}
+		q.Set("resource", res)
+		if tag := p.Get("tag"); tag != "" {
+			if len(tag) > 128 {
+				return nil, nil, refused("tag too long")
+			}
+			q.Set("tag", tag)
+		}
+		period := p.Get("period")
+		if period == "" {
+			period = "hour"
+		}
+		if !statsPeriods[period] {
+			return nil, nil, refused("unknown period %q", period)
+		}
+		q.Set("period", period)
+	case "panel.update":
+		if v := p.Get("version"); v != "" {
+			if len(v) > 32 || strings.ContainsAny(v, " /\\") {
+				return nil, nil, refused("invalid version")
+			}
+			form.Set("version", v)
+		}
 	case "core.stop":
 		form.Set("enable", "true")
 	case "core.start":
@@ -522,11 +569,28 @@ func (s *NodeRemoteService) Execute(actor string, req RemoteRequest) (json.RawMe
 		return nil, err
 	}
 	started := time.Now()
-	requestID := newRequestID()
+	requestID := req.RequestId
+	if requestID == "" {
+		requestID = newRequestID()
+	}
+	// Dangerous ops (core stop, panel restart/update, token rotation) are
+	// never deferred: running them later, unattended, is not what was asked.
+	if req.Queue && remoteOps[req.Op].dangerous {
+		req.Queue = false
+	}
+	if req.Queue && remoteOps[req.Op].write && node.Enable {
+		if open, _ := breakerOpen(node.Id); open {
+			return s.enqueue(node, actor, req, requestID, "node offline")
+		}
+	}
 	op, caps, err := s.checkOp(node, &req)
 	if err != nil {
 		if remoteOps[req.Op].write {
 			s.audit(node.Id, requestID, req, actor, started, 0, err)
+		}
+		if req.Queue && remoteOps[req.Op].write && node.Enable && !errors.Is(err, errRemoteRefused) {
+			// capabilities unreadable = node unreachable
+			return s.enqueue(node, actor, req, requestID, err.Error())
 		}
 		return nil, err
 	}
@@ -553,6 +617,9 @@ func (s *NodeRemoteService) Execute(actor string, req RemoteRequest) (json.RawMe
 		s.audit(node.Id, requestID, req, actor, started, attempts, err)
 	}
 	if err != nil {
+		if req.Queue && op.write && retryable(err) {
+			return s.enqueue(node, actor, req, requestID, err.Error())
+		}
 		return nil, err
 	}
 	if req.Op == "capabilities" {
@@ -689,6 +756,11 @@ func (s *NodeRemoteService) audit(nodeId uint, requestID string, req RemoteReque
 		row.Error = truncate(err.Error(), 512)
 	}
 	db := database.GetDB()
+	if req.RequestId != "" {
+		// A queued replay reuses the node-facing request id; the audit row
+		// (unique request_id) gets a suffix per attempt.
+		row.RequestId = truncate(requestID, 48) + "." + newRequestID()[:8]
+	}
 	if e := db.Create(&row).Error; e != nil {
 		logger.Warning("nodes: audit remote operation: ", e)
 		return
@@ -778,7 +850,7 @@ func (s *NodeRemoteService) rotateToken(node *model.Node, requestID string) erro
 		return common.NewError("node returned no token")
 	}
 	fresh := *node
-	fresh.Token = minted.Token
+	fresh.Token = model.SecretString(minted.Token)
 	if _, err := s.fetchHello(&fresh, client); err != nil {
 		// Undo on the node with the still-valid old token.
 		form := url.Values{}
@@ -786,7 +858,11 @@ func (s *NodeRemoteService) rotateToken(node *model.Node, requestID string) erro
 		_, _, _ = s.callWithRetry(ctx, node, client, "POST", "nodeRevokeToken", nil, form, newRequestID())
 		return common.NewErrorf("new token did not verify, rotation rolled back: %v", err)
 	}
-	if err := database.GetDB().Model(model.Node{}).Where("id = ?", node.Id).Update("token", minted.Token).Error; err != nil {
+	sealed, err := model.SealNodeSecret(minted.Token)
+	if err != nil {
+		return err
+	}
+	if err := database.GetDB().Model(model.Node{}).Where("id = ?", node.Id).Update("token", sealed).Error; err != nil {
 		return err
 	}
 	invalidateNodeClient(node.Id)
