@@ -45,6 +45,20 @@
       <input class="input" v-model="nodeData.desc" />
     </Field>
 
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+      <Field :label="$t('node.group')">
+        <input class="input" v-model="nodeData.group" maxlength="64" placeholder="eu" />
+      </Field>
+      <Field :label="$t('node.location')">
+        <input class="input" v-model="nodeData.location" maxlength="64" placeholder="Frankfurt, DE" />
+      </Field>
+    </div>
+
+    <SwitchLabel v-model="nodeData.allowPrivate" :label="$t('node.allowPrivate')" />
+    <MHint>{{ $t('node.allowPrivateHint') }}</MHint>
+    <SwitchLabel v-model="nodeData.subExclude" :label="$t('node.subExclude')" />
+    <MHint v-if="nodeData.subExclude">{{ $t('node.subExcludeHint') }}</MHint>
+
     <Field :label="$t('node.syncMode')" :hint="$t('node.syncModeHint')">
       <select class="input" v-model="nodeData.syncMode">
         <option value="one_way">{{ $t('node.syncOneWay') }}</option>
@@ -76,6 +90,16 @@
     </MHint>
       </div>
     </div>
+
+    <template v-if="!isNew && nodeData.tokenSet">
+      <hr class="form-divider" />
+      <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+        <Btn :loading="rotating" @click="rotateToken">
+          <Ico name="key" :size="15" /> {{ $t('node.rotateToken') }}
+        </Btn>
+        <span style="font-size: 12px; color: var(--text-3);">{{ $t('node.rotateTokenHint') }}</span>
+      </div>
+    </template>
   </MDrawer>
 </template>
 
@@ -124,6 +148,17 @@ const saveChanges = async () => {
   const success = await Data().save('nodes', nodeData.value.id > 0 ? 'edit' : 'new', nodeData.value)
   if (success) emit('close')
   loading.value = false
+}
+
+// ---------------- token rotation ----------------
+// The node mints the replacement, the master verifies and stores it, then the
+// old one is revoked -- the token itself never reaches the browser.
+const rotating = ref(false)
+const rotateToken = async () => {
+  if (!props.id) return
+  rotating.value = true
+  await HttpUtils.post('api/nodeTokenRotate', { id: props.id })
+  rotating.value = false
 }
 
 // ---------------- test connection ----------------

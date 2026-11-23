@@ -76,6 +76,11 @@ const routes = [
         component: () => import('@/views/Nodes.vue'),
       },
       {
+        path: '/nodes/:id(\\d+)',
+        name: 'pages.nodeDetail',
+        component: () => import('@/views/NodeDetail.vue'),
+      },
+      {
         path: '/admins',
         name: 'pages.admins',
         component: () => import('@/views/Admins.vue'),
