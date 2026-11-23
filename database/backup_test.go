@@ -227,6 +227,8 @@ func seedEveryTable(t *testing.T) {
 		&model.LoginAttempt{Scope: "ip", Key: "1.2.3.4", Failures: 1, WindowStart: now},
 		&model.WgPeer{InboundId: 1, ClientId: 1, PrivateKey: "k", PublicKey: "p", PresharedKey: "s", Address: "10.8.1.2"},
 		&model.QwdttState{Id: 1, Config: `{"enabled":true}`, VkCookies: "remixsid=x", VkCalls: `{}`},
+		&model.SyncConflict{UID: "00000000-0000-0000-0000-000000000001", Kind: "client", LocalJSON: "{}", RemoteJSON: "{}", CreatedAt: now},
+		&model.NodeOperation{NodeId: 1, RequestId: "req-1", Op: "health", Status: "ok", StartedAt: now},
 	}
 	for _, row := range rows {
 		if err := GetDB().Create(row).Error; err != nil {

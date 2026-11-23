@@ -156,6 +156,7 @@ func InitDB(dbPath string) error {
 		&model.WgPeer{},
 		&model.LoginAttempt{},
 		&model.SyncConflict{},
+		&model.NodeOperation{},
 	}
 	err = db.AutoMigrate(models...)
 	if err != nil {
@@ -211,6 +212,10 @@ func InitDB(dbPath string) error {
 		return err
 	}
 	err = migrateInboundTraffic()
+	if err != nil {
+		return err
+	}
+	err = migrateNodeAllowPrivate()
 	if err != nil {
 		return err
 	}

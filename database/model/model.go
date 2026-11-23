@@ -210,6 +210,47 @@ type Node struct {
 	// last collection: map[clientName]{up,down}. Single writer (traffic job),
 	// one row UPDATE per node per cycle.
 	Baselines json.RawMessage `json:"-"`
+
+	// ---- Multi-node management (added with node API level 2) ----
+	// NodeGroup is an operator label for grouping nodes and bulk operations
+	// (e.g. "eu", "backup"). Free text, not a cluster scope: client sync stays
+	// scoped by the @cluster client group regardless of it.
+	NodeGroup string `json:"group" form:"group" gorm:"column:node_group;size:64;index;default:'';not null"`
+	// Location is display-only (city / country / provider).
+	Location string `json:"location" form:"location" gorm:"size:64;default:'';not null"`
+	// AllowPrivate lets the master dial a node whose address resolves to a
+	// loopback or private (RFC 1918 / ULA) address. Link-local, multicast and
+	// unspecified addresses are refused regardless (cloud metadata endpoints
+	// live there). Existing nodes are migrated to true so an upgrade does not
+	// cut off a cluster on a private network (database.migrateNodeAllowPrivate).
+	AllowPrivate bool `json:"allowPrivate" form:"allowPrivate" gorm:"default:false;not null"`
+	// SubExclude keeps the node managed and monitored but leaves its servers
+	// out of every master subscription. The stored links are kept, so turning
+	// it back off restores them without a reconcile.
+	SubExclude bool `json:"subExclude" form:"subExclude" gorm:"default:false;not null"`
+	// Capabilities is the node's last nodeCapabilities answer (JSON), CapsAt
+	// when it was fetched. Heartbeat-owned: never taken from a form.
+	Capabilities json.RawMessage `json:"-"`
+	CapsAt       int64           `json:"capsAt" gorm:"default:0;not null"`
+}
+
+// NodeOperation is the master-side audit trail of typed remote operations
+// (service/nodeRemote.go): who ran what against which node, with which request
+// id, and how it ended. Payloads are deliberately not stored -- they carry
+// credentials (inbound users, private keys) that an audit table must not keep.
+type NodeOperation struct {
+	Id         uint64 `json:"id" gorm:"primaryKey;autoIncrement"`
+	NodeId     uint   `json:"nodeId" gorm:"index;not null"`
+	RequestId  string `json:"requestId" gorm:"size:64;uniqueIndex;not null"`
+	Op         string `json:"op" gorm:"size:32;not null"`
+	Object     string `json:"object" gorm:"size:32;default:'';not null"`
+	Action     string `json:"action" gorm:"size:16;default:'';not null"`
+	Actor      string `json:"actor" gorm:"size:64;default:'';not null"`
+	Status     string `json:"status" gorm:"size:16;not null"` // ok | failed | refused
+	Error      string `json:"error" gorm:"size:512;default:'';not null"`
+	Attempts   int    `json:"attempts" gorm:"default:1;not null"`
+	StartedAt  int64  `json:"startedAt" gorm:"index;not null"`
+	DurationMs int64  `json:"durationMs" gorm:"default:0;not null"`
 }
 
 // SyncConflict holds a divergent bi-di edit until an operator resolves it.

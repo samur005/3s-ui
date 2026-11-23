@@ -89,6 +89,8 @@ func GetDb(exclude string) ([]byte, error) {
 		&model.Cert{},
 		&model.QwdttState{},
 		&model.WgPeer{},
+		&model.SyncConflict{},
+		&model.NodeOperation{},
 	)
 	if err != nil {
 		return nil, err
@@ -230,6 +232,16 @@ func GetDb(exclude string) ([]byte, error) {
 			return nil, err
 		}
 	}
+	// Unresolved bidirectional-sync conflicts: dropping them on restore would
+	// silently discard the operator's pending decisions.
+	var conflicts []model.SyncConflict
+	if err := db.Model(&model.SyncConflict{}).Scan(&conflicts).Error; err != nil {
+		return nil, err
+	} else if len(conflicts) > 0 {
+		if err := backupDb.CreateInBatches(conflicts, backupBatchSize).Error; err != nil {
+			return nil, err
+		}
+	}
 	// 手动登记的证书记录也要带走,漏了它们会在恢复后从证书页静默消失
 	if err := db.Model(&model.Cert{}).Scan(&certs).Error; err != nil {
 		return nil, err
@@ -263,6 +275,17 @@ func GetDb(exclude string) ([]byte, error) {
 		}
 		if len(changes) > 0 {
 			if err := backupDb.CreateInBatches(changes, backupBatchSize).Error; err != nil {
+				return nil, err
+			}
+		}
+		// The remote-operation audit trail travels with the change log: both
+		// are history, and both are left out together when asked to.
+		var nodeOps []model.NodeOperation
+		if err := db.Model(&model.NodeOperation{}).Scan(&nodeOps).Error; err != nil {
+			return nil, err
+		}
+		if len(nodeOps) > 0 {
+			if err := backupDb.CreateInBatches(nodeOps, backupBatchSize).Error; err != nil {
 				return nil, err
 			}
 		}
