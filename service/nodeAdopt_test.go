@@ -67,7 +67,7 @@ func adoptTestNode(t *testing.T) (nodeId uint, requests *atomic.Int32) {
 	}))
 	t.Cleanup(srv.Close)
 
-	node := model.Node{Name: "tokyo", Enable: true, BaseUrl: srv.URL}
+	node := model.Node{Name: "tokyo", Enable: true, BaseUrl: srv.URL, AllowPrivate: true}
 	if err := database.GetDB().Create(&node).Error; err != nil {
 		t.Fatal(err)
 	}

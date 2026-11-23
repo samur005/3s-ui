@@ -223,7 +223,7 @@ func TestClusterIPLimitPushesOneGlobalDecisionToEveryNode(t *testing.T) {
 			}
 		}))
 		t.Cleanup(fake.server.Close)
-		node := model.Node{Name: name, BaseUrl: fake.server.URL, WebPath: "/app/", Token: "test-token", Enable: true}
+		node := model.Node{Name: name, BaseUrl: fake.server.URL, WebPath: "/app/", Token: "test-token", Enable: true, AllowPrivate: true}
 		if err := db.Create(&node).Error; err != nil {
 			t.Fatalf("seed node %s: %v", name, err)
 		}

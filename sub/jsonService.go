@@ -108,6 +108,7 @@ func (j *JsonService) getData(subId string) (*model.Client, []*model.Inbound, er
 	if err != nil {
 		return nil, nil, err
 	}
+	client.Links = service.FilterNodeLinks(client.Links)
 	var clientInbounds []uint
 	err = json.Unmarshal(client.Inbounds, &clientInbounds)
 	if err != nil {

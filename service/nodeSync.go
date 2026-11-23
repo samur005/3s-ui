@@ -465,7 +465,17 @@ func (s *NodeSyncService) Reconcile(nodeId uint) error {
 		return nil
 	}
 	defer s.releaseReconcile(nodeId)
-	return s.runReconcile(nodeId, gen)
+	return s.trackedReconcile(nodeId, gen)
+}
+
+// trackedReconcile runs a claimed reconcile and records its outcome for the
+// node's sync status (nodeHealth.go): last attempt, last success, the error and
+// the failure streak that drives the background backoff.
+func (s *NodeSyncService) trackedReconcile(nodeId uint, gen uint64) error {
+	syncStarted(nodeId)
+	err := s.runReconcile(nodeId, gen)
+	syncFinished(nodeId, err)
+	return err
 }
 
 // ReconcileNow is the interactive entry (manual sync button, post-adoption
@@ -478,7 +488,7 @@ func (s *NodeSyncService) ReconcileNow(nodeId uint) error {
 		return common.NewError("a sync for this node is already running — try again shortly")
 	}
 	defer s.releaseReconcile(nodeId)
-	return s.runReconcile(nodeId, gen)
+	return s.trackedReconcile(nodeId, gen)
 }
 
 func (s *NodeSyncService) runReconcile(nodeId uint, startGen uint64) error {
@@ -1233,7 +1243,9 @@ func (s *NodeSyncService) claimReconcile(nodeId uint, force bool) (uint64, bool)
 		return 0, false
 	}
 	if !force {
-		if last, ok := reconcileLast[nodeId]; ok && time.Since(last) < reconcileBackoff {
+		// Exponential after failures (30s, 1m, 2m ... 15m): a node that keeps
+		// rejecting a push is not hammered every heartbeat.
+		if last, ok := reconcileLast[nodeId]; ok && time.Since(last) < syncBackoffFor(nodeSyncFailures(nodeId)) {
 			return 0, false
 		}
 	}

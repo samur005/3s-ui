@@ -48,6 +48,12 @@ func (a *APIv2Handler) postHandler(c *gin.Context) {
 	// that passed auth (ReloadTokens swap or an expiry tick in between) and
 	// attribute the write to an empty actor.
 	username := c.GetString("username")
+	// Writes are deduplicated per X-Request-Id and checked against
+	// X-Request-Timestamp when the caller sends them (api/idempotency.go).
+	withIdempotency(c, username, func() { a.post(c, username) })
+}
+
+func (a *APIv2Handler) post(c *gin.Context, username string) {
 	action := c.Param("postAction")
 
 	switch action {
@@ -97,6 +103,35 @@ func (a *APIv2Handler) postHandler(c *gin.Context) {
 		a.ApiService.ApplyClusterBans(c)
 	case "syncCatalogApply":
 		a.ApiService.ApplySyncCatalog(c)
+	// node management API level 2 (node side)
+	case "nodeCheckConfig":
+		a.ApiService.NodeCheckConfig(c)
+	case "nodeRotateToken":
+		token, newId, prevId, err := a.ApiService.UserService.RotateCallerToken(c.Request.Header.Get("Token"))
+		if err == nil {
+			a.ReloadTokens()
+		}
+		jsonObj(c, map[string]interface{}{"token": token, "id": newId, "previousId": prevId}, err)
+	case "nodeRevokeToken":
+		id, err := strconv.ParseUint(c.Request.FormValue("id"), 10, 32)
+		if err != nil {
+			jsonMsg(c, "", common.NewError("invalid token id"))
+			return
+		}
+		err = a.ApiService.UserService.RevokeTokenAsCaller(c.Request.Header.Get("Token"), uint(id))
+		if err == nil {
+			a.ReloadTokens()
+		}
+		jsonMsg(c, "nodeRevokeToken", err)
+	// node management (master side), for automation over apiv2
+	case "nodeRemote":
+		a.ApiService.NodeRemote(c, username)
+	case "nodeBulk":
+		a.ApiService.NodeBulk(c, username)
+	case "nodeReconnect":
+		a.ApiService.NodeReconnect(c)
+	case "nodeTokenRotate":
+		a.ApiService.NodeTokenRotate(c, username)
 	default:
 		jsonMsg(c, "failed", common.NewError("unknown action: ", action))
 	}
@@ -142,6 +177,22 @@ func (a *APIv2Handler) getHandler(c *gin.Context) {
 		a.ApiService.GetDb(c)
 	case "checkOutbound":
 		a.ApiService.GetCheckOutbound(c)
+	// node management API level 2 (node side)
+	case "nodeHello":
+		a.ApiService.NodeHello(c)
+	case "nodeCapabilities":
+		a.ApiService.NodeCapabilities(c)
+	case "nodeHealth":
+		a.ApiService.NodeHealth(c)
+	case "nodeServices":
+		a.ApiService.NodeServices(c)
+	case "nodePortCheck":
+		a.ApiService.NodePortCheck(c)
+	// node management (master side)
+	case "nodeDetail":
+		a.ApiService.NodeDetail(c)
+	case "nodeOps":
+		a.ApiService.NodeOps(c)
 	default:
 		jsonMsg(c, "failed", common.NewError("unknown action: ", action))
 	}

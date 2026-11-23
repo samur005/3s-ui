@@ -342,6 +342,7 @@ func TestRefreshReplicasPullsNodeSideEdits(t *testing.T) {
 	}))
 	defer srv.Close()
 	node.BaseUrl = srv.URL
+	node.AllowPrivate = true // httptest listens on loopback (SSRF guard)
 
 	var svc NodeSyncService
 	// "gone-from-node" is absent from the map on purpose — that is what a rename
@@ -467,6 +468,7 @@ func TestRefreshReplicasFollowsTheNodeSwitch(t *testing.T) {
 	}))
 	defer srv.Close()
 	node.BaseUrl = srv.URL
+	node.AllowPrivate = true // httptest listens on loopback (SSRF guard)
 	var svc NodeSyncService
 	tagToId := map[string]uint{"vless-node": 9}
 	client := &model.Client{Name: "u1", Config: json.RawMessage(`{"vless":{"uuid":"uuid-1"}}`)}

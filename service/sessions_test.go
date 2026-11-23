@@ -78,7 +78,7 @@ func TestDisconnectClusterUserMerge(t *testing.T) {
 			w.Write([]byte(`{"success":true,"obj":` + answers[name] + `}`))
 		}))
 		t.Cleanup(srv.Close)
-		node := model.Node{Name: name, BaseUrl: srv.URL, WebPath: "/app/", Token: "test-token", Enable: true}
+		node := model.Node{Name: name, BaseUrl: srv.URL, WebPath: "/app/", Token: "test-token", Enable: true, AllowPrivate: true}
 		if err := db.Create(&node).Error; err != nil {
 			t.Fatalf("seed node %s: %v", name, err)
 		}

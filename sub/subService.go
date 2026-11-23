@@ -187,6 +187,9 @@ func (j *SubService) getClientBySubId(subId string) (*model.Client, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Node exclusion and duplicate removal (service/nodeSubscription.go), on
+	// the in-memory copy only.
+	client.Links = service.FilterNodeLinks(client.Links)
 	return client, nil
 }
 

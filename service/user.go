@@ -386,3 +386,55 @@ func (s *UserService) DeleteToken(loginUser string, id string) error {
 	}
 	return nil
 }
+
+// RotateCallerToken mints a replacement for the apiv2 token the caller is
+// authenticated with: same admin, same absolute expiry, a description that
+// says where it came from. The old token stays valid -- the caller verifies the
+// new one first and then revokes the old with RevokeTokenAsCaller. Used by a
+// master rotating its node token (service/nodeRemote.go).
+func (s *UserService) RotateCallerToken(callerToken string) (token string, newId uint, previousId uint, err error) {
+	if callerToken == "" {
+		return "", 0, 0, common.NewError("no caller token")
+	}
+	db := database.GetDB()
+	var old model.Tokens
+	if err = db.Model(model.Tokens{}).Where("token = ?", callerToken).First(&old).Error; err != nil {
+		return "", 0, 0, common.NewError("caller token not found")
+	}
+	desc := strings.TrimSpace(old.Desc)
+	if i := strings.Index(desc, " (rotated "); i >= 0 {
+		desc = desc[:i]
+	}
+	fresh := &model.Tokens{
+		Token:  common.Random(32),
+		Desc:   desc + " (rotated " + time.Now().UTC().Format("2006-01-02") + ")",
+		Expiry: old.Expiry,
+		UserId: old.UserId,
+	}
+	if err = db.Create(fresh).Error; err != nil {
+		return "", 0, 0, err
+	}
+	return fresh.Token, fresh.Id, old.Id, nil
+}
+
+// RevokeTokenAsCaller deletes token id on behalf of an apiv2 caller: only a
+// token of the same admin, and never the token making the call (that would
+// lock the caller out mid-rotation).
+func (s *UserService) RevokeTokenAsCaller(callerToken string, id uint) error {
+	db := database.GetDB()
+	var caller model.Tokens
+	if err := db.Model(model.Tokens{}).Where("token = ?", callerToken).First(&caller).Error; err != nil {
+		return common.NewError("caller token not found")
+	}
+	if caller.Id == id {
+		return common.NewError("refusing to revoke the token making this call")
+	}
+	res := db.Where("id = ? AND user_id = ?", id, caller.UserId).Delete(&model.Tokens{})
+	if res.Error != nil {
+		return res.Error
+	}
+	if res.RowsAffected == 0 {
+		return common.NewError("no such token")
+	}
+	return nil
+}
