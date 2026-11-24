@@ -125,7 +125,10 @@ func buildProfileHeaders(p profileContext) http.Header {
 		h.Set("Announce", "base64:"+base64.StdEncoding.EncodeToString([]byte(a)))
 	}
 
-	happManaged := cfg.Happ.AutoDetect && IsHappClient(p.userAgent)
+	// Send the configured Happ headers to every client, not only when the
+	// User-Agent says Happ. AntiBS2client and other apps never match the
+	// Happ regex, so they used to get none of these.
+	happManaged := cfg.Happ.AutoDetect
 	if cfg.EnableRouting {
 		h.Set("Routing-Enable", "true")
 	} else if happManaged {
