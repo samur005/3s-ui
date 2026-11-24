@@ -694,7 +694,7 @@ func (s *ConfigService) Save(obj string, act string, data json.RawMessage, initU
 	case "nodes":
 		// Nodes are a panel-local concept: no corePtr involvement, so saving
 		// one never disturbs the running sing-box.
-		err = s.NodeService.Save(tx, act, data)
+		afterCommit, err = s.NodeService.SaveWithLinks(tx, act, data)
 		if err == nil {
 			data = redactNodeToken(data)
 		}

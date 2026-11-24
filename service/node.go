@@ -1,6 +1,8 @@
 package service
 
 import (
+	"github.com/samur005/3s-ui/util/secretbox"
+
 	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
@@ -34,16 +36,36 @@ type NodeMem struct {
 }
 
 type NodeStatus struct {
-	State           string  `json:"state"` // online | offline | core-stopped
-	Latency         int64   `json:"latency"`
-	Cpu             float64 `json:"cpu"`
-	Mem             NodeMem `json:"mem"`
-	AppVersion      string  `json:"appVersion"`
-	CoreVersion     string  `json:"coreVersion"`
-	Error           string  `json:"error,omitempty"`
-	CheckedAt       int64   `json:"checkedAt"`
-	LastOnline      int64   `json:"lastOnline"`
-	onlineUsers     []string
+	State       string  `json:"state"` // online | offline | core-stopped
+	Latency     int64   `json:"latency"`
+	Cpu         float64 `json:"cpu"`
+	Mem         NodeMem `json:"mem"`
+	AppVersion  string  `json:"appVersion"`
+	CoreVersion string  `json:"coreVersion"`
+	Error       string  `json:"error,omitempty"`
+	CheckedAt   int64   `json:"checkedAt"`
+	LastOnline  int64   `json:"lastOnline"`
+
+	// Extended metrics (nodeHealth.go). Zero when the node did not report
+	// them; Stale marks a snapshot carried over from an earlier probe while
+	// the circuit breaker holds the node back.
+	Swap        NodeMem    `json:"swap"`
+	Disk        NodeMem    `json:"disk"`
+	Net         NodeNet    `json:"net"`
+	CoreUptime  uint32     `json:"coreUptime"`
+	HostUptime  uint64     `json:"hostUptime"`
+	Maintenance bool       `json:"maintenance"`
+	Stale       bool       `json:"stale,omitempty"`
+	Failures    int        `json:"failures,omitempty"`
+	NextProbeAt int64      `json:"nextProbeAt,omitempty"`
+	Health      string     `json:"health"`
+	Reasons     []string   `json:"reasons,omitempty"`
+	ApiVersion  int        `json:"apiVersion"`
+	Sync        NodeSyncSt `json:"sync"`
+
+	onlineUsers []string
+	// inboundsRev is the node's sys.inboundsRev (nodeExtras.go); not exported.
+	inboundsRev     string
 	onlineCheckedAt int64
 }
 
@@ -113,6 +135,40 @@ func nodeApiURL(n *model.Node, action string) string {
 	return strings.TrimRight(n.BaseUrl, "/") + normalizeWebPath(n.WebPath) + "apiv2/" + action
 }
 
+// storedNodeSecret reads one node secret column (token, client_key) and opens
+// it: a column scanned into a plain string bypasses SecretString.
+func storedNodeSecret(tx *gorm.DB, id uint, column string) (model.SecretString, error) {
+	var raw string
+	if err := tx.Model(model.Node{}).Select(column).Where("id = ?", id).Find(&raw).Error; err != nil {
+		return "", err
+	}
+	v, err := secretbox.Open(raw)
+	if err != nil {
+		return "", common.NewErrorf("stored %s cannot be decrypted (database moved without its secret.key?) -- enter it again", column)
+	}
+	return model.SecretString(v), nil
+}
+
+// validateNodeClientCert checks the optional mTLS pair parses and matches.
+func validateNodeClientCert(n *model.Node) error {
+	n.ClientCert = strings.TrimSpace(n.ClientCert)
+	n.ClientKey = model.SecretString(strings.TrimSpace(string(n.ClientKey)))
+	if n.ClientCert == "" {
+		n.ClientKey = ""
+		return nil
+	}
+	if !strings.HasPrefix(strings.ToLower(n.BaseUrl), "https://") {
+		return common.NewError("a client certificate (mTLS) needs an https:// node address")
+	}
+	if n.ClientKey == "" {
+		return common.NewError("the client certificate needs its private key")
+	}
+	if _, err := tls.X509KeyPair([]byte(n.ClientCert), []byte(n.ClientKey)); err != nil {
+		return common.NewErrorf("client certificate / key: %v", err)
+	}
+	return nil
+}
+
 func pinVerifier(pin string) func([][]byte, [][]*x509.Certificate) error {
 	return func(rawCerts [][]byte, _ [][]*x509.Certificate) error {
 		if len(rawCerts) == 0 {
@@ -127,7 +183,16 @@ func pinVerifier(pin string) func([][]byte, [][]*x509.Certificate) error {
 }
 
 func buildNodeHTTPClient(n *model.Node) *http.Client {
-	client := &http.Client{Timeout: nodeProbeTimeout}
+	// Every node client gets its own Transport now, plain http included: the
+	// SSRF guard lives in the dialer (nodeNet.go), and http.DefaultTransport's
+	// dialer would bypass it.
+	transport := &http.Transport{
+		Proxy:               nil, // a node is dialed directly, never via HTTP(S)_PROXY
+		DialContext:         guardedDialContext(n.AllowPrivate, nodeProbeTimeout),
+		IdleConnTimeout:     nodeIdleConnTimeout,
+		TLSHandshakeTimeout: nodeProbeTimeout,
+		MaxIdleConnsPerHost: 4,
+	}
 	if strings.HasPrefix(strings.ToLower(n.BaseUrl), "https://") {
 		tlsConfig := &tls.Config{}
 		if pin := normalizeCertPin(n.CertPin); pin != "" {
@@ -137,12 +202,22 @@ func buildNodeHTTPClient(n *model.Node) *http.Client {
 		} else if n.Insecure {
 			tlsConfig.InsecureSkipVerify = true
 		}
-		client.Transport = &http.Transport{
-			TLSClientConfig: tlsConfig,
-			IdleConnTimeout: nodeIdleConnTimeout,
+		// Optional mTLS: present the client certificate in addition to (never
+		// instead of) verifying the node's certificate as configured above.
+		if n.ClientCert != "" && n.ClientKey != "" {
+			if pair, err := tls.X509KeyPair([]byte(n.ClientCert), []byte(n.ClientKey)); err == nil {
+				tlsConfig.Certificates = []tls.Certificate{pair}
+			} else {
+				logger.Warning("nodes: client certificate of ", n.Name, ": ", err)
+			}
 		}
+		transport.TLSClientConfig = tlsConfig
 	}
-	return client
+	return &http.Client{
+		Timeout:       nodeProbeTimeout,
+		Transport:     transport,
+		CheckRedirect: nodeCheckRedirect,
+	}
 }
 
 // closeIdle hands a node client's idle connections back.
@@ -196,8 +271,9 @@ func (s *NodeService) nodeGet(n *model.Node, client *http.Client, action string,
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Token", n.Token)
+	req.Header.Set("Token", string(n.Token))
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("X-Request-Id", newRequestID())
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -230,7 +306,7 @@ func (s *NodeService) probe(n *model.Node, client *http.Client) NodeStatus {
 	start := time.Now()
 	status := NodeStatus{CheckedAt: start.Unix()}
 	q := url.Values{}
-	q.Set("r", "cpu,mem,sys,sbd")
+	q.Set("r", "cpu,mem,sys,sbd,swp,dsk,net")
 	obj, err := s.nodeGet(n, client, "status", q)
 	status.Latency = time.Since(start).Milliseconds()
 	if err != nil {
@@ -245,12 +321,24 @@ func (s *NodeService) probe(n *model.Node, client *http.Client) NodeStatus {
 			Total   int64 `json:"total"`
 		} `json:"mem"`
 		Sys struct {
-			AppVersion string `json:"appVersion"`
+			AppVersion  string `json:"appVersion"`
+			BootTime    uint64 `json:"bootTime"`
+			InboundsRev string `json:"inboundsRev"`
 		} `json:"sys"`
 		Sbd struct {
-			Running bool   `json:"running"`
-			Version string `json:"version"`
+			Running     bool   `json:"running"`
+			Version     string `json:"version"`
+			Maintenance bool   `json:"maintenance"`
+			Stats       struct {
+				Uptime uint32 `json:"Uptime"`
+			} `json:"stats"`
 		} `json:"sbd"`
+		Swp NodeMem `json:"swp"`
+		Dsk NodeMem `json:"dsk"`
+		Net struct {
+			Sent uint64 `json:"sent"`
+			Recv uint64 `json:"recv"`
+		} `json:"net"`
 	}
 	if err := json.Unmarshal(obj, &payload); err != nil {
 		status.State = "offline"
@@ -260,7 +348,16 @@ func (s *NodeService) probe(n *model.Node, client *http.Client) NodeStatus {
 	status.Cpu = payload.Cpu
 	status.Mem = NodeMem{Current: payload.Mem.Current, Total: payload.Mem.Total}
 	status.AppVersion = payload.Sys.AppVersion
+	status.inboundsRev = payload.Sys.InboundsRev
 	status.CoreVersion = payload.Sbd.Version
+	status.Swap = payload.Swp
+	status.Disk = payload.Dsk
+	status.Net = NodeNet{Sent: payload.Net.Sent, Recv: payload.Net.Recv}
+	status.CoreUptime = payload.Sbd.Stats.Uptime
+	status.Maintenance = payload.Sbd.Maintenance
+	if payload.Sys.BootTime > 0 && uint64(status.CheckedAt) > payload.Sys.BootTime {
+		status.HostUptime = uint64(status.CheckedAt) - payload.Sys.BootTime
+	}
 	if payload.Sbd.Running {
 		status.State = "online"
 		obj, err := s.nodeGet(n, client, "onlines", nil)
@@ -284,6 +381,7 @@ func (s *NodeService) probe(n *model.Node, client *http.Client) NodeStatus {
 // RefreshAll probes every enabled node with bounded parallelism and atomically
 // swaps in a freshly built snapshot. Called by the @every 5s cron job.
 func (s *NodeService) RefreshAll() {
+	loadBreakerState()
 	var nodes []*model.Node
 	db := database.GetDB()
 	err := db.Model(model.Node{}).Where("enable = ?", true).Find(&nodes).Error
@@ -297,7 +395,17 @@ func (s *NodeService) RefreshAll() {
 		var wg sync.WaitGroup
 		var mu sync.Mutex
 		sem := make(chan struct{}, nodeProbeParallel)
+		now := time.Now()
 		for _, n := range nodes {
+			// Circuit breaker: a node that keeps failing is probed on an
+			// exponential schedule instead of every 5s. Its last snapshot is
+			// carried over, marked stale, so the UI never shows it as fresh.
+			if held, prev := probeHeld(n.Id, now); held {
+				mu.Lock()
+				newStatuses[n.Id] = prev
+				mu.Unlock()
+				continue
+			}
 			wg.Add(1)
 			sem <- struct{}{}
 			go func(n *model.Node) {
@@ -316,15 +424,28 @@ func (s *NodeService) RefreshAll() {
 	old := nodeStatuses
 	for id, status := range newStatuses {
 		prev, had := old[id]
+		if status.Stale {
+			continue // carried over as-is by the breaker
+		}
 		if status.State == "online" {
 			status.LastOnline = status.CheckedAt
 		} else if had {
 			status.LastOnline = prev.LastOnline
 		}
-		newStatuses[id] = status
+		newStatuses[id] = recordProbeOutcome(id, status, prev, had)
 	}
 	nodeStatuses = newStatuses
 	nodeStatusMu.Unlock()
+
+	s.refreshCapabilities(nodes, newStatuses)
+
+	// A node whose inbounds changed on its own panel: refresh its replicas
+	// and links now rather than at the hourly reconcile.
+	for _, n := range nodes {
+		if st, ok := newStatuses[n.Id]; ok && !st.Stale && st.State != "offline" {
+			noteInboundsRevision(n, st.inboundsRev)
+		}
+	}
 
 	// Persist last_seen only on online -> not-online transitions. `old` was
 	// swapped out under the lock, nothing writes it anymore.
@@ -418,10 +539,15 @@ func (s *NodeService) notifyStatuses(nodes []*model.Node, statuses map[uint]Node
 // GetStatuses returns a copy of the live snapshot for API responses.
 func (s *NodeService) GetStatuses() map[uint]NodeStatus {
 	nodeStatusMu.RLock()
-	defer nodeStatusMu.RUnlock()
 	out := make(map[uint]NodeStatus, len(nodeStatuses))
 	for id, status := range nodeStatuses {
 		out[id] = status
+	}
+	nodeStatusMu.RUnlock()
+	// Health is derived at read time from the probe, the sync state and the
+	// cached capabilities, so it is never older than its inputs.
+	for id, status := range out {
+		out[id] = decorateHealth(id, status)
 	}
 	return out
 }
@@ -435,21 +561,35 @@ func (s *NodeService) TestNode(data json.RawMessage) (NodeStatus, error) {
 	if err != nil {
 		return NodeStatus{}, err
 	}
-	node.BaseUrl = strings.TrimSpace(strings.TrimRight(node.BaseUrl, "/"))
-	if !strings.HasPrefix(node.BaseUrl, "http://") && !strings.HasPrefix(node.BaseUrl, "https://") {
-		return NodeStatus{}, common.NewError("baseUrl must start with http:// or https://")
+	node.BaseUrl, err = validateNodeBaseURL(node.BaseUrl)
+	if err != nil {
+		return NodeStatus{}, err
 	}
 	if node.Token == "" && node.Id > 0 {
-		var oldToken string
-		err = database.GetDB().Model(model.Node{}).Select("token").Where("id = ?", node.Id).Find(&oldToken).Error
+		node.Token, err = storedNodeSecret(database.GetDB(), node.Id, "token")
 		if err != nil {
 			return NodeStatus{}, err
 		}
-		node.Token = oldToken
+	}
+	if node.ClientCert != "" && node.ClientKey == "" && node.Id > 0 {
+		node.ClientKey, err = storedNodeSecret(database.GetDB(), node.Id, "client_key")
+		if err != nil {
+			return NodeStatus{}, err
+		}
 	}
 	client := buildNodeHTTPClient(&node)
 	defer closeIdle(client)
-	return s.probe(&node, client), nil
+	status := s.probe(&node, client)
+	// Report the API level too, so the form can say up front whether the
+	// node supports remote management or only the legacy sync.
+	if status.State != "offline" {
+		if hello, err := s.fetchHello(&node, client); err == nil {
+			status.ApiVersion = hello.ApiVersion
+		} else {
+			status.ApiVersion = 1
+		}
+	}
+	return decorateHealthWith(status, true, nil, NodeSyncSt{}), nil
 }
 
 // ---------- CRUD ----------
@@ -479,6 +619,15 @@ func (s *NodeService) GetAll() ([]map[string]interface{}, error) {
 			"dirty":    n.Dirty,
 			"lastSync": n.LastSync,
 			"syncMode": n.SyncMode,
+			// multi-node management
+			"group":        n.NodeGroup,
+			"location":     n.Location,
+			"allowPrivate": n.AllowPrivate,
+			"subExclude":   n.SubExclude,
+			"capsAt":       n.CapsAt,
+			// mTLS: the certificate is public, the key never leaves.
+			"clientCert":   n.ClientCert,
+			"clientKeySet": n.ClientKey != "",
 		})
 	}
 	return out, nil
@@ -502,24 +651,62 @@ func redactNodeToken(data json.RawMessage) json.RawMessage {
 }
 
 func (s *NodeService) Save(tx *gorm.DB, act string, data json.RawMessage) error {
+	_, err := s.save(tx, act, data)
+	return err
+}
+
+// SaveWithLinks is Save for callers that own the transaction: the returned
+// func, run after the commit, regenerates the node's aggregated subscription
+// links from the stored replica rows right away -- a rename or any other edit
+// shows in every bound client's subscription immediately instead of after the
+// next reconcile, and it works while the node is offline (no node call).
+func (s *NodeService) SaveWithLinks(tx *gorm.DB, act string, data json.RawMessage) (func(), error) {
+	id, err := s.save(tx, act, data)
+	if err != nil || act == "del" || id == 0 {
+		return nil, err
+	}
+	return func() { RefreshNodeLinksFromReplicas(id) }, nil
+}
+
+// RefreshNodeLinksFromReplicas rebuilds node id's "[name] " links in every
+// client from the master's replica rows, without contacting the node.
+func RefreshNodeLinksFromReplicas(id uint) {
+	db := database.GetDB()
+	if db == nil {
+		return
+	}
+	var node model.Node
+	if err := db.Model(model.Node{}).Where("id = ?", id).First(&node).Error; err != nil {
+		return
+	}
+	(&NodeSyncService{}).refreshNodeLinks(&node)
+}
+
+func (s *NodeService) save(tx *gorm.DB, act string, data json.RawMessage) (uint, error) {
 	var err error
+	var savedId uint
 
 	switch act {
 	case "new", "edit":
 		var node model.Node
 		err = json.Unmarshal(data, &node)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		node.Name = strings.TrimSpace(node.Name)
 		if node.Name == "" {
-			return common.NewError("node name is required")
+			return 0, common.NewError("node name is required")
 		}
-		node.BaseUrl = strings.TrimSpace(strings.TrimRight(node.BaseUrl, "/"))
-		if !strings.HasPrefix(node.BaseUrl, "http://") && !strings.HasPrefix(node.BaseUrl, "https://") {
-			return common.NewError("node baseUrl must start with http:// or https://")
+		node.BaseUrl, err = validateNodeBaseURL(node.BaseUrl)
+		if err != nil {
+			return 0, err
 		}
 		node.WebPath = normalizeWebPath(node.WebPath)
+		node.NodeGroup = strings.TrimSpace(node.NodeGroup)
+		node.Location = strings.TrimSpace(node.Location)
+		if len(node.NodeGroup) > 64 || len(node.Location) > 64 {
+			return 0, common.NewError("node group and location are limited to 64 characters")
+		}
 		node.CertPin = normalizeCertPin(node.CertPin)
 		switch node.SyncMode {
 		case "", "one_way":
@@ -527,22 +714,27 @@ func (s *NodeService) Save(tx *gorm.DB, act string, data json.RawMessage) error 
 		case "bidirectional":
 			// ok — opt-in only via explicit save
 		default:
-			return common.NewError("unknown syncMode; use one_way or bidirectional")
+			return 0, common.NewError("unknown syncMode; use one_way or bidirectional")
 		}
 		var oldName string
 		if act == "edit" {
 			if node.Id == 0 {
-				return common.NewError("node id is required")
+				return 0, common.NewError("node id is required")
 			}
 			// Empty token on edit means "keep the stored one" — the UI never
 			// sees the token, so it cannot send it back.
 			if node.Token == "" {
-				var oldToken string
-				err = tx.Model(model.Node{}).Select("token").Where("id = ?", node.Id).Find(&oldToken).Error
+				node.Token, err = storedNodeSecret(tx, node.Id, "token")
 				if err != nil {
-					return err
+					return 0, err
 				}
-				node.Token = oldToken
+			}
+			// Same for the mTLS key; clearing the certificate clears both.
+			if node.ClientCert != "" && node.ClientKey == "" {
+				node.ClientKey, err = storedNodeSecret(tx, node.Id, "client_key")
+				if err != nil {
+					return 0, err
+				}
 			}
 			// last_seen is heartbeat-owned; don't let a stale form value clobber it.
 			var oldNode struct {
@@ -551,13 +743,16 @@ func (s *NodeService) Save(tx *gorm.DB, act string, data json.RawMessage) error 
 			}
 			err = tx.Model(model.Node{}).Select("name", "last_seen").Where("id = ?", node.Id).Find(&oldNode).Error
 			if err != nil {
-				return err
+				return 0, err
 			}
 			oldName = oldNode.Name
 			node.LastSeen = oldNode.LastSeen
 		}
 		if node.Token == "" {
-			return common.NewError("node API token is required")
+			return 0, common.NewError("node API token is required")
+		}
+		if err = validateNodeClientCert(&node); err != nil {
+			return 0, err
 		}
 		// The name is the aggregated-link marker (see nodeLinkPrefix), so a
 		// bracket in it would make one node's prefix match another's links — the
@@ -566,25 +761,34 @@ func (s *NodeService) Save(tx *gorm.DB, act string, data json.RawMessage) error 
 		// this rule must stay editable (token, baseUrl, enable) without being
 		// forced through a rename it did not ask for.
 		if (act == "new" || oldName != node.Name) && strings.ContainsAny(node.Name, "[]") {
-			return common.NewError("node name cannot contain [ or ]")
+			return 0, common.NewError("node name cannot contain [ or ]")
 		}
-		err = tx.Save(&node).Error
+		// Capabilities are heartbeat-owned and never part of the form; a plain
+		// Save would write their zero values over the cached answer.
+		if act == "edit" {
+			err = tx.Omit("capabilities", "caps_at", "breaker_fails", "breaker_until").Save(&node).Error
+		} else {
+			err = tx.Save(&node).Error
+		}
 		if err != nil {
-			return err
+			return 0, err
 		}
 		// A rename would orphan the "[old] " aggregated links (refreshNodeLinks
 		// keys the prefix on the current name); carry them over in place.
 		if oldName != "" && oldName != node.Name {
 			if err = renameNodeLinkPrefix(tx, oldName, node.Name); err != nil {
-				return err
+				return 0, err
 			}
 		}
 		invalidateNodeClient(node.Id)
+		resetProbeBreaker(node.Id)
+		forgetCapabilities(node.Id)
+		savedId = node.Id
 	case "del":
 		var id uint
 		err = json.Unmarshal(data, &id)
 		if err != nil {
-			return err
+			return 0, err
 		}
 		// Refuse while replicas exist: deleting the node would strand them as
 		// uneditable orphan rows and leave their "[name] " links in every
@@ -593,23 +797,27 @@ func (s *NodeService) Save(tx *gorm.DB, act string, data json.RawMessage) error 
 		var replicas int64
 		err = tx.Model(model.Inbound{}).Where("node_id = ?", id).Count(&replicas).Error
 		if err != nil {
-			return err
+			return 0, err
 		}
 		if replicas > 0 {
-			return common.NewErrorf("node still has %d adopted inbound(s) — remove them on the Inbounds page first", replicas)
+			return 0, common.NewErrorf("node still has %d adopted inbound(s) — remove them on the Inbounds page first", replicas)
 		}
 		err = tx.Where("id = ?", id).Delete(model.Node{}).Error
 		if err != nil {
-			return err
+			return 0, err
 		}
 		invalidateNodeClient(id)
 		nodeStatusMu.Lock()
 		delete(nodeStatuses, id)
 		nodeStatusMu.Unlock()
+		resetProbeBreaker(id)
+		forgetCapabilities(id)
+		forgetSyncState(id)
+		forgetInboundsRevision(id)
 	default:
-		return common.NewErrorf("unknown action: %s", act)
+		return 0, common.NewErrorf("unknown action: %s", act)
 	}
-	return nil
+	return savedId, nil
 }
 
 // renameNodeLinkPrefix rewrites the "[old] " prefix on aggregated node links to

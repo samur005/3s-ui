@@ -76,6 +76,13 @@ const routes = [
         component: () => import('@/views/Nodes.vue'),
       },
       {
+        // One path segment on purpose: index.html loads its assets by
+        // relative URL, so a nested path would break a reload of this page.
+        path: '/node',
+        name: 'pages.nodeDetail',
+        component: () => import('@/views/NodeDetail.vue'),
+      },
+      {
         path: '/admins',
         name: 'pages.admins',
         component: () => import('@/views/Admins.vue'),

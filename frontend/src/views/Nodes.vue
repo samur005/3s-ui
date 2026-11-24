@@ -15,6 +15,21 @@
   <TombstonesModal :visible="tombstonesVisible" @close="tombstonesVisible = false" />
   <EnrollSyncModal :visible="enrollVisible" @close="enrollVisible = false" />
 
+  <!-- bulk confirmation -->
+  <Modal :open="bulkConfirm" :title="$t('node.bulk.confirmTitle')" :width="420" @close="bulkConfirm = false">
+    <div style="padding: 18px; font-size: 13.5px; display: flex; flex-direction: column; gap: 8px;">
+      <div>{{ bulkOp ? $t('node.bulk.ops.' + bulkOp) : '' }} → {{ selectedNames }}</div>
+      <div v-if="bulkOp === 'disable' || bulkOp === 'subExclude'" style="color: var(--amber);">{{ $t('node.bulk.warn') }}</div>
+      <div v-for="r in bulkResults" :key="r.nodeId" :style="{ color: r.ok ? 'var(--emerald)' : 'var(--rose)' }" class="mono">
+        #{{ r.nodeId }} {{ r.ok ? 'ok' : r.error }}
+      </div>
+    </div>
+    <template #footer>
+      <Btn @click="bulkConfirm = false">{{ $t('no') }}</Btn>
+      <Btn variant="primary" :loading="bulkRunning" @click="runBulk">{{ $t('yes') }}</Btn>
+    </template>
+  </Modal>
+
   <!-- delete confirmation -->
   <DeleteConfirm :open="del.visible" :loading="deleting" @close="del.visible = false" @confirm="confirmDelete" />
 
@@ -34,11 +49,38 @@
       </Btn>
     </div>
 
+    <!-- filter + bulk -->
+    <div v-if="nodes.length > 0" class="toolbar" style="justify-content: center; gap: 8px; flex-wrap: wrap;">
+      <select v-if="groups.length > 0" class="input" style="width: auto; min-width: 140px;" v-model="groupFilter">
+        <option value="">{{ $t('node.allGroups') }}</option>
+        <option v-for="g in groups" :key="g" :value="g">{{ g }}</option>
+        <option value="__none__">{{ $t('node.noGroup') }}</option>
+      </select>
+      <select class="input" style="width: auto; min-width: 140px;" v-model="healthFilter">
+        <option value="">{{ $t('node.allStates') }}</option>
+        <option v-for="h in healthKeys" :key="h" :value="h">{{ healthLabel(h) }}</option>
+      </select>
+      <Btn sm :variant="selecting ? 'primary' : undefined" @click="toggleSelecting">
+        <Ico name="list" :size="15" /> {{ $t('node.bulk.select') }}
+      </Btn>
+      <template v-if="selecting">
+        <Btn sm @click="selectAllVisible">{{ $t('node.bulk.all') }} ({{ shown.length }})</Btn>
+        <span style="font-size: 12.5px; color: var(--text-3); align-self: center;">{{ $t('node.bulk.selected', { n: selected.length }) }}</span>
+        <select class="input" style="width: auto; min-width: 170px;" v-model="bulkOp" :disabled="selected.length === 0">
+          <option value="">{{ $t('node.bulk.choose') }}</option>
+          <option v-for="o in bulkOps" :key="o" :value="o">{{ $t('node.bulk.ops.' + o) }}</option>
+        </select>
+        <input v-if="bulkOp === 'setGroup'" class="input" style="width: 140px;" maxlength="64" v-model="bulkValue" :placeholder="$t('node.group')" />
+        <Btn sm variant="primary" :disabled="!bulkOp || selected.length === 0" @click="bulkConfirm = true">{{ $t('node.bulk.apply') }}</Btn>
+      </template>
+    </div>
+
     <EmptyState v-if="nodes.length === 0" icon="server" :title="$t('node.emptyTitle')" :desc="$t('node.emptyDesc')" />
+    <EmptyState v-else-if="shown.length === 0" icon="filter" :title="$t('node.noMatch')" :desc="''" />
 
     <div v-else class="entity-grid">
       <EntityCard
-        v-for="item in nodes"
+        v-for="item in shown"
         :key="item.id"
         :title="item.name"
         :type="displayUrl(item)"
@@ -47,15 +89,22 @@
         :rows="cardRows(item)"
       >
         <template #chip>
+          <span v-if="selecting" style="cursor: pointer;" @click="toggleSelected(item.id)">
+            <Check :checked="selected.includes(item.id)" />
+          </span>
           <Chip v-if="item.dirty" color="amber" :title="$t('node.syncDirty')">{{ $t('node.syncDirty') }}</Chip>
           <Chip v-if="stateOf(item) === 'online'" color="emerald" dot>{{ $t('node.status.online') }}</Chip>
+          <Chip v-else-if="stateOf(item) === 'degraded'" color="amber" :title="reasonsOf(item)">{{ $t('node.status.degraded') }}</Chip>
+          <Chip v-else-if="stateOf(item) === 'syncing'" color="cyan" dot>{{ $t('node.status.syncing') }}</Chip>
+          <Chip v-else-if="stateOf(item) === 'incompatible'" color="rose" :title="reasonsOf(item)">{{ $t('node.status.incompatible') }}</Chip>
           <Chip v-else-if="stateOf(item) === 'core-stopped'" color="amber">{{ $t('node.status.coreStopped') }}</Chip>
           <Chip v-else-if="stateOf(item) === 'offline'" color="rose">{{ $t('node.status.offline') }}</Chip>
           <Chip v-else-if="stateOf(item) === 'disabled'">{{ $t('disable') }}</Chip>
           <Chip v-else>{{ $t('node.status.pending') }}</Chip>
         </template>
         <template #actions>
-          <CardBtn icon="edit" :title="$t('actions.edit')" @click="openDrawer(item.id)" />
+          <CardBtn icon="eye" :title="$t('node.details')" @click="$router.push({ path: '/node', query: { id: item.id } })" />
+          <CardBtn icon="edit" border :title="$t('actions.edit')" @click="openDrawer(item.id)" />
           <CardBtn icon="download" border :title="$t('node.import')" @click="openImport(item)" />
           <CardBtn
             icon="refresh"
@@ -72,7 +121,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Data from '@/store/modules/data'
 import { intlLocale } from '@/locales'
@@ -84,6 +133,8 @@ import DeleteConfirm from '@/components/ui/DeleteConfirm.vue'
 import CardBtn from '@/components/ui/CardBtn.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import EntityCard, { EntityRow } from '@/components/ui/EntityCard.vue'
+import Modal from '@/components/ui/Modal.vue'
+import Check from '@/components/ui/Check.vue'
 import NodeDrawer from '@/layouts/drawers/node/NodeDrawer.vue'
 import NodeImportModal from '@/layouts/drawers/node/NodeImportModal.vue'
 import SyncConflictsModal from '@/layouts/drawers/node/SyncConflictsModal.vue'
@@ -101,7 +152,7 @@ const dataStore = Data()
 const nodes = computed((): Node[] => <Node[]>dataStore.nodes)
 
 // ---------------- live state ----------------
-type CardState = 'online' | 'offline' | 'core-stopped' | 'disabled' | 'pending'
+type CardState = 'online' | 'offline' | 'core-stopped' | 'disabled' | 'pending' | 'degraded' | 'syncing' | 'incompatible'
 
 const statusOf = (n: Node): NodeStatus | undefined => dataStore.nodesStatus[n.id]
 
@@ -110,15 +161,73 @@ const stateOf = (n: Node): CardState => {
   const st = statusOf(n)
   // No snapshot yet: heartbeat hasn't reached this node since panel start.
   if (!st) return 'pending'
+  // core-stopped keeps its own chip; everything else follows the derived health.
+  if (st.state === 'core-stopped') return 'core-stopped'
+  if (st.health && st.health !== 'online' && st.health !== 'disabled') return st.health
   return st.state
 }
+
+const reasonsOf = (n: Node): string => (statusOf(n)?.reasons ?? []).join('\n')
 
 const stateColor = (n: Node): string => {
   switch (stateOf(n)) {
     case 'online': return 'var(--emerald)'
-    case 'core-stopped': return 'var(--amber)'
-    case 'offline': return 'var(--rose)'
+    case 'syncing': return 'var(--cyan)'
+    case 'core-stopped':
+    case 'degraded': return 'var(--amber)'
+    case 'offline':
+    case 'incompatible': return 'var(--rose)'
     default: return 'var(--text-3)'
+  }
+}
+
+// ---------------- filter ----------------
+const groupFilter = ref('')
+const healthFilter = ref('')
+const healthKeys: CardState[] = ['online', 'degraded', 'syncing', 'incompatible', 'core-stopped', 'offline', 'disabled', 'pending']
+const healthLabel = (h: string): string => {
+  switch (h) {
+    case 'core-stopped': return t('node.status.coreStopped')
+    case 'disabled': return t('disable')
+    default: return t('node.status.' + h)
+  }
+}
+const groups = computed((): string[] =>
+  [...new Set(nodes.value.map((n) => (n.group ?? '').trim()).filter((g) => g !== ''))].sort())
+const shown = computed((): Node[] => nodes.value.filter((n) => {
+  if (groupFilter.value === '__none__' && (n.group ?? '') !== '') return false
+  if (groupFilter.value && groupFilter.value !== '__none__' && n.group !== groupFilter.value) return false
+  if (healthFilter.value && stateOf(n) !== healthFilter.value) return false
+  return true
+}))
+
+// ---------------- bulk ----------------
+const bulkOps = ['enable', 'disable', 'reconnect', 'reconcile', 'refreshCaps', 'subExclude', 'subInclude', 'setGroup']
+const selecting = ref(false)
+const selected = ref<number[]>([])
+const bulkOp = ref('')
+const bulkValue = ref('')
+const bulkConfirm = ref(false)
+const bulkRunning = ref(false)
+const bulkResults = ref<{ nodeId: number; ok: boolean; error?: string }[]>([])
+const toggleSelecting = () => {
+  selecting.value = !selecting.value
+  if (!selecting.value) selected.value = []
+}
+const toggleSelected = (id: number) => {
+  selected.value = selected.value.includes(id) ? selected.value.filter((x) => x !== id) : [...selected.value, id]
+}
+const selectAllVisible = () => { selected.value = shown.value.map((n) => n.id) }
+const selectedNames = computed(() => nodes.value.filter((n) => selected.value.includes(n.id)).map((n) => n.name).join(', '))
+watch(bulkConfirm, (v) => { if (v) bulkResults.value = [] })
+const runBulk = async () => {
+  bulkRunning.value = true
+  const msg = await HttpUtils.post('api/nodeBulk', { ids: JSON.stringify(selected.value), op: bulkOp.value, value: bulkValue.value })
+  bulkRunning.value = false
+  if (msg.success) {
+    bulkResults.value = msg.obj ?? []
+    dataStore.loadData()
+    if (bulkResults.value.every((r) => r.ok)) bulkConfirm.value = false
   }
 }
 
@@ -142,19 +251,27 @@ const relTime = (unix: number): string => {
 const pct = (v: number): string => Math.round(v) + '%'
 
 const cardRows = (n: Node): EntityRow[] => {
+  const rows = baseRows(n)
+  const place = [n.group, n.location].filter((v) => v && v.trim() !== '').join(' · ')
+  if (place) rows.unshift({ k: t('node.group') + ' / ' + t('node.location'), v: place })
+  if (n.subExclude) rows.push({ k: t('node.subExclude'), v: t('node.subExcluded'), color: 'var(--amber)' })
+  return rows
+}
+
+const baseRows = (n: Node): EntityRow[] => {
   const state = stateOf(n)
   const st = statusOf(n)
   // 待同步的节点把"上次同步"标黄,与卡片顶部的 dirty 徽章呼应
   const lastSync: EntityRow = n.dirty
     ? { k: t('node.lastSync'), v: relTime(n.lastSync ?? 0), color: 'var(--amber)' }
     : { k: t('node.lastSync'), v: relTime(n.lastSync ?? 0) }
-  if (state === 'online' || state === 'core-stopped') {
+  if (st && (state === 'online' || state === 'core-stopped' || state === 'degraded' || state === 'syncing' || state === 'incompatible') && st.state !== 'offline') {
     const memPct = st!.mem.total > 0 ? (st!.mem.current / st!.mem.total) * 100 : 0
     return [
       { k: t('node.latency'), v: st!.latency + ' ' + t('date.ms'), mono: true },
       { k: t('ui.cpu') + ' / ' + t('ui.memory'), v: pct(st!.cpu) + ' / ' + pct(memPct), mono: true },
       { k: t('node.panelVersion'), v: st!.appVersion || t('ui.none'), mono: !!st!.appVersion },
-      state === 'online'
+      st!.state === 'online'
         ? { k: t('node.coreVersion'), v: st!.coreVersion || t('ui.none'), mono: !!st!.coreVersion }
         : { k: t('node.coreVersion'), v: t('node.status.coreStopped'), color: 'var(--amber)' },
       lastSync,

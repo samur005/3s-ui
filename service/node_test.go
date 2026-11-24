@@ -68,13 +68,17 @@ func TestNodeOnlyClientAppearsOnlineOnMaster(t *testing.T) {
 				return
 			}
 			w.Write([]byte(`{"success":true,"obj":{"user":["alice","local","stranger","alice"]}}`))
+		case "/app/apiv2/nodeCapabilities":
+			// The heartbeat asks for capabilities once; answer like a node
+			// that predates the management API.
+			w.Write([]byte(`{"success":false,"msg":"unknown action: nodeCapabilities","obj":null}`))
 		default:
 			t.Errorf("unexpected node request: %s", r.URL.Path)
 			w.WriteHeader(http.StatusNotFound)
 		}
 	}))
 	defer srv.Close()
-	node := model.Node{Name: "node", BaseUrl: srv.URL, WebPath: "/app/", Token: "token", Enable: true}
+	node := model.Node{Name: "node", BaseUrl: srv.URL, WebPath: "/app/", Token: "token", Enable: true, AllowPrivate: true}
 	if err := db.Create(&node).Error; err != nil {
 		t.Fatalf("seed node: %v", err)
 	}
@@ -138,11 +142,16 @@ func TestBuildNodeHTTPClientBoundsIdleConns(t *testing.T) {
 		t.Fatalf("https node: IdleConnTimeout = %v, want a positive timeout", tr.IdleConnTimeout)
 	}
 
-	// Plain http deliberately leaves Transport nil so it shares
-	// http.DefaultTransport, which already bounds its own pool.
+	// Plain http owns its Transport too since the SSRF guard: the guard is
+	// the Transport's dialer, and http.DefaultTransport's would bypass it.
+	// closeIdle therefore only ever empties the node's own pool.
 	client = buildNodeHTTPClient(&model.Node{BaseUrl: "http://node.example:2095"})
-	if client.Transport != nil {
-		t.Fatalf("http node: want the default transport, got %T", client.Transport)
+	tr, ok = client.Transport.(*http.Transport)
+	if !ok || tr == http.DefaultTransport {
+		t.Fatalf("http node: want its own *http.Transport, got %T", client.Transport)
+	}
+	if tr.IdleConnTimeout <= 0 || tr.DialContext == nil {
+		t.Fatalf("http node: want a bounded pool and the guarded dialer")
 	}
 }
 
@@ -258,7 +267,7 @@ func TestNodeRequestsDoNotAccumulateConnections(t *testing.T) {
 
 	node := model.Node{
 		Name: "n1", BaseUrl: srv.URL, WebPath: "/app/",
-		Token: "t", Insecure: true, Enable: true,
+		Token: "t", Insecure: true, Enable: true, AllowPrivate: true,
 	}
 	if err := database.GetDB().Create(&node).Error; err != nil {
 		t.Fatalf("seed node: %v", err)

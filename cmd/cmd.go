@@ -17,6 +17,9 @@ func ParseCmd() {
 	adminCmd := flag.NewFlagSet("admin", flag.ExitOnError)
 	settingCmd := flag.NewFlagSet("setting", flag.ExitOnError)
 	backupCmd := flag.NewFlagSet("backup", flag.ExitOnError)
+	secretsCmd := flag.NewFlagSet("secrets", flag.ExitOnError)
+	var decryptSecrets bool
+	secretsCmd.BoolVar(&decryptSecrets, "decrypt", false, "write node tokens back unencrypted (before downgrading to a release without encryption at rest)")
 
 	var username string
 	var password string
@@ -60,6 +63,7 @@ func ParseCmd() {
 		fmt.Println("    setting        set/reset/show settings")
 		fmt.Println("    backup         create a database backup")
 		fmt.Println("    healthcheck    exit 0 while the panel is accepting connections")
+		fmt.Println("    secrets        node secret encryption at rest (-decrypt before a downgrade)")
 		fmt.Println()
 		adminCmd.Usage()
 		fmt.Println()
@@ -139,6 +143,16 @@ func ParseCmd() {
 			return
 		}
 		backupDb(output, exclude)
+	case "secrets":
+		if err := secretsCmd.Parse(os.Args[2:]); err != nil {
+			fmt.Println(err)
+			return
+		}
+		if decryptSecrets {
+			secretsDecrypt()
+		} else {
+			secretsCmd.Usage()
+		}
 	default:
 		fmt.Println("Invalid subcommands")
 		flag.Usage()

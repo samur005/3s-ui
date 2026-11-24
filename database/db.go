@@ -123,6 +123,7 @@ func InitDB(dbPath string) error {
 	if err != nil {
 		return err
 	}
+	loadSecretKey(dbPath)
 
 	// Default Outbounds
 	if !db.Migrator().HasTable(&model.Outbound{}) {
@@ -156,6 +157,10 @@ func InitDB(dbPath string) error {
 		&model.WgPeer{},
 		&model.LoginAttempt{},
 		&model.SyncConflict{},
+		&model.NodeOperation{},
+		&model.ClientHwid{},
+		&model.IdempotencyRecord{},
+		&model.NodeQueuedOp{},
 	}
 	err = db.AutoMigrate(models...)
 	if err != nil {
@@ -211,6 +216,14 @@ func InitDB(dbPath string) error {
 		return err
 	}
 	err = migrateInboundTraffic()
+	if err != nil {
+		return err
+	}
+	err = migrateNodeAllowPrivate()
+	if err != nil {
+		return err
+	}
+	err = migrateSealSecrets()
 	if err != nil {
 		return err
 	}

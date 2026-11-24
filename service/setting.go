@@ -906,6 +906,14 @@ func (s *SettingService) Save(tx *gorm.DB, data json.RawMessage) error {
 				return err
 			}
 		}
+		if err = ValidateSubProfileSetting(key, obj); err != nil {
+			return err
+		}
+		if key == "apiClientCA" {
+			if _, err = ParseClientCAs(obj); err != nil {
+				return err
+			}
+		}
 		// Secure file existence check
 		if obj != "" &&
 			(((key == "webCertFile" || key == "webKeyFile") && !webAcme && !webNginx) ||

@@ -99,7 +99,7 @@ func (s *NodeSyncService) nodePost(n *model.Node, client *http.Client, action st
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Token", n.Token)
+	req.Header.Set("Token", string(n.Token))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
 	resp, err := client.Do(req)
@@ -465,7 +465,17 @@ func (s *NodeSyncService) Reconcile(nodeId uint) error {
 		return nil
 	}
 	defer s.releaseReconcile(nodeId)
-	return s.runReconcile(nodeId, gen)
+	return s.trackedReconcile(nodeId, gen)
+}
+
+// trackedReconcile runs a claimed reconcile and records its outcome for the
+// node's sync status (nodeHealth.go): last attempt, last success, the error and
+// the failure streak that drives the background backoff.
+func (s *NodeSyncService) trackedReconcile(nodeId uint, gen uint64) error {
+	syncStarted(nodeId)
+	err := s.runReconcile(nodeId, gen)
+	syncFinished(nodeId, err)
+	return err
 }
 
 // ReconcileNow is the interactive entry (manual sync button, post-adoption
@@ -478,7 +488,7 @@ func (s *NodeSyncService) ReconcileNow(nodeId uint) error {
 		return common.NewError("a sync for this node is already running — try again shortly")
 	}
 	defer s.releaseReconcile(nodeId)
-	return s.runReconcile(nodeId, gen)
+	return s.trackedReconcile(nodeId, gen)
 }
 
 func (s *NodeSyncService) runReconcile(nodeId uint, startGen uint64) error {
@@ -1060,6 +1070,23 @@ func (s *NodeSyncService) refreshNodeLinks(node *model.Node) {
 	}
 }
 
+// RefreshReplicasAndLinks pulls the node's current shape of its adopted
+// inbounds (address, port, TLS/SNI, address book) into the replica rows and
+// regenerates the bound clients' links at once. Used right after a remote edit
+// made through the master, so the subscription does not wait for the next
+// reconcile. If the node cannot be read, the links are still rebuilt from
+// the stored replicas.
+func (s *NodeSyncService) RefreshReplicasAndLinks(node *model.Node) {
+	client := nodePushClient(node)
+	defer closeIdle(client)
+	if tagToId, err := s.nodeInboundTagMap(node, client); err == nil {
+		s.refreshReplicas(node, client, tagToId)
+	} else {
+		logger.Warning("nodes: refresh replicas of ", node.Name, ": ", err)
+	}
+	s.refreshNodeLinks(node)
+}
+
 // ---------- dirty tracking / triggers ----------
 
 func (s *NodeSyncService) MarkAllDirty() {
@@ -1233,7 +1260,9 @@ func (s *NodeSyncService) claimReconcile(nodeId uint, force bool) (uint64, bool)
 		return 0, false
 	}
 	if !force {
-		if last, ok := reconcileLast[nodeId]; ok && time.Since(last) < reconcileBackoff {
+		// Exponential after failures (30s, 1m, 2m ... 15m): a node that keeps
+		// rejecting a push is not hammered every heartbeat.
+		if last, ok := reconcileLast[nodeId]; ok && time.Since(last) < syncBackoffFor(nodeSyncFailures(nodeId)) {
 			return 0, false
 		}
 	}

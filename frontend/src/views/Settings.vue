@@ -96,6 +96,10 @@
       <SRow :label="$t('setting.timeLoc')">
         <input class="input mono" v-model="settings.timeLocation" />
       </SRow>
+      <SRow class="sg-span" :label="$t('setting.apiClientCA')" :hint="$t('setting.apiClientCAHint')">
+        <textarea class="input mono" rows="3" spellcheck="false" dir="ltr" v-model="settings.apiClientCA"
+                  placeholder="-----BEGIN CERTIFICATE-----"></textarea>
+      </SRow>
     </SettingsGroup>
 
     <!-- ===================== Subscription ===================== -->
@@ -134,6 +138,28 @@
         <textarea class="input mono" rows="3" spellcheck="false" dir="ltr" v-model="settings.subCustomHeaders"
                   :placeholder="'announce: Hello!\nannounce-url: https://t.me/example'"></textarea>
       </SRow>
+    </SettingsGroup>
+
+    <!-- ===================== Subscription profile headers ===================== -->
+    <SettingsGroup v-else-if="tab === 'subHeaders'" grid>
+      <div class="sg-span" style="font-size: 12.5px; color: var(--text-3); padding: 4px 0 6px;">{{ $t('subHdr.desc') }}</div>
+      <template v-for="sec in subHeaderSections" :key="sec.title">
+        <div class="sg-span" style="padding-top: 10px;"><SectionLabel>{{ $t('subHdr.' + sec.title) }}</SectionLabel></div>
+        <template v-for="f in sec.fields" :key="f.key">
+          <ToggleRow v-if="f.kind === 'bool'" :model-value="(settings as any)[f.key] === 'true'"
+                     @update:model-value="(v: boolean) => (settings as any)[f.key] = v ? 'true' : 'false'"
+                     :label="$t('subHdr.' + f.key)" :desc="f.header" />
+          <SRow v-else :class="f.kind === 'area' ? 'sg-span' : ''" :label="$t('subHdr.' + f.key)" :hint="f.header">
+            <Select v-if="f.kind === 'select'" v-model="(settings as any)[f.key]">
+              <option v-for="o in f.options" :key="o" :value="o">{{ o === '' ? '—' : $t('subHdr.opt.' + o) }}</option>
+            </Select>
+            <textarea v-else-if="f.kind === 'area'" class="input mono" rows="3" spellcheck="false" dir="ltr"
+                      v-model="(settings as any)[f.key]" :placeholder="f.placeholder"></textarea>
+            <input v-else class="input mono" dir="ltr" v-model="(settings as any)[f.key]" :placeholder="f.placeholder" />
+          </SRow>
+        </template>
+      </template>
+      <div class="sg-span" style="font-size: 12px; color: var(--text-3); padding: 10px 0;">{{ $t('subHdr.placeholders') }}</div>
     </SettingsGroup>
 
     <!-- ===================== JSON sub ===================== -->
@@ -427,6 +453,52 @@ import CertsPanel from '@/components/settings/CertsPanel.vue'
 import { loadCerts, certsLoaded, findCert, daysLeft } from '@/plugins/certs'
 
 const tab = ref('interface')
+
+// Subscription profile headers (the LucX set): one data-driven form; the
+// backend validates every value on Save.
+type SubHdrField = { key: string, kind: 'text' | 'area' | 'bool' | 'select', header: string, options?: string[], placeholder?: string }
+const subHeaderSections: { title: string, fields: SubHdrField[] }[] = [
+  { title: 'common', fields: [
+    { key: 'subTitle', kind: 'text', header: 'Profile-Title', placeholder: 'My VPN — {{USERNAME}}' },
+    { key: 'subSupportUrl', kind: 'text', header: 'Support-Url', placeholder: 'https://t.me/support' },
+    { key: 'subProfileMode', kind: 'select', header: 'Profile-Web-Page-Url', options: ['none', 'builtin', 'custom'] },
+    { key: 'subProfileUrl', kind: 'text', header: 'Profile-Web-Page-Url', placeholder: 'https://example.com/u/{{SUB_ID}}' },
+    { key: 'subAnnounce', kind: 'area', header: 'Announce' },
+  ] },
+  { title: 'routing', fields: [
+    { key: 'subEnableRouting', kind: 'bool', header: 'Routing-Enable' },
+    { key: 'subRoutingRules', kind: 'area', header: 'Routing', placeholder: '{"Name":"…"}  |  happ://routing/onadd/…  |  https://…/routing.json' },
+    { key: 'subHideSettings', kind: 'bool', header: 'Hide-Settings' },
+    { key: 'subIncyEnableRouting', kind: 'bool', header: 'incy://autorouting' },
+    { key: 'subIncyRoutingRules', kind: 'text', header: 'incy://autorouting/onadd/…', placeholder: 'https://example.com/incy.json' },
+  ] },
+  { title: 'happ', fields: [
+    { key: 'subHappAutoDetect', kind: 'bool', header: 'User-Agent: Happ' },
+    { key: 'subHappProviderId', kind: 'text', header: 'ProviderID' },
+    { key: 'subHappNewUrl', kind: 'text', header: 'New-Url', placeholder: 'https://' },
+    { key: 'subHappFallbackUrl', kind: 'text', header: 'Fallback-Url', placeholder: 'https://' },
+    { key: 'subHappSubInfoText', kind: 'text', header: 'Sub-Info-Text' },
+    { key: 'subHappSubInfoColor', kind: 'select', header: 'Sub-Info-Color', options: ['blue', 'green', 'red'] },
+    { key: 'subHappSubInfoButtonText', kind: 'text', header: 'Sub-Info-Button-Text' },
+    { key: 'subHappSubInfoButtonLink', kind: 'text', header: 'Sub-Info-Button-Link', placeholder: 'https://' },
+    { key: 'subHappSubExpire', kind: 'bool', header: 'Sub-Expire' },
+    { key: 'subHappSubExpireButtonLink', kind: 'text', header: 'Sub-Expire-Button-Link', placeholder: 'https://' },
+    { key: 'subHappNotificationExpire', kind: 'bool', header: 'Notification-Subs-Expire' },
+    { key: 'subHappNoLimit', kind: 'bool', header: 'No-Limit-Enabled' },
+    { key: 'subHappAlwaysHwid', kind: 'bool', header: 'Subscription-Always-Hwid-Enable' },
+    { key: 'subHappTunMode', kind: 'text', header: 'Tun-Mode' },
+    { key: 'subHappTunType', kind: 'text', header: 'Tun-Type', placeholder: 'system / gvisor' },
+    { key: 'subHappExcludeRoutes', kind: 'text', header: 'Exclude-Routes', placeholder: '10.0.0.0/8,192.168.0.0/16' },
+    { key: 'subHappExcludeApns', kind: 'bool', header: 'Exclude-Apns-Enable' },
+    { key: 'subHappColorProfile', kind: 'text', header: 'Color-Profile' },
+    { key: 'subHappPingType', kind: 'text', header: 'Ping-Type', placeholder: 'proxy / tcp / icmp' },
+    { key: 'subHappAutoConnect', kind: 'bool', header: 'Subscription-Autoconnect' },
+    { key: 'subHappAutoConnectType', kind: 'select', header: 'Subscription-Autoconnect-Type', options: ['lowestdelay', 'lastused'] },
+    { key: 'subHappPerAppMode', kind: 'select', header: 'Per-App-Proxy-Mode', options: ['off', 'on', 'bypass'] },
+    { key: 'subHappPerAppList', kind: 'area', header: 'Per-App-Proxy-List', placeholder: 'com.example.app' },
+    { key: 'subHappLocalProxyAuth', kind: 'select', header: 'Socks-Auth-Mode / Http-Auth-Mode', options: ['', 'auto', 'on', 'off'] },
+  ] },
+]
 const loading = ref(false)
 // 保存时要跟当前值逐字段比对,判断反代配置需不需要重新生成(见 save)
 const oldSettings = ref<Record<string, any>>({})
@@ -437,6 +509,7 @@ const tabItems = computed((): [string, string][] => [
   ['certs', i18n.global.t('setting.certs')],
   ['interface', i18n.global.t('setting.interface')],
   ['sub', i18n.global.t('setting.sub')],
+  ['subHeaders', i18n.global.t('subHdr.tab')],
   ['jsonSub', i18n.global.t('setting.jsonSub')],
   ['clashSub', i18n.global.t('setting.clashSub')],
   ['notify', i18n.global.t('setting.notify')],
@@ -483,6 +556,17 @@ const settings = ref({
   subClashSprtAll: "false",
   subClashUdp: "false",
   subCustomHeaders: "",
+  apiClientCA: "",
+  subTitle: "", subSupportUrl: "", subProfileMode: "none", subProfileUrl: "", subAnnounce: "",
+  subEnableRouting: "false", subRoutingRules: "", subHideSettings: "false",
+  subIncyEnableRouting: "false", subIncyRoutingRules: "",
+  subHappAutoDetect: "false", subHappProviderId: "", subHappNewUrl: "", subHappFallbackUrl: "",
+  subHappSubInfoColor: "blue", subHappSubInfoText: "", subHappSubInfoButtonText: "", subHappSubInfoButtonLink: "",
+  subHappSubExpire: "false", subHappSubExpireButtonLink: "", subHappNotificationExpire: "false",
+  subHappNoLimit: "false", subHappAlwaysHwid: "false", subHappTunMode: "", subHappTunType: "",
+  subHappExcludeRoutes: "", subHappExcludeApns: "false", subHappColorProfile: "", subHappPingType: "",
+  subHappAutoConnect: "false", subHappAutoConnectType: "lowestdelay", subHappPerAppMode: "off",
+  subHappPerAppList: "", subHappLocalProxyAuth: "",
   // 通知。凭据(notifyTgToken / notifySmtpPass)后端只写不读:GetAllSetting 把值抹掉,
   // 改成回一个 hasNotifyTgToken / hasNotifySmtpPass 布尔,所以这里两个输入框永远是空的,
   // 留空保存 = 不改动已存的凭据(后端 Save 跳过空值),要换就填新的。

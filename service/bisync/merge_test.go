@@ -76,8 +76,11 @@ func TestResolve_KeepLocalAndRemote(t *testing.T) {
 }
 
 func TestBumpAndTombstone(t *testing.T) {
+	prevNow := NowUnix
 	NowUnix = func() int64 { return 50 }
-	defer func() { NowUnix = func() int64 { return 0 } }()
+	// Restore the real clock: a zero clock left behind makes every later
+	// Tombstone() stamp deleted_at = 0, i.e. "alive" (TestTombstoneListAndPurge).
+	defer func() { NowUnix = prevNow }()
 	cur := Record{UID: "a", Rev: 1, Origin: "A"}
 	b := BumpRev(cur, "A")
 	if b.Rev != 2 || b.Base != 1 {
