@@ -709,6 +709,9 @@ func NotifyConfigChanged() {
 // access is not widened. It also refreshes stats subscriptions — the stats
 // table only changes at this flush.
 func HubAfterStatsFlush() {
+	// Credit WireGuard/AmneziaWG peer counters into client/inbound totals
+	// so the panel banners show traffic for them.
+	(&WgService{}).CreditTraffic()
 	h := getHub()
 	if h == nil {
 		return

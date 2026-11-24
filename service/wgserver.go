@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
+	"sync"
 
 	"github.com/samur005/3s-ui/database"
 	"github.com/samur005/3s-ui/database/model"
@@ -182,4 +183,78 @@ func (s *WgService) GenerateObfuscation(version string) (any, error) {
 		wgserver.Obfuscation
 		Fields wgserver.FieldSet `json:"fields"`
 	}{wgserver.Generate(version), wgserver.Fields(version)}, nil
+}
+
+// wgTrafficBase remembers the last rx/tx reading per peer so only the growth
+// is credited. Key is inboundID + public key.
+var (
+	wgTrafficMu   sync.Mutex
+	wgTrafficBase = map[string][2]int64{}
+)
+
+// CreditTraffic reads the WireGuard/AmneziaWG engine's per-peer counters and
+// adds the growth since the previous call to the bound client's and the
+// inbound's up/down. Called from the stats flush so the panel banners move.
+func (s *WgService) CreditTraffic() {
+	db := database.GetDB()
+	if db == nil {
+		return
+	}
+	inbounds, err := wgserver.LoadInbounds(db)
+	if err != nil || len(inbounds) == 0 {
+		return
+	}
+	wgTrafficMu.Lock()
+	defer wgTrafficMu.Unlock()
+
+	for _, in := range inbounds {
+		stats := wgserver.Get().Stats(in.ID)
+		if len(stats) == 0 {
+			continue
+		}
+		var peers []model.WgPeer
+		if err := db.Where("inbound_id = ?", in.ID).Find(&peers).Error; err != nil {
+			continue
+		}
+		byKey := map[string]uint{}
+		for _, p := range peers {
+			byKey[p.PublicKey] = p.ClientId
+		}
+		var totalUp, totalDown int64
+		for _, ps := range stats {
+			cid, ok := byKey[ps.PublicKey]
+			if !ok {
+				continue
+			}
+			key := ps.PublicKey
+			prev := wgTrafficBase[key]
+			du, dd := ps.Rx-prev[0], ps.Tx-prev[1]
+			if du < 0 {
+				du = ps.Rx
+			}
+			if dd < 0 {
+				dd = ps.Tx
+			}
+			wgTrafficBase[key] = [2]int64{ps.Rx, ps.Tx}
+			if du == 0 && dd == 0 {
+				continue
+			}
+			totalUp += du
+			totalDown += dd
+			if err := db.Model(&model.Client{}).Where("id = ?", cid).Updates(map[string]any{
+				"up":   gorm.Expr("up + ?", du),
+				"down": gorm.Expr("down + ?", dd),
+			}).Error; err != nil {
+				logger.Warning("wg traffic credit client: ", err)
+			}
+		}
+		if totalUp > 0 || totalDown > 0 {
+			if err := db.Model(&model.Inbound{}).Where("id = ?", in.ID).Updates(map[string]any{
+				"up":   gorm.Expr("up + ?", totalUp),
+				"down": gorm.Expr("down + ?", totalDown),
+			}).Error; err != nil {
+				logger.Warning("wg traffic credit inbound: ", err)
+			}
+		}
+	}
 }
