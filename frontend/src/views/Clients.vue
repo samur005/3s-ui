@@ -671,10 +671,10 @@ td.actions-td { padding-inline-end: 10px; }
 .clients-cards {
   display: none;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
 }
 .m-client {
-  padding: 14px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
   cursor: pointer;

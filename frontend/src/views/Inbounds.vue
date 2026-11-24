@@ -203,8 +203,21 @@ const usersTitle = (item: any): string | undefined =>
 // the same number, because a client's up/down is its total across all of the
 // inbounds it belongs to. A node replica is measured on its node, which reports
 // per client only, so there is nothing to show for one here.
-const trafficOf = (item: any): string =>
-  item.node_id || isExternal(item) ? '—' : HumanReadable.sizeFormat(dataStore.inboundTraffic[item.tag] ?? 0)
+const trafficOf = (item: any): string => {
+  // Prefer core-measured total for ordinary local inbounds.
+  if (!item.node_id && !isExternal(item)) {
+    return HumanReadable.sizeFormat(dataStore.inboundTraffic[item.tag] ?? 0)
+  }
+  // External (qWDTT/AWG/WG/...) and node replicas: sum traffic of bound clients.
+  // The core does not count these, so this is the figure the panel can show.
+  let sum = 0
+  for (const c of dataStore.clients ?? []) {
+    if (Array.isArray(c.inbounds) && c.inbounds.includes(item.id)) {
+      sum += (c.up ?? 0) + (c.down ?? 0)
+    }
+  }
+  return sum > 0 ? HumanReadable.sizeFormat(sum) : '—'
+}
 
 // ---------------- enable switch ----------------
 // Absent is on: rows from a panel that predates the switch carry no flag.
@@ -346,7 +359,7 @@ const showStats = (tag: string) => {
   flex-direction: column;
 }
 .inb-head {
-  padding: 15px 16px 13px;
+  padding: 10px 12px 8px;
   display: flex;
   align-items: center;
   gap: 11px;
@@ -377,7 +390,7 @@ const showStats = (tag: string) => {
   font-weight: 600;
 }
 .inb-meta {
-  padding: 0 16px 14px;
+  padding: 0 12px 8px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px 14px;
