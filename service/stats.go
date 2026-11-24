@@ -111,14 +111,73 @@ func sampleClientRates(now time.Time) {
 		if box := corePtr.GetInstance(); box != nil {
 			if st := box.StatsTracker(); st != nil {
 				moved, window, ok := st.SampleUsers(now, minRateWindow)
-				if !ok {
-					return
+				if ok {
+					rates = ratesOf(moved, window)
 				}
-				rates = ratesOf(moved, window)
 			}
 		}
 	}
+	// External protocols (qWDTT, AWG, ...) update client up/down in the DB
+	// but never appear in the core StatsTracker. Sample those counters too
+	// so the panel can show a speed for them.
+	for name, r := range sampleDbRates(now) {
+		if _, exists := rates[name]; !exists {
+			rates[name] = r
+		}
+	}
 	setClientRates(rates)
+}
+
+// dbRateState holds the previous snapshot of client counters for external rate sampling.
+var (
+	dbRateMu   sync.Mutex
+	dbRatePrev map[string][2]int64 // name -> [up, down]
+	dbRateAt   time.Time
+)
+
+func sampleDbRates(now time.Time) map[string]ClientRate {
+	dbRateMu.Lock()
+	defer dbRateMu.Unlock()
+
+	type row struct {
+		Name string
+		Up   int64
+		Down int64
+	}
+	var rows []row
+	if err := database.GetDB().Model(model.Client{}).
+		Select("name", "up", "down").
+		Where("deleted_at = 0 AND (up > 0 OR down > 0)").
+		Scan(&rows).Error; err != nil {
+		return nil
+	}
+
+	cur := make(map[string][2]int64, len(rows))
+	for _, r := range rows {
+		cur[r.Name] = [2]int64{r.Up, r.Down}
+	}
+
+	out := map[string]ClientRate{}
+	if !dbRateAt.IsZero() {
+		window := now.Sub(dbRateAt)
+		if window > 0 && window <= maxRateWindow {
+			sec := window.Seconds()
+			for name, c := range cur {
+				if prev, ok := dbRatePrev[name]; ok {
+					du, dd := c[0]-prev[0], c[1]-prev[1]
+					if du > 0 || dd > 0 {
+						out[name] = ClientRate{
+							Up:   int64(float64(du) / sec),
+							Down: int64(float64(dd) / sec),
+						}
+					}
+				}
+			}
+		}
+	}
+	dbRatePrev = cur
+	dbRateAt = now
+	return out
 }
 
 // pauseClientRates stops sampling once the last tab is gone, emptying the
