@@ -96,6 +96,7 @@ func (a *APP) Start() error {
 	// core stays down for the life of the process, the watchdog included
 	// (#251).
 	a.configService.ReclaimCore()
+	service.BackfillSubIds()
 
 	loc, err := a.SettingService.GetTimeLocation()
 	if err != nil {

@@ -61,6 +61,10 @@ type Client struct {
 	Id       uint            `json:"id" form:"id" gorm:"primaryKey;autoIncrement"`
 	Enable   bool            `json:"enable" form:"enable"`
 	Name     string          `json:"name" form:"name"`
+	// SubId is the stable subscription path segment. It never changes when
+	// the client is renamed, so a shared link keeps working. Empty on rows
+	// created before the field existed; filled on the next save.
+	SubId    string          `json:"subId,omitempty" form:"subId" gorm:"index;default:'';size:36"`
 	Config   json.RawMessage `json:"config,omitempty" form:"config"`
 	Inbounds json.RawMessage `json:"inbounds" form:"inbounds"`
 	Links    json.RawMessage `json:"links,omitempty" form:"links"`

@@ -10,6 +10,7 @@ import (
 	// has to resolve on hosts without a zoneinfo database -- Windows above all.
 	_ "time/tzdata"
 
+	"github.com/gofrs/uuid/v5"
 	"github.com/samur005/3s-ui/database"
 	"github.com/samur005/3s-ui/database/jsonsql"
 	"github.com/samur005/3s-ui/database/model"
@@ -67,7 +68,7 @@ func (s *ClientService) GetAll() (*[]model.Client, error) {
 // The three reset columns are there for the list to show when the next reset
 // lands. They are read-only on this shape: the bulk edit submits these rows,
 // and findInboundsChanges restores every reset column from the stored row.
-const clientListColumns = "`id`, `enable`, `name`, `desc`, `group`, `remark`, `inbounds`, `up`, `down`, `volume`, `expiry`, `created_at`, `online_at`, `limit_ip`, `auto_reset`, `delay_start`, `next_reset`, `sync_uid`, `sync_rev`, `deleted_at`"
+const clientListColumns = "`id`, `enable`, `name`, `sub_id`, `desc`, `group`, `remark`, `inbounds`, `up`, `down`, `volume`, `expiry`, `created_at`, `online_at`, `limit_ip`, `auto_reset`, `delay_start`, `next_reset`, `sync_uid`, `sync_rev`, `deleted_at`"
 
 // GetAllWithConfig adds config for the cluster reconcile diff only: clientDiffers
 // compares it, and an absent key reads as "always different", which would re-push
@@ -188,8 +189,13 @@ func (s *ClientService) Save(tx *gorm.DB, act string, data json.RawMessage, host
 			// sent they are the change -- the drawer's per-client reset works
 			// by sending zeroed counters.
 			client.CreatedAt, client.OnlineAt = stored.CreatedAt, stored.OnlineAt
+			if client.SubId == "" {
+				client.SubId = stored.SubId
+			}
+			ensureSubId(client)
 		} else {
 			client.CreatedAt = time.Now().Unix()
+			ensureSubId(client)
 			err = json.Unmarshal(client.Inbounds, &inboundIds)
 			if err != nil {
 				return nil, err
@@ -1907,4 +1913,36 @@ func autoBindSyncedInbounds(db *gorm.DB, c *model.Client) {
 	}
 	b, _ := json.Marshal(existing)
 	c.Inbounds = b
+}
+
+// ensureSubId fills a stable subscription id when the row has none.
+func ensureSubId(client *model.Client) {
+	if strings.TrimSpace(client.SubId) != "" {
+		return
+	}
+	id, err := uuid.NewV4()
+	if err != nil {
+		return
+	}
+	client.SubId = id.String()
+}
+
+// BackfillSubIds assigns a stable subscription id to every client that has
+// none, so existing links can be migrated to the static form.
+func BackfillSubIds() {
+	db := database.GetDB()
+	if db == nil {
+		return
+	}
+	var ids []uint
+	if err := db.Model(model.Client{}).Where("sub_id = '' OR sub_id IS NULL").Pluck("id", &ids).Error; err != nil {
+		return
+	}
+	for _, id := range ids {
+		uid, err := uuid.NewV4()
+		if err != nil {
+			continue
+		}
+		db.Model(model.Client{}).Where("id = ?", id).Update("sub_id", uid.String())
+	}
 }

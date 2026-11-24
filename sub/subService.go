@@ -184,7 +184,7 @@ func (s *SubService) getClientInfoJSON(subId string) (*ClientInfo, error) {
 func (j *SubService) getAnyClientBySubId(subId string) (*model.Client, error) {
 	db := database.GetDB()
 	client := &model.Client{}
-	err := db.Model(model.Client{}).Where("name = ?", subId).First(client).Error
+	err := db.Model(model.Client{}).Where("(sub_id = ? or name = ?)", subId, subId).First(client).Error
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +194,7 @@ func (j *SubService) getAnyClientBySubId(subId string) (*model.Client, error) {
 func (j *SubService) getClientBySubId(subId string) (*model.Client, error) {
 	db := database.GetDB()
 	client := &model.Client{}
-	err := db.Model(model.Client{}).Where("enable = true and name = ?", subId).First(client).Error
+	err := db.Model(model.Client{}).Where("enable = true and (sub_id = ? or name = ?)", subId, subId).First(client).Error
 	if err != nil {
 		return nil, err
 	}

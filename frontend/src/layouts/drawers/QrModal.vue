@@ -137,7 +137,7 @@ const download = (e: any) => {
 // is encoded: a '#', '?' or space in it used to cut the URL short, and every
 // QR below -- the plain one, and Happ's, which takes the URL unencoded after
 // happ://add/ -- fetched another path. The server decodes it back.
-const clientSub = computed(() => Data().subURI + encodeURIComponent(client.value.name ?? ''))
+const clientSub = computed(() => Data().subURI + encodeURIComponent(client.value.subId || client.value.name || ''))
 const singbox = computed(() => {
   const url = clientSub.value + '?format=json'
   return 'sing-box://import-remote-profile?url=' + encodeURIComponent(url) + '#' + (client.value.name ?? '')
