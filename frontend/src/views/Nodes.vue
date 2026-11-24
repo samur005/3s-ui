@@ -35,7 +35,6 @@
   <DeleteConfirm :open="del.visible" :loading="deleting" @close="del.visible = false" @confirm="confirmDelete" />
 
   <div class="page-stack fade-up">
-    <ViewToggle v-model="viewMode" style="margin: 0 auto 10px; display: flex; justify-content: center;" />
     <div class="toolbar" style="justify-content: center; gap: 8px;">
       <Btn variant="primary" sm @click="openDrawer(0)">
         <Ico name="plus" :size="15" /> {{ $t('actions.add') }}
@@ -80,7 +79,7 @@
     <EmptyState v-if="nodes.length === 0" icon="server" :title="$t('node.emptyTitle')" :desc="$t('node.emptyDesc')" />
     <EmptyState v-else-if="shown.length === 0" icon="filter" :title="$t('node.noMatch')" :desc="''" />
 
-    <div v-else-if="viewMode === 'cards'" class="entity-grid">
+    <div class="entity-grid">
       <EntityCard
         v-for="item in shown"
         :key="item.id"
@@ -120,23 +119,11 @@
       </EntityCard>
     </div>
 
-    <div v-else class="card" style="overflow:hidden;">
-      <table class="dtable">
-        <thead><tr><th>name</th><th>address</th><th></th></tr></thead>
-        <tbody>
-          <tr v-for="item in shown" :key="item.id" class="clickable">
-            <td class="mono">{{ item.name }}</td>
-            <td>{{ (item as any).address || (item as any).host || "" }}</td>
-            <td style="text-align:right;"><IconBtn name="edit" /></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    
 </template>
 
 <script lang="ts" setup>
 import { useViewMode } from '@/composables/useViewMode'
-import ViewToggle from '@/components/ViewToggle.vue'
 const { mode: viewMode } = useViewMode('nodes')
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
