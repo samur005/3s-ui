@@ -147,6 +147,9 @@
       <template v-for="sec in subHeaderSections" :key="sec.title">
         <div class="sg-span" style="padding-top: 10px;"><SectionLabel>{{ $t('subHdr.' + sec.title) }}</SectionLabel></div>
         <template v-for="f in sec.fields" :key="f.key">
+          <div v-if="f.comment" class="sg-span" style="font-size: 12px; color: var(--text-3); margin: 2px 0 4px; line-height: 1.4;">
+            {{ f.comment }}
+          </div>
           <ToggleRow v-if="f.kind === 'bool'" :model-value="(settings as any)[f.key] === 'true'"
                      @update:model-value="(v: boolean) => (settings as any)[f.key] = v ? 'true' : 'false'"
                      :label="$t('subHdr.' + f.key)" :desc="f.header" />
@@ -457,47 +460,47 @@ const tab = ref('interface')
 
 // Subscription profile headers (the LucX set): one data-driven form; the
 // backend validates every value on Save.
-type SubHdrField = { key: string, kind: 'text' | 'area' | 'bool' | 'select', header: string, options?: string[], placeholder?: string }
+type SubHdrField = { key: string, kind: 'text' | 'area' | 'bool' | 'select', header: string, options?: string[], placeholder?: string, comment?: string }
 const subHeaderSections: { title: string, fields: SubHdrField[] }[] = [
   { title: 'common', fields: [
-    { key: 'subTitle', kind: 'text', header: 'Profile-Title', placeholder: 'My VPN — {{USERNAME}}' },
-    { key: 'subSupportUrl', kind: 'text', header: 'Support-Url', placeholder: 'https://t.me/support' },
-    { key: 'subProfileMode', kind: 'select', header: 'Profile-Web-Page-Url', options: ['none', 'builtin', 'custom'] },
-    { key: 'subProfileUrl', kind: 'text', header: 'Profile-Web-Page-Url', placeholder: 'https://example.com/u/{{SUB_ID}}' },
-    { key: 'subAnnounce', kind: 'area', header: 'Announce' },
+    { key: 'subTitle', kind: 'text', header: 'Profile-Title', placeholder: 'My VPN — {{USERNAME}}', comment: 'Заголовок карточки подписки в клиенте (Happ, v2RayTun и др.). Пример: 🚀 AntiBS2vpn ({{USERNAME}})' },
+    { key: 'subSupportUrl', kind: 'text', header: 'Support-Url', placeholder: 'https://t.me/support', comment: 'Ссылка на поддержку (Support-Url). Пример: https://t.me/support или https://t.me/{{USERNAME}}' },
+    { key: 'subProfileMode', kind: 'select', header: 'Profile-Web-Page-Url', options: ['none', 'builtin', 'custom'], comment: 'Страница профиля (Profile-Web-Page-Url). none — выкл, builtin — встроенная страница панели, custom — свой URL ниже' },
+    { key: 'subProfileUrl', kind: 'text', header: 'Profile-Web-Page-Url', placeholder: 'https://example.com/u/{{SUB_ID}}', comment: 'Свой URL страницы профиля. Можно с плейсхолдерами: https://example.com/user/{{SUB_ID}}' },
+    { key: 'subAnnounce', kind: 'area', header: 'Announce', comment: 'Объявление при обновлении подписки (Announce). Поддерживает несколько строк и плейсхолдеры {{USERNAME}}, {{REMARK}}' },
   ] },
   { title: 'routing', fields: [
-    { key: 'subEnableRouting', kind: 'bool', header: 'Routing-Enable' },
-    { key: 'subRoutingRules', kind: 'area', header: 'Routing', placeholder: '{"Name":"…"}  |  happ://routing/onadd/…  |  https://…/routing.json' },
-    { key: 'subHideSettings', kind: 'bool', header: 'Hide-Settings' },
-    { key: 'subIncyEnableRouting', kind: 'bool', header: 'incy://autorouting' },
-    { key: 'subIncyRoutingRules', kind: 'text', header: 'incy://autorouting/onadd/…', placeholder: 'https://example.com/incy.json' },
+    { key: 'subEnableRouting', kind: 'bool', header: 'Routing-Enable', comment: 'Включить автоматическую маршрутизацию в приложении (Routing-Enable)' },
+    { key: 'subRoutingRules', kind: 'area', header: 'Routing', placeholder: '{"Name":"…"}  |  happ://routing/onadd/…  |  https://…/routing.json', comment: 'Профиль маршрутизации: JSON, ссылка happ://routing/onadd/... или https-источник. Плейсхолдеры поддерживаются' },
+    { key: 'subHideSettings', kind: 'bool', header: 'Hide-Settings', comment: 'Скрыть настройки серверов в приложении (Hide-Settings = 1)' },
+    { key: 'subIncyEnableRouting', kind: 'bool', header: 'incy://autorouting', comment: 'Включить автороутинг для клиента Incy' },
+    { key: 'subIncyRoutingRules', kind: 'text', header: 'incy://autorouting/onadd/…', placeholder: 'https://example.com/incy.json', comment: 'Источник маршрутов для Incy (https или incy://)' },
   ] },
   { title: 'happ', fields: [
-    { key: 'subHappAutoDetect', kind: 'bool', header: 'User-Agent: Happ' },
-    { key: 'subHappProviderId', kind: 'text', header: 'ProviderID' },
-    { key: 'subHappNewUrl', kind: 'text', header: 'New-Url', placeholder: 'https://' },
-    { key: 'subHappFallbackUrl', kind: 'text', header: 'Fallback-Url', placeholder: 'https://' },
-    { key: 'subHappSubInfoText', kind: 'text', header: 'Sub-Info-Text' },
-    { key: 'subHappSubInfoColor', kind: 'select', header: 'Sub-Info-Color', options: ['blue', 'green', 'red'] },
-    { key: 'subHappSubInfoButtonText', kind: 'text', header: 'Sub-Info-Button-Text' },
-    { key: 'subHappSubInfoButtonLink', kind: 'text', header: 'Sub-Info-Button-Link', placeholder: 'https://' },
-    { key: 'subHappSubExpire', kind: 'bool', header: 'Sub-Expire' },
-    { key: 'subHappSubExpireButtonLink', kind: 'text', header: 'Sub-Expire-Button-Link', placeholder: 'https://' },
-    { key: 'subHappNotificationExpire', kind: 'bool', header: 'Notification-Subs-Expire' },
-    { key: 'subHappNoLimit', kind: 'bool', header: 'No-Limit-Enabled' },
-    { key: 'subHappAlwaysHwid', kind: 'bool', header: 'Subscription-Always-Hwid-Enable' },
-    { key: 'subHappTunMode', kind: 'text', header: 'Tun-Mode' },
-    { key: 'subHappTunType', kind: 'text', header: 'Tun-Type', placeholder: 'system / gvisor' },
-    { key: 'subHappExcludeRoutes', kind: 'text', header: 'Exclude-Routes', placeholder: '10.0.0.0/8,192.168.0.0/16' },
-    { key: 'subHappExcludeApns', kind: 'bool', header: 'Exclude-Apns-Enable' },
-    { key: 'subHappColorProfile', kind: 'text', header: 'Color-Profile' },
-    { key: 'subHappPingType', kind: 'text', header: 'Ping-Type', placeholder: 'proxy / tcp / icmp' },
-    { key: 'subHappAutoConnect', kind: 'bool', header: 'Subscription-Autoconnect' },
-    { key: 'subHappAutoConnectType', kind: 'select', header: 'Subscription-Autoconnect-Type', options: ['lowestdelay', 'lastused'] },
-    { key: 'subHappPerAppMode', kind: 'select', header: 'Per-App-Proxy-Mode', options: ['off', 'on', 'bypass'] },
-    { key: 'subHappPerAppList', kind: 'area', header: 'Per-App-Proxy-List', placeholder: 'com.example.app' },
-    { key: 'subHappLocalProxyAuth', kind: 'select', header: 'Socks-Auth-Mode / Http-Auth-Mode', options: ['', 'auto', 'on', 'off'] },
+    { key: 'subHappAutoDetect', kind: 'bool', header: 'User-Agent: Happ', comment: 'Отправлять специальные заголовки Happ только если клиент представился как Happ' },
+    { key: 'subHappProviderId', kind: 'text', header: 'ProviderID', comment: 'Provider ID для Happ' },
+    { key: 'subHappNewUrl', kind: 'text', header: 'New-Url', placeholder: 'https://', comment: 'Новый URL подписки (New-Url). Можно {{USERNAME}}' },
+    { key: 'subHappFallbackUrl', kind: 'text', header: 'Fallback-Url', placeholder: 'https://', comment: 'Резервный URL подписки (Fallback-Url)' },
+    { key: 'subHappSubInfoText', kind: 'text', header: 'Sub-Info-Text', comment: 'Текст инфо-баннера внизу карточки. Пример: Подписка: {{USERNAME}} | Осталось дней: 101' },
+    { key: 'subHappSubInfoColor', kind: 'select', header: 'Sub-Info-Color', options: ['blue', 'green', 'red'], comment: 'Цвет инфо-баннера: blue / green / red' },
+    { key: 'subHappSubInfoButtonText', kind: 'text', header: 'Sub-Info-Button-Text', comment: 'Текст кнопки на инфо-баннере' },
+    { key: 'subHappSubInfoButtonLink', kind: 'text', header: 'Sub-Info-Button-Link', placeholder: 'https://', comment: 'Ссылка кнопки инфо-баннера' },
+    { key: 'subHappSubExpire', kind: 'bool', header: 'Sub-Expire', comment: 'Показывать баннер об окончании подписки' },
+    { key: 'subHappSubExpireButtonLink', kind: 'text', header: 'Sub-Expire-Button-Link', placeholder: 'https://', comment: 'Ссылка кнопки баннера окончания' },
+    { key: 'subHappNotificationExpire', kind: 'bool', header: 'Notification-Subs-Expire', comment: 'Уведомления об окончании подписки' },
+    { key: 'subHappNoLimit', kind: 'bool', header: 'No-Limit-Enabled', comment: 'Режим без лимита трафика' },
+    { key: 'subHappAlwaysHwid', kind: 'bool', header: 'Subscription-Always-Hwid-Enable', comment: 'Всегда требовать отправку HWID' },
+    { key: 'subHappTunMode', kind: 'text', header: 'Tun-Mode', comment: 'Режим TUN (Tun-Mode)' },
+    { key: 'subHappTunType', kind: 'text', header: 'Tun-Type', placeholder: 'system / gvisor', comment: 'Стек TUN: system / gvisor' },
+    { key: 'subHappExcludeRoutes', kind: 'text', header: 'Exclude-Routes', placeholder: '10.0.0.0/8,192.168.0.0/16', comment: 'Маршруты, которые идут мимо TUN (через запятую)' },
+    { key: 'subHappExcludeApns', kind: 'bool', header: 'Exclude-Apns-Enable', comment: 'Исключить Apple Push (APNs) из туннеля' },
+    { key: 'subHappColorProfile', kind: 'text', header: 'Color-Profile', comment: 'Цветовой профиль интерфейса' },
+    { key: 'subHappPingType', kind: 'text', header: 'Ping-Type', placeholder: 'proxy / tcp / icmp', comment: 'Тип пинга: proxy / tcp / icmp' },
+    { key: 'subHappAutoConnect', kind: 'bool', header: 'Subscription-Autoconnect', comment: 'Автоподключение при открытии приложения' },
+    { key: 'subHappAutoConnectType', kind: 'select', header: 'Subscription-Autoconnect-Type', options: ['lowestdelay', 'lastused'], comment: 'Какой сервер выбирать при автоподключении' },
+    { key: 'subHappPerAppMode', kind: 'select', header: 'Per-App-Proxy-Mode', options: ['off', 'on', 'bypass'], comment: 'Прокси только для выбранных приложений (или bypass)' },
+    { key: 'subHappPerAppList', kind: 'area', header: 'Per-App-Proxy-List', placeholder: 'com.example.app', comment: 'Список приложений (по одному в строке или через запятую)' },
+    { key: 'subHappLocalProxyAuth', kind: 'select', header: 'Socks-Auth-Mode / Http-Auth-Mode', options: ['', 'auto', 'on', 'off'], comment: 'Авторизация локального SOCKS/HTTP прокси' },
   ] },
 ]
 const loading = ref(false)
