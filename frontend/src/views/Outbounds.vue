@@ -77,7 +77,6 @@
         </template>
       </EntityCard>
     </div>
-  </div>
 
     <div v-else class="card" style="overflow:hidden;">
       <table class="dtable">

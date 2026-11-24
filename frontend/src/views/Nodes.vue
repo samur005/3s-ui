@@ -79,7 +79,7 @@
     <EmptyState v-if="nodes.length === 0" icon="server" :title="$t('node.emptyTitle')" :desc="$t('node.emptyDesc')" />
     <EmptyState v-else-if="shown.length === 0" icon="filter" :title="$t('node.noMatch')" :desc="''" />
 
-    <div v-else class="entity-grid">
+    <div v-else-if="viewMode === 'cards'" class="entity-grid">
       <EntityCard
         v-for="item in shown"
         :key="item.id"
@@ -118,7 +118,6 @@
         </template>
       </EntityCard>
     </div>
-  </div>
 
     <div v-else class="card" style="overflow:hidden;">
       <table class="dtable">
