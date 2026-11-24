@@ -106,16 +106,23 @@ var ratesLive atomic.Bool
 // empty, as they would for a core with no traffic; a window too short to
 // close leaves the published rates as they are.
 func sampleClientRates(now time.Time) {
-	rates := map[string]ClientRate{}
+	var rates map[string]ClientRate
+	sampled := false
 	if corePtr != nil && corePtr.IsRunning() {
 		if box := corePtr.GetInstance(); box != nil {
 			if st := box.StatsTracker(); st != nil {
 				moved, window, ok := st.SampleUsers(now, minRateWindow)
-				if ok {
-					rates = ratesOf(moved, window)
+				if !ok {
+					// Window too short: leave the previously published rates alone.
+					return
 				}
+				rates = ratesOf(moved, window)
+				sampled = true
 			}
 		}
+	}
+	if !sampled {
+		rates = map[string]ClientRate{}
 	}
 	// External protocols (qWDTT, AWG, ...) update client up/down in the DB
 	// but never appear in the core StatsTracker. Sample those counters too

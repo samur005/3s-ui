@@ -371,7 +371,6 @@ export default {
   colClient: "Client",
   colGroup: "Group",
   colProtocol: "Protocol",
-  view: 'View',
   viewCards: 'Cards',
   viewList: 'List',
   colUsage: "Usage / Quota",

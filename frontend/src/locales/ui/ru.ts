@@ -371,7 +371,6 @@ export default {
   colClient: "Клиент",
   colGroup: "Группа",
   colProtocol: "Протокол",
-  view: 'Вид',
   viewCards: 'Баннеры',
   viewList: 'Список',
   colUsage: "Расход / Квота",
