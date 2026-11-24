@@ -122,6 +122,7 @@
 </template>
 
 <script lang="ts" setup>
+import StatusDot from '@/components/StatusDot.vue'
 import { useViewMode } from '@/composables/useViewMode'
 import ViewToggle from '@/components/ViewToggle.vue'
 const { mode: viewMode } = useViewMode('inbounds')

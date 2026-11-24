@@ -46,6 +46,7 @@
         :rows="cardRows(item)"
       >
         <template #chip>
+          <StatusDot :online="onlines.includes(item.tag)" />
           <Chip v-if="onlines.includes(item.tag)" color="emerald" dot>{{ $t('online') }}</Chip>
           <Chip v-else>{{ $t('ui.none') }}</Chip>
         </template>
@@ -83,7 +84,7 @@
         <thead><tr><th>tag</th><th>type</th><th></th></tr></thead>
         <tbody>
           <tr v-for="item in endpoints" :key="item.id" class="clickable">
-            <td class="mono">{{ item.tag || item.tag || item.name }}</td>
+            <td class="mono"><StatusDot :online="onlines.includes(item.tag)" /> {{ item.tag }}</td>
             <td>{{ item.type || item.type || item.address }}</td>
             <td style="text-align:right;"><IconBtn name="edit" /></td>
           </tr>
@@ -93,6 +94,7 @@
 </template>
 
 <script lang="ts" setup>
+import StatusDot from '@/components/StatusDot.vue'
 import { useViewMode } from '@/composables/useViewMode'
 import ViewToggle from '@/components/ViewToggle.vue'
 const { mode: viewMode } = useViewMode('endpoints')

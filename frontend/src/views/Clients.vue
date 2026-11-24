@@ -81,7 +81,7 @@
                 <div style="display: flex; align-items: center; gap: 11px;">
                   <div style="position: relative; flex: none;">
                     <Avatar :name="c.name" />
-                    <span v-if="isOnline(c.name)" class="on-dot" />
+                    <StatusDot :online="isOnline(c.name)" />
                   </div>
                   <div style="min-width: 0;">
                     <div style="font-weight: 700; font-size: 13.5px; display: flex; align-items: center; gap: 7px; white-space: nowrap;">
