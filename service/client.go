@@ -192,10 +192,10 @@ func (s *ClientService) Save(tx *gorm.DB, act string, data json.RawMessage, host
 			if client.SubId == "" {
 				client.SubId = stored.SubId
 			}
-			ensureSubId(client)
+			ensureSubId(&client)
 		} else {
 			client.CreatedAt = time.Now().Unix()
-			ensureSubId(client)
+			ensureSubId(&client)
 			err = json.Unmarshal(client.Inbounds, &inboundIds)
 			if err != nil {
 				return nil, err
