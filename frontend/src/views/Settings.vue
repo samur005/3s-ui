@@ -157,7 +157,7 @@
                      :label="$t('subHdr.' + f.key)" :desc="f.header" />
           <SRow v-else :class="f.kind === 'area' ? 'sg-span' : ''" :label="$t('subHdr.' + f.key)" :hint="f.header">
             <Select v-if="f.kind === 'select'" v-model="(settings as any)[f.key]">
-              <option v-for="o in f.options" :key="o" :value="o">{{ o === '' ? '—' : o }}</option>
+              <option v-for="o in f.options" :key="typeof o === 'string' ? o : o.v" :value="typeof o === 'string' ? o : o.v">{{ typeof o === 'string' ? (o === '' ? '—' : o) : o.l }}</option>
             </Select>
             <template v-else-if="f.kind === 'area'">
               <textarea class="input mono" rows="3" spellcheck="false" dir="ltr"
@@ -465,7 +465,7 @@ const tab = ref('interface')
 
 // Subscription profile headers (the LucX set): one data-driven form; the
 // backend validates every value on Save.
-type SubHdrField = { key: string, kind: 'text' | 'area' | 'bool' | 'select', header: string, options?: string[], placeholder?: string, comment?: string }
+type SubHdrField = { key: string, kind: 'text' | 'area' | 'bool' | 'select', header: string, options?: (string | { v: string, l: string })[], placeholder?: string, comment?: string }
 const subHeaderSections: { title: string, fields: SubHdrField[] }[] = [
   { title: 'common', fields: [
     { key: 'subTitle', kind: 'text', header: 'Profile-Title', placeholder: 'My VPN — {{USERNAME}}', comment: 'Заголовок карточки подписки в клиенте (Happ, v2RayTun и др.). Пример: 🚀 AntiBS2vpn ({{USERNAME}})' },
@@ -487,25 +487,25 @@ const subHeaderSections: { title: string, fields: SubHdrField[] }[] = [
     { key: 'subHappNewUrl', kind: 'text', header: 'New-Url', placeholder: 'https://', comment: 'Новый URL подписки (New-Url). Можно {{USERNAME}}' },
     { key: 'subHappFallbackUrl', kind: 'text', header: 'Fallback-Url', placeholder: 'https://', comment: 'Резервный URL подписки (Fallback-Url)' },
     { key: 'subHappSubInfoText', kind: 'text', header: 'Sub-Info-Text', comment: 'Текст инфо-баннера внизу карточки. Пример: Подписка: {{USERNAME}} | Осталось дней: 101' },
-    { key: 'subHappSubInfoColor', kind: 'select', header: 'Sub-Info-Color', options: ['blue', 'green', 'red'], comment: 'Цвет инфо-баннера: blue / green / red' },
-    { key: 'subHappSubInfoButtonText', kind: 'select', header: 'Sub-Info-Button-Text', options: ['', 'Продлить', 'Поддержка', 'Сайт', 'Telegram', 'Купить'], comment: 'Текст кнопки на инфо-баннере' },
+    { key: 'subHappSubInfoColor', kind: 'select', header: 'Sub-Info-Color', options: [{v:'blue',l:'Синий'},{v:'green',l:'Зелёный'},{v:'red',l:'Красный'}], comment: 'Цвет инфо-баннера' },
+    { key: 'subHappSubInfoButtonText', kind: 'select', header: 'Sub-Info-Button-Text', options: [{v:'',l:'—'},{v:'Продлить',l:'Продлить'},{v:'Поддержка',l:'Поддержка'},{v:'Сайт',l:'Сайт'},{v:'Telegram',l:'Telegram'},{v:'Купить',l:'Купить'}], comment: 'Текст кнопки на инфо-баннере' },
     { key: 'subHappSubInfoButtonLink', kind: 'text', header: 'Sub-Info-Button-Link', placeholder: 'https://', comment: 'Ссылка кнопки инфо-баннера' },
     { key: 'subHappSubExpire', kind: 'bool', header: 'Sub-Expire', comment: 'Показывать баннер об окончании подписки' },
     { key: 'subHappSubExpireButtonLink', kind: 'text', header: 'Sub-Expire-Button-Link', placeholder: 'https://', comment: 'Ссылка кнопки баннера окончания' },
     { key: 'subHappNotificationExpire', kind: 'bool', header: 'Notification-Subs-Expire', comment: 'Уведомления об окончании подписки' },
     { key: 'subHappNoLimit', kind: 'bool', header: 'No-Limit-Enabled', comment: 'Режим без лимита трафика' },
     { key: 'subHappAlwaysHwid', kind: 'bool', header: 'Subscription-Always-Hwid-Enable', comment: 'Всегда требовать отправку HWID' },
-    { key: 'subHappTunMode', kind: 'select', header: 'Tun-Mode', options: ['', 'system', 'gvisor', 'mixed'], comment: 'Режим TUN (Tun-Mode)' },
-    { key: 'subHappTunType', kind: 'select', header: 'Tun-Type', options: ['', 'system', 'gvisor', 'mixed'], comment: 'Стек TUN: system / gvisor / mixed' },
+    { key: 'subHappTunMode', kind: 'select', header: 'Tun-Mode', options: [{v:'',l:'—'},{v:'system',l:'Системный'},{v:'gvisor',l:'gVisor'},{v:'mixed',l:'Смешанный'}], comment: 'Режим TUN (Tun-Mode)' },
+    { key: 'subHappTunType', kind: 'select', header: 'Tun-Type', options: [{v:'',l:'—'},{v:'system',l:'Системный'},{v:'gvisor',l:'gVisor'},{v:'mixed',l:'Смешанный'}], comment: 'Стек TUN' },
     { key: 'subHappExcludeRoutes', kind: 'text', header: 'Exclude-Routes', placeholder: '10.0.0.0/8,192.168.0.0/16', comment: 'Маршруты, которые идут мимо TUN (через запятую)' },
     { key: 'subHappExcludeApns', kind: 'bool', header: 'Exclude-Apns-Enable', comment: 'Исключить Apple Push (APNs) из туннеля' },
-    { key: 'subHappColorProfile', kind: 'select', header: 'Color-Profile', options: ['', 'default', 'dark', 'light', 'blue', 'green', 'purple'], comment: 'Цветовой профиль интерфейса' },
+    { key: 'subHappColorProfile', kind: 'select', header: 'Color-Profile', options: [{v:'',l:'—'},{v:'default',l:'По умолчанию'},{v:'dark',l:'Тёмный'},{v:'light',l:'Светлый'},{v:'blue',l:'Синий'},{v:'green',l:'Зелёный'},{v:'purple',l:'Фиолетовый'}], comment: 'Цветовой профиль интерфейса' },
     { key: 'subHappPingType', kind: 'text', header: 'Ping-Type', placeholder: 'proxy / tcp / icmp', comment: 'Тип пинга: proxy / tcp / icmp' },
     { key: 'subHappAutoConnect', kind: 'bool', header: 'Subscription-Autoconnect', comment: 'Автоподключение при открытии приложения' },
-    { key: 'subHappAutoConnectType', kind: 'select', header: 'Subscription-Autoconnect-Type', options: ['lowestdelay', 'lastused'], comment: 'Какой сервер выбирать при автоподключении' },
-    { key: 'subHappPerAppMode', kind: 'select', header: 'Per-App-Proxy-Mode', options: ['off', 'on', 'bypass'], comment: 'Прокси только для выбранных приложений (или bypass)' },
+    { key: 'subHappAutoConnectType', kind: 'select', header: 'Subscription-Autoconnect-Type', options: [{v:'lowestdelay',l:'Минимальная задержка'},{v:'lastused',l:'Последний использованный'}], comment: 'Какой сервер выбирать при автоподключении' },
+    { key: 'subHappPerAppMode', kind: 'select', header: 'Per-App-Proxy-Mode', options: [{v:'off',l:'Выкл'},{v:'on',l:'Только выбранные'},{v:'bypass',l:'В обход выбранных'}], comment: 'Прокси только для выбранных приложений' },
     { key: 'subHappPerAppList', kind: 'area', header: 'Per-App-Proxy-List', placeholder: 'com.example.app', comment: 'Список приложений. Нажмите «Белый список» чтобы вставить типовые: банки, госуслуги, маркетплейсы' },
-    { key: 'subHappLocalProxyAuth', kind: 'select', header: 'Socks-Auth-Mode / Http-Auth-Mode', options: ['', 'auto', 'on', 'off'], comment: 'Авторизация локального SOCKS/HTTP прокси' },
+    { key: 'subHappLocalProxyAuth', kind: 'select', header: 'Socks-Auth-Mode / Http-Auth-Mode', options: [{v:'',l:'—'},{v:'auto',l:'Авто'},{v:'on',l:'Вкл'},{v:'off',l:'Выкл'}], comment: 'Авторизация локального SOCKS/HTTP прокси' },
   ] },
 ]
 
@@ -523,22 +523,7 @@ const loading = ref(false)
 const oldSettings = ref<Record<string, any>>({})
 
 
-const whiteListApps = `ru.sberbankmobile
-com.google.android.apps.walletnfcrel
-ru.alfabank.mobile.android
-ru.tinkoff.android
-com.wildberries.ru
-ru.ozon.app.android
-com.avito.android
-ru.yandex.taxi
-ru.yandex.music
-com.vkontakte.android
-ru.mail.mailapp
-ru.gosuslugi
-com.whatsapp
-org.telegram.messenger
-com.instagram.android
-com.zhiliaoapp.musically`
+const whiteListApps = "ru.sberbankmobile,com.google.android.apps.walletnfcrel,ru.alfabank.mobile.android,ru.tinkoff.android,com.wildberries.ru,ru.ozon.app.android,com.avito.android,ru.yandex.taxi,ru.yandex.music,com.vkontakte.android,ru.mail.mailapp,ru.gosuslugi,com.whatsapp,org.telegram.messenger,com.instagram.android,com.zhiliaoapp.musically"
 const fillWhiteList = () => { (settings.value as any).subHappPerAppList = whiteListApps }
 const jsonEditor = ref(false)
 const clashEditor = ref(false)
