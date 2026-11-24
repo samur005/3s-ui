@@ -23,13 +23,15 @@
             borderColor: data.values.includes(c.value) ? 'var(--brand)' : 'var(--line)',
           }"
           @click="toggleClient(c.value)"
-        >{{ c.title }}</button>
+        ><StatusDot :online="isOnline(c.title)" /> {{ c.title }}</button>
       </div>
     </Field>
   </div>
 </template>
 
 <script lang="ts" setup>
+import StatusDot from '@/components/StatusDot.vue'
+import Data from '@/store/modules/data'
 import Select from '@/components/ui/Select.vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -55,6 +57,8 @@ const groupNames = computed((): string[] =>
   Array.from(new Set(props.clients.map((c: any) => c.group)))
 )
 
+const dataStore = Data()
+const isOnline = (name: string) => (dataStore.onlines?.user ?? []).includes(name)
 const toggleClient = (id: number) => {
   props.data.values = props.data.values.includes(id)
     ? props.data.values.filter((x: number) => x !== id)

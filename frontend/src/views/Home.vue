@@ -89,6 +89,12 @@
             :sub="`${data.inbounds.length} ${$t('objects.inbound')}`"
           />
         </div>
+        <div v-if="onlineUsers > 0" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; padding: 0 4px;">
+          <span v-for="name in (data.onlines.user ?? []).slice(0, 12)" :key="name" class="mono" style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-2);">
+            <StatusDot :online="true" /> {{ name }}
+          </span>
+          <span v-if="(data.onlines.user ?? []).length > 12" style="font-size: 12px; color: var(--text-3);">+{{ (data.onlines.user ?? []).length - 12 }}</span>
+        </div>
       </DPanel>
     </div>
 
@@ -204,6 +210,8 @@
 </template>
 
 <script lang="ts" setup>
+import StatusDot from '@/components/StatusDot.vue'
+
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import HttpUtils from '@/plugins/httputil'
