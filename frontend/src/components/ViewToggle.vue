@@ -1,0 +1,53 @@
+<template>
+  <div class="view-toggle" role="group" :aria-label="$t('ui.view')">
+    <button
+      type="button"
+      class="vt-btn"
+      :class="{ on: modelValue === 'cards' }"
+      :title="$t('ui.viewCards')"
+      @click="$emit('update:modelValue', 'cards')"
+    >
+      <Ico name="basics" :size="15" />
+    </button>
+    <button
+      type="button"
+      class="vt-btn"
+      :class="{ on: modelValue === 'list' }"
+      :title="$t('ui.viewList')"
+      @click="$emit('update:modelValue', 'list')"
+    >
+      <Ico name="list" :size="15" />
+    </button>
+  </div>
+</template>
+
+<script setup lang="ts">
+defineProps<{ modelValue: 'cards' | 'list' }>()
+defineEmits<{ 'update:modelValue': [v: 'cards' | 'list'] }>()
+</script>
+
+<style scoped>
+.view-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-2);
+}
+.vt-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 28px;
+  border: 0;
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer;
+}
+.vt-btn.on {
+  background: var(--bg-3);
+  color: var(--text-1);
+}
+.vt-btn:hover { color: var(--text-1); }
+</style>

@@ -51,10 +51,11 @@
       </template>
       <Btn sm @click="addBulkVisible = true"><Ico name="upload" :size="15" /> {{ $t('ui.addBulk') }}</Btn>
       <Btn variant="primary" sm @click="openDrawer(0)"><Ico name="plus" :size="16" /> {{ $t('ui.addClient') }}</Btn>
+      <ViewToggle v-model="viewMode" />
     </div>
 
     <!-- ===================== table (desktop) ===================== -->
-    <div class="card clients-table" style="overflow: hidden;">
+    <div class="card clients-table" :class="{ force: viewMode === 'list' }" style="overflow: hidden;">
       <div style="overflow-x: auto;">
         <table class="dtable" style="min-width: 920px;">
           <thead>
@@ -189,7 +190,7 @@
     </div>
 
     <!-- ===================== cards (mobile ≤820px) ===================== -->
-    <div class="clients-cards">
+    <div class="clients-cards" :class="{ force: viewMode === 'cards' }">
       <div v-for="c in pageRows" :key="c.id" class="card m-client" @click="openDrawer(c.id)">
         <div class="m-head">
           <span style="flex: none; display: inline-flex;" @click.stop="toggleSel(c.id)">
@@ -696,5 +697,13 @@ td.actions-td { padding-inline-end: 10px; }
 @media (max-width: 820px) {
   .clients-table { display: none; }
   .clients-cards { display: flex; }
+}
+
+.clients-table.force { display: block !important; }
+.clients-cards.force { display: flex !important; }
+.clients-table:not(.force) { }
+@media (min-width: 821px) {
+  .clients-cards.force { display: flex; }
+  .clients-table:not(.force) { display: none; }
 }
 </style>

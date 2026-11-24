@@ -22,6 +22,7 @@
   <DeleteConfirm :open="del.visible" :loading="deleting" @close="del.visible = false" @confirm="confirmDelete" />
 
   <div class="page-stack fade-up">
+    <ViewToggle v-model="viewMode" style="margin: 0 auto 10px; display: flex; justify-content: center;" />
     <div class="toolbar" style="justify-content: center;">
       <Btn variant="primary" sm @click="openDrawer(0)">
         <Ico name="plus" :size="15" /> {{ $t('actions.add') }}
@@ -40,7 +41,7 @@
       <UrlTestTarget />
     </div>
 
-    <div class="entity-grid">
+    <div v-if="viewMode === 'cards'" class="entity-grid">
       <EntityCard
         v-for="item in outbounds"
         :key="item.tag"
@@ -76,9 +77,25 @@
       </EntityCard>
     </div>
   </div>
+
+    <div v-else class="card" style="overflow:hidden;">
+      <table class="dtable">
+        <thead><tr><th>tag</th><th>type</th><th></th></tr></thead>
+        <tbody>
+          <tr v-for="item in outbounds" :key="item.id" class="clickable">
+            <td class="mono">{{ item.tag || item.tag || item.name }}</td>
+            <td>{{ item.type || item.type || item.address }}</td>
+            <td style="text-align:right;"><IconBtn name="edit" /></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 </template>
 
 <script lang="ts" setup>
+import { useViewMode } from '@/composables/useViewMode'
+import ViewToggle from '@/components/ViewToggle.vue'
+const { mode: viewMode } = useViewMode('outbounds')
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Data from '@/store/modules/data'

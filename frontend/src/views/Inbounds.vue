@@ -30,10 +30,11 @@
       <Btn variant="primary" sm @click="openDrawer(0)">
         <Ico name="plus" :size="16" /> {{ $t('ui.addInbound') }}
       </Btn>
+          <ViewToggle v-model="viewMode" />
     </div>
 
     <!-- ===================== cards ===================== -->
-    <div class="entity-grid">
+    <div v-if="viewMode === 'cards'" class="entity-grid">
       <div v-for="item in rows" :key="item.id" class="card inb-card" :class="{ 'inb-off': !isEnabled(item) }">
         <div class="inb-head">
           <div class="inb-ico" :style="iconStyle(item.type)" :title="item.type" :aria-label="item.type"><Ico :name="protoIcon(item.type)" :size="19" /></div>
@@ -102,10 +103,28 @@
         </div>
       </div>
     </div>
+
+    <div v-else class="card" style="overflow:hidden;">
+      <table class="dtable">
+        <thead><tr><th>Tag</th><th>Type</th><th>{{ $t('ui.listen') }}</th><th>{{ $t('ui.trafficCol') }}</th><th></th></tr></thead>
+        <tbody>
+          <tr v-for="item in rows" :key="item.id" class="clickable" @click="openDrawer(item.id)">
+            <td class="mono">{{ item.tag }}</td>
+            <td>{{ item.type }}</td>
+            <td class="mono">{{ listenOf(item) }}</td>
+            <td class="mono">{{ trafficOf(item) }}</td>
+            <td style="text-align:right;"><IconBtn name="edit" @click.stop="openDrawer(item.id)" /></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
 <script lang="ts" setup>
+import { useViewMode } from '@/composables/useViewMode'
+import ViewToggle from '@/components/ViewToggle.vue'
+const { mode: viewMode } = useViewMode('inbounds')
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Data from '@/store/modules/data'
