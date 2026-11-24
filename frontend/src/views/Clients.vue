@@ -698,16 +698,16 @@ td.actions-td { padding-inline-end: 10px; }
   border-top: 1px solid var(--line);
 }
 @media (max-width: 820px) {
-  .clients-table { display: none; }
-  .clients-cards { display: flex; }
-}
-
-.clients-table.force { display: block !important; }
-.clients-cards.force { display: flex !important; }
-.clients-table:not(.force) { }
-@media (min-width: 821px) {
-  .clients-cards.force { display: flex; }
   .clients-table:not(.force) { display: none; }
+  .clients-cards:not(.force) { display: none; }
+  .clients-cards.force { display: flex; }
+  .clients-table.force { display: block; }
+}
+@media (min-width: 821px) {
+  .clients-cards:not(.force) { display: none; }
+  .clients-table:not(.force) { display: block; }
+  .clients-cards.force { display: flex; }
+  .clients-table.force { display: block; }
 }
 
 .status-dot {
