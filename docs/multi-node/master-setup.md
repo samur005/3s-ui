@@ -35,6 +35,16 @@ release that contains this feature.
 * **Details (eye icon)** — `/app/node?id=N` with tabs Overview, Inbounds,
   Outbounds (+ Endpoints), Clients, Routing, DNS, Capabilities, Traffic,
   Services, Logs, Settings, Audit / Sync.
+* **Inbounds on a node from the master's form** — Inbounds → Add → *Target*:
+  pick a node instead of *Local panel*. The inbound is written on the node
+  (its validators; the port is checked there first; TLS list = the node's) and
+  adopted at once as a replica, with the picked clients bound and pushed.
+  A replica's *Edit* opens the node's inbound and saves it there (no tag
+  change); its delete can also delete it on the node (default) or only remove
+  the replica. API: `nodeInboundSave`, `nodeInboundForm` ([api.md](api.md)).
+* **Clients** — the client form's inbound list is one searchable dropdown
+  grouped *Master* / `[node]`; saving reconciles affected nodes at once (a
+  change during a running sync queues one more right after it).
 * **Token rotation** — node drawer or Settings tab: the node issues a new token,
   the master verifies and stores it, then revokes the old one (API level 2 nodes).
 
