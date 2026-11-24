@@ -6,6 +6,8 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/samur005/3s-ui/database/model"
+	"github.com/samur005/3s-ui/logger"
 	"github.com/samur005/3s-ui/service"
 	"github.com/samur005/3s-ui/util/common"
 
@@ -230,4 +232,96 @@ func (a *ApiService) ClientHwidsDel(c *gin.Context) {
 	}
 	var cs service.ClientService
 	jsonMsg(c, "clientHwidsDel", cs.DeleteHwids(uint(id), uint(device)))
+}
+
+// NodeInboundSave creates, edits or deletes an inbound on a node from the
+// master's inbound form (service/nodeInboundTarget.go). Form: action
+// (new|edit|del), nodeId (new), data (inbound JSON, or the tag for del),
+// initUsers (new; same comma-separated client ids as api/save), requestId
+// (optional; reused on a retried submit so the node replays it).
+func (a *ApiService) NodeInboundSave(c *gin.Context, loginUser string) {
+	act := c.Request.FormValue("action")
+	data := json.RawMessage(c.Request.FormValue("data"))
+	requestId := c.Request.FormValue("requestId")
+	if len(requestId) > 64 {
+		jsonMsg(c, "", common.NewError("requestId too long"))
+		return
+	}
+	var svc service.NodeInboundService
+	var nodeId uint
+	var row any
+	var err error
+	switch act {
+	case "new":
+		id, ok := parseNodeId(c, c.Request.FormValue("nodeId"))
+		if !ok {
+			return
+		}
+		nodeId = id
+		var r *model.Inbound
+		r, err = svc.CreateOnNode(loginUser, id, data, c.Request.FormValue("initUsers"), requestId)
+		if r != nil {
+			row = r
+		}
+	case "edit":
+		var r *model.Inbound
+		r, err = svc.EditOnNode(loginUser, data, requestId)
+		if r != nil {
+			row = r
+			nodeId = *r.NodeId
+		}
+	case "del":
+		var tag string
+		if jerr := json.Unmarshal(data, &tag); jerr != nil || tag == "" {
+			jsonMsg(c, "", common.NewError("del takes the tag as a JSON string"))
+			return
+		}
+		err = svc.DeleteOnNode(loginUser, tag, requestId)
+	default:
+		jsonMsg(c, "", common.NewError("action must be new, edit or del"))
+		return
+	}
+	if err != nil {
+		jsonMsg(c, "nodeInboundSave", err)
+		return
+	}
+	// Push the master's clients onto it (and the node links into
+	// subscriptions) now; the dirty flag lets the heartbeat converge if this
+	// loses to a running sync.
+	if nodeId > 0 {
+		go func() {
+			if err := a.NodeSyncService.ReconcileNow(nodeId); err != nil {
+				logger.Warning("node inbound save: reconcile: ", err)
+			}
+		}()
+	}
+	jsonObj(c, row, nil)
+}
+
+// NodeInboundForm answers the inbound form for a node target: the node's TLS
+// configs and, with id (a replica), the node's own inbound to edit.
+func (a *ApiService) NodeInboundForm(c *gin.Context, loginUser string) {
+	var nodeId, replicaId uint
+	if v := c.Query("nodeId"); v != "" {
+		id, ok := parseNodeId(c, v)
+		if !ok {
+			return
+		}
+		nodeId = id
+	}
+	if v := c.Query("id"); v != "" {
+		id, err := strconv.ParseUint(v, 10, 32)
+		if err != nil {
+			jsonMsg(c, "", common.NewError("invalid inbound id"))
+			return
+		}
+		replicaId = uint(id)
+	}
+	if nodeId == 0 && replicaId == 0 {
+		jsonMsg(c, "", common.NewError("nodeId or id is required"))
+		return
+	}
+	var svc service.NodeInboundService
+	out, err := svc.FormData(loginUser, nodeId, replicaId)
+	jsonObj(c, out, err)
 }
