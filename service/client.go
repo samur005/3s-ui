@@ -189,10 +189,11 @@ func (s *ClientService) Save(tx *gorm.DB, act string, data json.RawMessage, host
 			// sent they are the change -- the drawer's per-client reset works
 			// by sending zeroed counters.
 			client.CreatedAt, client.OnlineAt = stored.CreatedAt, stored.OnlineAt
+			// Keep the stored id; do not invent one on a plain edit
+			// (TestEditKeepsWhatTheRequestOmits compares the whole row).
 			if client.SubId == "" {
 				client.SubId = stored.SubId
 			}
-			ensureSubId(&client)
 		} else {
 			client.CreatedAt = time.Now().Unix()
 			ensureSubId(&client)
