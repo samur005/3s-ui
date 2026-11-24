@@ -106,7 +106,7 @@ func (s *InboundService) saveExternal(tx *gorm.DB, act string, inbound *model.In
 	if drv.Single {
 		var n int64
 		if err := tx.Model(model.Inbound{}).
-			Where("type = ? AND node_id IS NULL AND id <> ?", drv.Type, inbound.Id).Count(&n).Error; err != nil {
+			Where("type = ? AND node_id IS NULL AND deleted_at = 0 AND id <> ?", drv.Type, inbound.Id).Count(&n).Error; err != nil {
 			return err
 		}
 		if n > 0 {
