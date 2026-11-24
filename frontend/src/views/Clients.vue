@@ -202,6 +202,7 @@
           </div>
           <div style="flex: 1; min-width: 0;">
             <div style="font-weight: 700; font-size: 13.5px; display: flex; align-items: center; gap: 7px;">
+              <span class="status-dot" :class="{ on: isOnline(c.name) }" :title="isOnline(c.name) ? $t('ui.online') : $t('ui.offline')"></span>
               <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ c.name }}</span>
               <span v-if="!c.enable" class="chip off-chip" style="flex: none;">{{ $t('ui.off') }}</span>
             </div>
@@ -706,4 +707,15 @@ td.actions-td { padding-inline-end: 10px; }
   .clients-cards.force { display: flex; }
   .clients-table:not(.force) { display: none; }
 }
+
+.status-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-3);
+  flex: none;
+  margin-inline-end: 6px;
+}
+.status-dot.on { background: var(--emerald); box-shadow: 0 0 0 2px color-mix(in srgb, var(--emerald) 25%, transparent); }
 </style>

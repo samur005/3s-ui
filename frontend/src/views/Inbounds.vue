@@ -39,7 +39,7 @@
         <div class="inb-head">
           <div class="inb-ico" :style="iconStyle(item.type)" :title="item.type" :aria-label="item.type"><Ico :name="protoIcon(item.type)" :size="19" /></div>
           <div class="inb-title">
-            <div class="inb-tag">{{ item.tag }}</div>
+            <div class="inb-tag"><span class="status-dot" :class="{ on: isOnline(item.tag) }" :title="isOnline(item.tag) ? $t('ui.live') : $t('ui.idle')"></span>{{ item.tag }}</div>
             <div class="inb-type" :style="{ color: protoColor(item.type) }">
               {{ item.type }}<span class="inb-engine"> · {{ engineLabel(item) }}</span>
             </div>
@@ -109,7 +109,7 @@
         <thead><tr><th>Tag</th><th>Type</th><th>{{ $t('ui.listen') }}</th><th>{{ $t('ui.trafficCol') }}</th><th></th></tr></thead>
         <tbody>
           <tr v-for="item in rows" :key="item.id" class="clickable" @click="openDrawer(item.id)">
-            <td class="mono">{{ item.tag }}</td>
+            <td class="mono"><span class="status-dot" :class="{ on: isOnline(item.tag) }"></span>{{ item.tag }}</td>
             <td>{{ item.type }}</td>
             <td class="mono">{{ listenOf(item) }}</td>
             <td class="mono">{{ trafficOf(item) }}</td>
@@ -440,4 +440,15 @@ const showStats = (tag: string) => {
   border-top: 1px solid var(--line);
   margin-top: auto;
 }
+
+.status-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--text-3);
+  margin-inline-end: 6px;
+  vertical-align: middle;
+}
+.status-dot.on { background: var(--emerald); box-shadow: 0 0 0 2px color-mix(in srgb, var(--emerald) 25%, transparent); }
 </style>
