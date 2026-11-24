@@ -34,6 +34,17 @@
         <input class="input mono" v-model="data.dns" placeholder="8.8.8.8" />
       </Field>
     </div>
+    <div class="grid2">
+      <Field :label="$t('qwdtt.userMode')" :hint="$t('qwdtt.userModeHint')">
+        <Select v-model="data.userMode">
+          <option value="perClient">{{ $t('qwdtt.userModePerClient') }}</option>
+          <option value="shared">{{ $t('qwdtt.userModeShared') }}</option>
+        </Select>
+      </Field>
+      <Field v-if="data.userMode !== 'shared'" :label="$t('qwdtt.maxDevices')" :hint="$t('qwdtt.maxDevicesHint')">
+        <input class="input mono" type="number" min="0" max="100" v-model.number="data.maxDevices" />
+      </Field>
+    </div>
     <Field :label="$t('qwdtt.subHost')" :hint="$t('qwdtt.subHostHint')">
       <input class="input mono" v-model="data.subHost" placeholder="example.com:56000" />
     </Field>
@@ -82,8 +93,9 @@
     </div>
     <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px;">
       <Chip v-if="status && status.hasCookies" color="emerald" dot>{{ $t('qwdtt.cookiesStored') }}</Chip>
+      <Chip v-else-if="status && status.hasRemote" color="emerald" dot>{{ $t('qwdtt.remoteSet') }}</Chip>
       <Chip v-else>{{ $t('qwdtt.cookiesNone') }}</Chip>
-      <Btn sm :loading="generating" :disabled="isNew || !status || !status.hasCookies || status.hashEnv" @click="generate">
+      <Btn sm :loading="generating" :disabled="isNew || !status || !(status.hasCookies || status.hasRemote) || status.hashEnv" @click="generate">
         <Ico name="plus" :size="14" /> {{ $t('qwdtt.generate') }}
       </Btn>
       <Btn sm @click="$router.push('/qwdtt')">{{ $t('qwdtt.openPage') }}</Btn>

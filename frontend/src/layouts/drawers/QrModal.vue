@@ -40,6 +40,20 @@
             <div v-if="!e.enable" class="wg-note">{{ $t('wg.inboundOff') }}</div>
           </div>
         </div>
+        <div v-else-if="tab === 'qwdtt'" class="qr-list">
+          <div class="qr-item" v-for="q in qwdttLinks" :key="q.link">
+            <Chip :color="q.node ? '' : 'emerald'">{{ q.node ? q.node + ' · ' + q.tag : q.tag }}</Chip>
+            <QrcodeVue :value="q.link" :size="size" :margin="1" level="L" style="border-radius: .5rem; cursor: copy;" @click="copy(q.link)" />
+            <div class="wg-actions">
+              <Btn sm @click="copy(q.link)">{{ $t('qwdtt.copyLink') }}</Btn>
+            </div>
+          </div>
+          <div class="qr-item">
+            <Chip>{{ $t('qwdtt.appSub') }}</Chip>
+            <QrcodeVue :value="qwdttSub" :size="size" :margin="1" style="border-radius: .5rem; cursor: copy;" @click="copy(qwdttSub)" />
+            <div class="wg-note">{{ $t('qwdtt.appSubHint') }}</div>
+          </div>
+        </div>
         <div v-else class="qr-list">
           <div class="qr-item" v-for="l in clientLinks" :key="l.uri">
             <Chip>{{ l.remark ?? $t('client.' + l.type) }}</Chip>
@@ -76,19 +90,27 @@ const client = ref<any>({})
 const loading = ref(false)
 // The client's configs on the WireGuard / AmneziaWG inbounds it is bound to.
 const wgEntries = ref<any[]>([])
+// The client's qwdtt:// links: this panel's qWDTT server and every node's.
+const qwdttLinks = ref<any[]>([])
 
 const tabs = computed((): [string, string][] => {
   const list: [string, string][] = [['sub', t('setting.sub')], ['link', t('client.links')]]
   if (wgEntries.value.length) list.push(['wg', 'WG / AWG'])
+  if (qwdttLinks.value.length) list.push(['qwdtt', 'qWDTT'])
   return list
 })
 
 const load = async () => {
   loading.value = true
   wgEntries.value = []
+  qwdttLinks.value = []
   client.value = await Data().loadClients(props.id)
-  const msg = await HttpUtils.get('api/wgClient', { id: props.id })
+  const [msg, qw] = await Promise.all([
+    HttpUtils.get('api/wgClient', { id: props.id }),
+    HttpUtils.get('api/qwdttClient', { id: props.id }),
+  ])
   if (msg.success && Array.isArray(msg.obj)) wgEntries.value = msg.obj
+  if (qw.success && Array.isArray(qw.obj)) qwdttLinks.value = qw.obj
   loading.value = false
 }
 
@@ -132,6 +154,9 @@ const subQrs = computed(() => [
   { label: 'SING-BOX', value: singbox.value, copy: false },
   { label: 'HAPP', value: happ.value, copy: false },
 ])
+// What the qWDTT app's "subscription" import reads: a JSON document of every
+// qWDTT profile the client has, with its traffic.
+const qwdttSub = computed(() => clientSub.value + '?format=qwdtt')
 const clientLinks = computed(() => client.value.links ?? [])
 
 const size = computed(() => {

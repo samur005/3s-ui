@@ -83,6 +83,10 @@ func Load() (Config, error) {
 	return cfg, nil
 }
 
+// DecodeOptions reads a qWDTT inbound's stored options (a node's, through its
+// replica, included) merged over the defaults.
+func DecodeOptions(options json.RawMessage) Config { return decodeConfig(string(options)) }
+
 func decodeConfig(raw string) Config {
 	cfg := Default()
 	if strings.TrimSpace(raw) != "" {
@@ -96,6 +100,12 @@ func decodeConfig(raw string) Config {
 			}
 			if _, ok := stored["routeThroughCore"]; !ok {
 				cfg.RouteThroughCore = true
+			}
+			// Rows written before per-client passwords existed handed the
+			// shared password to everyone; switching them over silently would
+			// break every link already imported.
+			if _, ok := stored["userMode"]; !ok {
+				cfg.UserMode = UserModeShared
 			}
 		}
 	}

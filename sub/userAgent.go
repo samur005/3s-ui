@@ -28,6 +28,10 @@ func formatForUserAgent(userAgent string) string {
 	// The sing-box CLI and its own apps for Android, iOS, macOS and tvOS.
 	case product == "sing-box", product == "sfa", product == "sfi", product == "sfm", product == "sft":
 		return "json"
+	// The qWDTT Android app's subscription fetcher (SubscriptionImport.kt)
+	// reads a JSON document of profiles, not a link list.
+	case product == "qwdtt-subscription":
+		return "qwdtt"
 	}
 	return ""
 }

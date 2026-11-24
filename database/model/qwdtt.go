@@ -16,4 +16,20 @@ type QwdttState struct {
 	// VkCalls is the JSON list of VK calls the panel created itself, so the
 	// matching hash can be told apart from one pasted in by hand.
 	VkCalls string `json:"-"`
+	// Wdtt is the JSON of the optional remote WDTT panel the hashes can also be
+	// created through (qwdtt.RemoteSource: url, token or username/password),
+	// the LucX-compatible source for a panel without VK cookies of its own.
+	Wdtt string `json:"-"`
+}
+
+// QwdttUsage is the last byte counters read from the qWDTT server's
+// passwords.json for one per-client password. The server only ever adds to
+// them, so the difference to the previous read is the traffic to credit to
+// the client; a counter that went down means the entry was recreated and its
+// whole value is new.
+type QwdttUsage struct {
+	Password   string `json:"-" gorm:"primaryKey;size:64"`
+	ClientName string `json:"clientName" gorm:"index;size:255"`
+	Up         int64  `json:"up" gorm:"default:0;not null"`
+	Down       int64  `json:"down" gorm:"default:0;not null"`
 }

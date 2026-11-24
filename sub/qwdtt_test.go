@@ -27,7 +27,8 @@ func qwdttFixture(t *testing.T, mut func(*qwdtt.Config), bound ...string) {
 	for _, name := range []string{"alice", "bob"} {
 		if err := database.GetDB().Create(&model.Client{
 			Name: name, Enable: true,
-			Links: json.RawMessage(`[{"type":"external","remark":"r","uri":"vless://x@h:443"}]`),
+			Config: json.RawMessage(`{"qwdtt":{"name":"` + name + `","password":"pw-` + name + `"}}`),
+			Links:  json.RawMessage(`[{"type":"external","remark":"r","uri":"vless://x@h:443"}]`),
 		}).Error; err != nil {
 			t.Fatal(err)
 		}
@@ -99,7 +100,7 @@ func TestSubscriptionCarriesOneQwdttLink(t *testing.T) {
 	if !strings.HasPrefix(got, "qwdtt://config?") {
 		t.Fatalf("link = %q", got)
 	}
-	for _, want := range []string{"name=Home", "peer=1.2.3.4%3A56000", "pass=secret", "hashes=h1%2Ch2", "port=9000", "workers=16"} {
+	for _, want := range []string{"name=Home", "peer=1.2.3.4%3A56000", "pass=pw-alice", "hashes=h1%2Ch2", "port=9000", "workers=16"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("link lacks %q: %s", want, got)
 		}
@@ -162,5 +163,129 @@ func TestDashboardInfoListsQwdttLink(t *testing.T) {
 	}
 	if n != 1 {
 		t.Errorf("dashboard links = %v", info.Links)
+	}
+}
+
+// Shared mode, the shape of every inbound stored before per-client
+// passwords: everyone gets the inbound's one password.
+func TestSubscriptionSharedModeHandsOutTheSharedPassword(t *testing.T) {
+	qwdttFixture(t, func(c *qwdtt.Config) { c.UserMode = qwdtt.UserModeShared })
+	for _, name := range []string{"alice", "bob"} {
+		l := qwdttLines(t, name)
+		if len(l) != 1 || !strings.Contains(l[0], "pass=secret") {
+			t.Errorf("%s: %q", name, l)
+		}
+	}
+}
+
+// Per-client mode never falls back to the owner's password: a client with no
+// password of its own yet gets no link until the supervisor gives it one.
+func TestSubscriptionPerClientNeverLeaksTheOwnerPassword(t *testing.T) {
+	qwdttFixture(t, nil)
+	if err := database.GetDB().Model(model.Client{}).Where("name = ?", "bob").
+		Update("config", json.RawMessage(`{}`)).Error; err != nil {
+		t.Fatal(err)
+	}
+	if l := qwdttLines(t, "bob"); len(l) != 0 {
+		t.Errorf("client without a password got %q", l)
+	}
+	for _, l := range qwdttLines(t, "alice") {
+		if strings.Contains(l, "pass=secret") {
+			t.Errorf("owner password handed out: %s", l)
+		}
+	}
+}
+
+// ?format=qwdtt is the qWDTT app's import document; its User-Agent gets it on
+// the bare URL.
+func TestQwdttSubscriptionDocument(t *testing.T) {
+	qwdttFixture(t, nil)
+	s := SubService{}
+	res, _, err := s.getQwdttSub("alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc qwdtt.Subscription
+	if err := json.Unmarshal([]byte(*res), &doc); err != nil {
+		t.Fatalf("%v: %s", err, *res)
+	}
+	if doc.SubscriptionName != "alice" || len(doc.Profiles) != 1 {
+		t.Fatalf("doc = %+v", doc)
+	}
+	p := doc.Profiles[0]
+	if p.Peer != "1.2.3.4:56000" || p.Password != "pw-alice" || p.Hashes != "h1,h2" || p.Port != 9000 || p.Workers != 16 {
+		t.Errorf("profile = %+v", p)
+	}
+	if got := formatForUserAgent("qWDTT-Subscription/1.0"); got != "qwdtt" {
+		t.Errorf("qWDTT app User-Agent -> %q", got)
+	}
+}
+
+// The plain list can be told to leave qwdtt:// out (a strict proxy app); the
+// qWDTT document still has it.
+func TestQwdttSubLinksSetting(t *testing.T) {
+	qwdttFixture(t, nil)
+	if err := database.GetDB().Create(&model.Setting{Key: "qwdttSubLinks", Value: "false"}).Error; err != nil {
+		t.Fatal(err)
+	}
+	if l := qwdttLines(t, "alice"); len(l) != 0 {
+		t.Errorf("qwdtt links in the plain list with the setting off: %q", l)
+	}
+	s := SubService{}
+	if _, _, err := s.getQwdttSub("alice"); err != nil {
+		t.Errorf("qWDTT document: %v", err)
+	}
+}
+
+// A node's qWDTT inbound reaches the master's subscription through its
+// replica: the node's peer and hashes, the client's own password, the node's
+// name in front, and nothing for a node left out of subscriptions.
+func TestQwdttNodeReplicaLinks(t *testing.T) {
+	qwdttFixture(t, nil)
+	db := database.GetDB()
+	node := &model.Node{Name: "fi", BaseUrl: "https://fi.example.com:2095", WebPath: "/app/", Token: "t"}
+	if err := db.Create(node).Error; err != nil {
+		t.Fatal(err)
+	}
+	nodeID := node.Id
+	rep := &model.Inbound{Type: qwdtt.InboundType, Tag: "qwdtt-fi", NodeId: &nodeID, Enable: true, EnableSet: true,
+		Addrs: json.RawMessage("null"), OutJson: json.RawMessage("null"),
+		Options: json.RawMessage(`{"listenAddr":"0.0.0.0:57000","password":"nodeowner","userMode":"perClient","remark":"Fin"}`)}
+	if err := db.Create(rep).Error; err != nil {
+		t.Fatal(err)
+	}
+	ids, _ := json.Marshal([]uint{qwdtt.InboundID(), rep.Id})
+	if err := db.Model(model.Client{}).Where("name = ?", "alice").Update("inbounds", json.RawMessage(ids)).Error; err != nil {
+		t.Fatal(err)
+	}
+	lines := qwdttLines(t, "alice")
+	if len(lines) != 2 {
+		t.Fatalf("want master + node link, got %q", lines)
+	}
+	nodeLink := lines[1]
+	for _, want := range []string{"peer=fi.example.com%3A57000", "pass=pw-alice", "name=%5Bfi%5D+Fin", "hashes=h1%2Ch2"} {
+		if !strings.Contains(nodeLink, want) {
+			t.Errorf("node link lacks %q: %s", want, nodeLink)
+		}
+	}
+	if strings.Contains(nodeLink, "nodeowner") {
+		t.Errorf("node owner password handed out: %s", nodeLink)
+	}
+	s := SubService{}
+	res, _, err := s.getQwdttSub("alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc qwdtt.Subscription
+	_ = json.Unmarshal([]byte(*res), &doc)
+	if len(doc.Profiles) != 2 {
+		t.Errorf("document profiles = %+v", doc.Profiles)
+	}
+
+	if err := db.Model(model.Node{}).Where("id = ?", nodeID).Update("sub_exclude", true).Error; err != nil {
+		t.Fatal(err)
+	}
+	if l := qwdttLines(t, "alice"); len(l) != 1 {
+		t.Errorf("excluded node still in the subscription: %q", l)
 	}
 }

@@ -83,7 +83,8 @@ func TestGetConfigInjectsQwdttTun(t *testing.T) {
 func TestQwdttServiceSaveAndLink(t *testing.T) {
 	qwdttDB(t)
 	var svc QwdttService
-	alice := &model.Client{Name: "alice", Enable: true, Inbounds: json.RawMessage(`[]`)}
+	alice := &model.Client{Name: "alice", Enable: true, Inbounds: json.RawMessage(`[]`),
+		Config: json.RawMessage(`{"qwdtt":{"name":"alice","password":"alicePass"}}`)}
 
 	if err := svc.Save(`{"workers": 999}`); err == nil {
 		t.Error("an invalid config was accepted")
@@ -112,12 +113,17 @@ func TestQwdttServiceSaveAndLink(t *testing.T) {
 	if !strings.HasPrefix(link, "qwdtt://config?") || !strings.Contains(link, "peer=1.2.3.4%3A56000") {
 		t.Errorf("link = %q", link)
 	}
+	// A new inbound is per-client: the link carries the client's own password,
+	// never the owner's.
+	if !strings.Contains(link, "pass=alicePass") {
+		t.Errorf("per-client link without the client's password: %q", link)
+	}
 
 	v, err := svc.View()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if v.Link != link || v.ResolvedHost != "1.2.3.4:56000" || len(v.Hashes) != 1 || v.HashSource != "manual" {
+	if !strings.Contains(v.Link, "pass="+v.Config.Password) || v.ResolvedHost != "1.2.3.4:56000" || len(v.Hashes) != 1 || v.HashSource != "manual" {
 		t.Errorf("view = %+v", v)
 	}
 	doc, err := svc.SubscriptionJSON()

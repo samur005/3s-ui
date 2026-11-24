@@ -60,17 +60,17 @@
       </div>
 
       <div class="btn-row">
-        <Btn variant="primary" sm :loading="generating" :disabled="status.hashEnv || !status.hasCookies || !inboundId" @click="generate(false)">
+        <Btn variant="primary" sm :loading="generating" :disabled="status.hashEnv || !canGen || !inboundId" @click="generate(false)">
           <Ico name="plus" :size="15" /> {{ $t('qwdtt.generate') }}
         </Btn>
-        <Btn sm :loading="generating" :disabled="status.hashEnv || !status.hasCookies || hashCount < 4 || !inboundId" @click="generate(true)">
+        <Btn sm :loading="generating" :disabled="status.hashEnv || !canGen || hashCount < 4 || !inboundId" @click="generate(true)">
           <Ico name="refresh" :size="15" /> {{ $t('qwdtt.generateReplace') }}
         </Btn>
         <Btn sm :loading="checking" :disabled="hashCount === 0" @click="checkHashes">
           <Ico name="bolt" :size="15" /> {{ $t('qwdtt.checkHashes') }}
         </Btn>
       </div>
-      <div v-if="!status.hasCookies" class="fieldnote" style="margin-top: 10px;">
+      <div v-if="!canGen" class="fieldnote" style="margin-top: 10px;">
         <span>{{ $t('qwdtt.needCookies') }}</span>
       </div>
 
@@ -96,6 +96,55 @@
           <Ico name="trash" :size="15" /> {{ $t('qwdtt.cookiesClear') }}
         </Btn>
       </div>
+    </SettingsGroup>
+
+    <!-- ===================== remote WDTT hash source ===================== -->
+    <SettingsGroup :title="$t('qwdtt.remote')" :desc="$t('qwdtt.remoteDesc')">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
+        <Chip v-if="remote.url" color="emerald" dot>{{ $t('qwdtt.remoteSet') }}</Chip>
+        <Chip v-else>{{ $t('qwdtt.remoteNone') }}</Chip>
+        <Chip v-if="remote.fromEnv" color="amber">{{ $t('qwdtt.remoteEnv') }}</Chip>
+      </div>
+      <div class="grid2">
+        <input class="input mono" v-model="remoteForm.url" :disabled="remote.fromEnv" placeholder="https://wdtt.example.com/secret/" />
+        <input class="input mono" v-model="remoteForm.username" :disabled="remote.fromEnv" :placeholder="$t('qwdtt.remoteUser')" autocomplete="off" />
+        <input class="input mono" type="password" v-model="remoteForm.password" :disabled="remote.fromEnv" autocomplete="new-password"
+               :placeholder="remote.hasPassword ? $t('qwdtt.remoteKeep') : $t('qwdtt.remotePass')" />
+        <input class="input mono" type="password" v-model="remoteForm.token" :disabled="remote.fromEnv" autocomplete="off"
+               :placeholder="remote.hasToken ? $t('qwdtt.remoteKeep') : $t('qwdtt.remoteToken')" />
+      </div>
+      <div class="btn-row">
+        <Btn variant="primary" sm :loading="remoteBusy" :disabled="remote.fromEnv" @click="saveRemote(false)">
+          <Ico name="check" :size="15" /> {{ $t('qwdtt.remoteSave') }}
+        </Btn>
+        <Btn sm :loading="remoteBusy" :disabled="remote.fromEnv || !remote.url" style="color: var(--rose);" @click="saveRemote(true)">
+          <Ico name="trash" :size="15" /> {{ $t('qwdtt.remoteClear') }}
+        </Btn>
+      </div>
+    </SettingsGroup>
+
+    <!-- ===================== users on the server ===================== -->
+    <SettingsGroup :title="$t('qwdtt.users')" :desc="cfg.userMode === 'shared' ? $t('qwdtt.usersShared') : $t('qwdtt.usersDesc')">
+      <div class="btn-row" style="margin-top: 0; margin-bottom: 10px;">
+        <Btn sm :loading="usersLoading" @click="loadUsers"><Ico name="refresh" :size="15" /> {{ $t('qwdtt.refresh') }}</Btn>
+        <Chip v-if="nodeInbounds">{{ $t('qwdtt.nodeInbounds', { n: nodeInbounds }) }}</Chip>
+      </div>
+      <table v-if="users.length" class="users">
+        <thead>
+          <tr>
+            <th>{{ $t('qwdtt.userClient') }}</th><th>{{ $t('qwdtt.userDevices') }}</th>
+            <th>↑</th><th>↓</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="u in users" :key="u.client + u.managed">
+            <td><span class="mono">{{ u.client || '—' }}</span> <Chip v-if="!u.managed">{{ $t('qwdtt.userExternal') }}</Chip></td>
+            <td>{{ u.devices }} / {{ u.maxDevices > 1 ? u.maxDevices : 1 }}</td>
+            <td>{{ bytes(u.up) }}</td><td>{{ bytes(u.down) }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div v-else class="fieldnote"><span>{{ $t('qwdtt.noUsers') }}</span></div>
     </SettingsGroup>
 
     <!-- ===================== share ===================== -->
@@ -155,6 +204,8 @@ interface QwdttConfig {
   autoVkHash: boolean
   routeThroughCore: boolean
   outboundTag: string
+  userMode: string
+  maxDevices: number
 }
 
 interface QwdttStatus {
@@ -171,6 +222,7 @@ interface QwdttStatus {
   lastExit?: string
   hashEnv: boolean
   hasCookies: boolean
+  hasRemote?: boolean
 }
 
 interface HashCheck {
@@ -185,7 +237,7 @@ const data = Data()
 const blank = (): QwdttConfig => ({
   remark: '', enabled: false, listenAddr: '0.0.0.0:56000', wgPort: 56001, password: '', dns: '8.8.8.8',
   configDir: '', listenRaw: '0.0.0.0:56003', listenDirect: '', subHost: '', vkHashes: '', clientPort: 9000,
-  workers: 16, autoVkHash: true, routeThroughCore: true, outboundTag: '',
+  workers: 16, autoVkHash: true, routeThroughCore: true, outboundTag: '', userMode: 'perClient', maxDevices: 3,
 })
 
 const cfg = ref<QwdttConfig>(blank())
@@ -203,6 +255,13 @@ const cookiesText = ref('')
 const cookiesOk = ref<boolean | null>(null)
 const cookiesErr = ref('')
 
+const remote = ref<any>({ url: '', username: '', hasPassword: false, hasToken: false, fromEnv: false })
+const remoteForm = ref({ url: '', username: '', password: '', token: '' })
+const remoteBusy = ref(false)
+const users = ref<any[]>([])
+const usersLoading = ref(false)
+const nodeInbounds = ref(0)
+
 const restarting = ref(false)
 const generating = ref(false)
 const checking = ref(false)
@@ -211,6 +270,16 @@ const logLoading = ref(false)
 
 const hashList = computed((): string[] => cfg.value.vkHashes.split(/[,;\s]+/).filter(Boolean))
 const hashCount = computed(() => hashList.value.length)
+// A hash can be made with the panel's own VK cookies or through a WDTT panel.
+const canGen = computed(() => status.value.hasCookies || !!status.value.hasRemote)
+
+const bytes = (n: number): string => {
+  if (!n) return '0'
+  const u = ['B', 'KB', 'MB', 'GB', 'TB']
+  let i = 0
+  while (n >= 1024 && i < u.length - 1) { n /= 1024; i++ }
+  return n.toFixed(i ? 1 : 0) + ' ' + u[i]
+}
 
 const uptime = computed(() => {
   const s = status.value.uptime
@@ -229,7 +298,33 @@ const apply = (view: any) => {
   link.value = view.link ?? ''
   resolvedHost.value = view.resolvedHost ?? ''
   inboundId.value = view.inboundId ?? 0
+  nodeInbounds.value = view.nodeInbounds ?? 0
   if (view.config) cfg.value = { ...blank(), ...view.config }
+  if (view.remote) {
+    const first = !remote.value.url && !remoteForm.value.url
+    remote.value = view.remote
+    if (first) remoteForm.value = { url: view.remote.url ?? '', username: view.remote.username ?? '', password: '', token: '' }
+  }
+}
+
+const saveRemote = async (clear: boolean) => {
+  remoteBusy.value = true
+  const body = clear ? { url: '' } : remoteForm.value
+  const msg = await HttpUtils.post('api/qwdttRemote', body)
+  remoteBusy.value = false
+  if (msg.success) {
+    remoteForm.value.password = ''
+    remoteForm.value.token = ''
+    if (clear) remoteForm.value = { url: '', username: '', password: '', token: '' }
+    apply(msg.obj)
+  }
+}
+
+const loadUsers = async () => {
+  usersLoading.value = true
+  const msg = await HttpUtils.get('api/qwdttUsers')
+  usersLoading.value = false
+  if (msg.success) users.value = msg.obj ?? []
 }
 
 const load = async () => {
@@ -308,6 +403,7 @@ let timer: ReturnType<typeof setInterval> | undefined
 onMounted(async () => {
   await load()
   loadLogs()
+  loadUsers()
   timer = setInterval(() => load(), 10000)
 })
 onBeforeUnmount(() => clearInterval(timer))
@@ -323,6 +419,11 @@ onBeforeUnmount(() => clearInterval(timer))
 .hash-list { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
 .hash-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .hash-name { font-size: 13px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
+table.users { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.users th, table.users td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border, rgba(127,127,127,.15)); }
+table.users th { color: var(--text-3); font-weight: 500; }
 .share-grid { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
 .qr-box { background: #fff; padding: 10px; border-radius: 12px; line-height: 0; }
 .log-box {

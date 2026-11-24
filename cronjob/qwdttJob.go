@@ -1,8 +1,11 @@
 package cronjob
 
 import (
+	"sync"
+
 	"github.com/samur005/3s-ui/logger"
 	"github.com/samur005/3s-ui/qwdtt"
+	"github.com/samur005/3s-ui/service"
 )
 
 // QwdttJob keeps the qWDTT server and its routing in line with the stored
@@ -12,7 +15,27 @@ type QwdttJob struct{}
 
 func NewQwdttJob() *QwdttJob { return &QwdttJob{} }
 
-func (j *QwdttJob) Run() { qwdtt.Get().Reconcile() }
+func (j *QwdttJob) Run() {
+	service.QwdttEnsurePasswords()
+	qwdtt.Get().Reconcile()
+}
+
+// QwdttNodeJob keeps the replicas of the nodes' qWDTT inbounds current, so the
+// node links in subscriptions carry the node's live VK hashes.
+type QwdttNodeJob struct {
+	service.NodeSyncService
+	running sync.Mutex
+}
+
+func NewQwdttNodeJob() *QwdttNodeJob { return &QwdttNodeJob{} }
+
+func (j *QwdttNodeJob) Run() {
+	if !j.running.TryLock() {
+		return
+	}
+	defer j.running.Unlock()
+	j.NodeSyncService.RefreshQwdttReplicas()
+}
 
 // QwdttHashJob checks the VK calls behind the configured hashes and replaces
 // ended ones. A no-op unless qWDTT and automatic hashes are on and VK cookies

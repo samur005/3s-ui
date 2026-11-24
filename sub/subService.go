@@ -20,13 +20,18 @@ type SubService struct {
 	xray  service.XrayService
 }
 
-// withQwdtt appends the client's qwdtt:// link, when qWDTT is on and the client
-// is bound to the qWDTT inbound. The link comes from the live qWDTT configuration rather
-// than from client.Links: its VK hashes are replaced as calls end, and every
-// subscription has to hand out the current ones.
+// withQwdtt appends the client's qwdtt:// links: this panel's server when qWDTT
+// is on and the client is bound to its inbound, and every node's qWDTT inbound
+// the client is bound to through a replica (sub/qwdttSub.go). The links come
+// from the live configuration rather than from client.Links: their VK hashes
+// are replaced as calls end, and every subscription has to hand out the
+// current ones.
 func (s *SubService) withQwdtt(client *model.Client, links []string) []string {
-	if link := s.qwdtt.ClientLink(client); link != "" {
-		return append(links, link)
+	if !s.qwdttInLinks() {
+		return links
+	}
+	for _, l := range s.qwdtt.ClientLinks(client) {
+		links = append(links, l.Link)
 	}
 	return links
 }

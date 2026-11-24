@@ -157,6 +157,8 @@ func (a *APIHandler) postHandler(c *gin.Context) {
 		a.ApiService.GenerateQwdttHash(c)
 	case "qwdttHashesCheck":
 		a.ApiService.CheckQwdttHashes(c)
+	case "qwdttRemote":
+		a.ApiService.SaveQwdttRemote(c)
 	default:
 		jsonMsg(c, "failed", common.NewError("unknown action: ", action))
 	}
@@ -242,6 +244,10 @@ func (a *APIHandler) getHandler(c *gin.Context) {
 		a.ApiService.GetQwdttLogs(c)
 	case "qwdttSubscription":
 		a.ApiService.GetQwdttSubscription(c)
+	case "qwdttUsers":
+		a.ApiService.GetQwdttUsers(c)
+	case "qwdttClient":
+		a.ApiService.GetQwdttClient(c)
 	default:
 		jsonMsg(c, "failed", common.NewError("unknown action: ", action))
 	}

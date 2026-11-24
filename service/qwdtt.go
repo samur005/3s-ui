@@ -2,7 +2,9 @@ package service
 
 import (
 	"encoding/json"
+	"net/url"
 	"strings"
+	"time"
 
 	"github.com/samur005/3s-ui/database"
 	"github.com/samur005/3s-ui/database/jsonsql"
@@ -51,6 +53,14 @@ type QwdttView struct {
 	// InboundID is the qWDTT inbound the configuration lives in, 0 when there
 	// is none yet (the settings then come from the defaults and nothing runs).
 	InboundID uint `json:"inboundId"`
+	// Remote is the WDTT panel hashes can also be created through, secrets
+	// left out.
+	Remote qwdtt.RemoteView `json:"remote"`
+	// Users is how many clients hold a password of their own on the server
+	// (per-client mode), and NodeInbounds how many nodes' qWDTT inbounds are
+	// adopted here.
+	Users        int `json:"users"`
+	NodeInbounds int `json:"nodeInbounds"`
 }
 
 // resolveHost fills an empty SubHost from the subscription domain, the panel
@@ -87,7 +97,16 @@ func (s *QwdttService) View() (*QwdttView, error) {
 		Hashes:       qwdtt.ParseHashes(cfg.EffectiveHashes()),
 		HashSource:   "manual",
 		InboundID:    qwdtt.InboundID(),
+		Remote:       qwdtt.LoadRemote().View(),
 	}
+	if cfg.PerClient() && v.InboundID != 0 {
+		if users, err := qwdtt.DesiredUsers(database.GetDB(), v.InboundID, cfg); err == nil {
+			v.Users = len(users)
+		}
+	}
+	var n int64
+	database.GetDB().Model(model.Inbound{}).Where("type = ? AND node_id IS NOT NULL", qwdtt.InboundType).Count(&n)
+	v.NodeInbounds = int(n)
 	switch {
 	case v.Status.HashEnv:
 		v.HashSource = "env"
@@ -172,6 +191,22 @@ func (s *QwdttService) SaveCookies(raw string) error {
 	return nil
 }
 
+// SaveRemote stores the remote WDTT source and, when qWDTT is on with no hash
+// yet, makes one through it.
+func (s *QwdttService) SaveRemote(rs qwdtt.RemoteSource) error {
+	if err := qwdtt.SaveRemote(rs); err != nil {
+		return err
+	}
+	if cfg, err := qwdtt.Load(); err == nil && cfg.Enabled {
+		if changed, err := qwdtt.EnsureHashesNow(); err != nil {
+			logger.Warning("qwdtt: creating a VK hash: ", err)
+		} else if changed {
+			qwdtt.Get().Reconcile()
+		}
+	}
+	return nil
+}
+
 // Generate creates a VK call and adds its hash.
 func (s *QwdttService) Generate(replaceOldest bool) (string, error) {
 	_, call, err := qwdtt.GenerateHash(replaceOldest)
@@ -181,28 +216,193 @@ func (s *QwdttService) Generate(replaceOldest bool) (string, error) {
 	return call.Hash, nil
 }
 
-// ClientLink is the qwdtt:// link for a client, "" when qWDTT is off or the
-// client is not bound to the qWDTT inbound (the same binding every other
-// inbound uses: the client's inbounds list).
-func (s *QwdttService) ClientLink(client *model.Client) string {
-	cfg, err := qwdtt.Load()
-	if err != nil || !cfg.Enabled || client == nil {
-		return ""
-	}
-	id := qwdtt.InboundID()
-	if id == 0 {
-		return ""
-	}
+// QwdttClientLink is one qwdtt:// link of a client: this panel's server or a
+// node's.
+type QwdttClientLink struct {
+	// Node is the node's name, "" for this panel's own server.
+	Node string `json:"node"`
+	Tag  string `json:"tag"`
+	Link string `json:"link"`
+	// PerClient is whether the link carries the client's own password.
+	PerClient bool `json:"perClient"`
+}
+
+// clientInbounds is the set of inbound ids a client is bound to.
+func clientInbounds(client *model.Client) map[uint]bool {
 	var ids []uint
 	if err := json.Unmarshal(client.Inbounds, &ids); err != nil {
-		return ""
+		return nil
 	}
+	set := make(map[uint]bool, len(ids))
 	for _, v := range ids {
-		if v == id {
-			return s.resolveHost(cfg).ClientURI()
+		set[v] = true
+	}
+	return set
+}
+
+// ClientLink is the qwdtt:// link of this panel's own server for a client, ""
+// when qWDTT is off, the client is not bound to the qWDTT inbound (the same
+// binding every other inbound uses: the client's inbounds list) or, in
+// per-client mode, has no password yet (the supervisor fills it within one
+// pass).
+func (s *QwdttService) ClientLink(client *model.Client) string {
+	for _, l := range s.ClientLinks(client) {
+		if l.Node == "" {
+			return l.Link
 		}
 	}
 	return ""
+}
+
+// ClientLinks are every qwdtt:// link a client is given: this panel's server
+// first, then each node's qWDTT inbound the client is bound to through its
+// replica. Node links are built here, from the replica the reconcile keeps
+// current, rather than stored in client.Links: the VK hashes in them change as
+// calls end. A node left out of subscriptions (SubExclude) or switched off on
+// its node gives no link, the same policy as the node's other servers.
+func (s *QwdttService) ClientLinks(client *model.Client) []QwdttClientLink {
+	out := []QwdttClientLink{}
+	if client == nil {
+		return out
+	}
+	bound := clientInbounds(client)
+	if len(bound) == 0 {
+		return out
+	}
+	own := ClientQwdttPassword(client)
+	cfg, err := qwdtt.Load()
+	if err == nil && cfg.Enabled {
+		if in, err := qwdtt.LoadInbound(database.GetDB()); err == nil && in != nil && bound[in.Id] {
+			pass := cfg.Password
+			if cfg.PerClient() {
+				pass = own
+			}
+			resolved := s.resolveHost(cfg)
+			if link := resolved.ClientURIFor(pass, qwdtt.DiagKey(cfg.ResolveConfigDir())); link != "" {
+				out = append(out, QwdttClientLink{Tag: in.Tag, Link: link, PerClient: cfg.PerClient()})
+			}
+		}
+	}
+	return append(out, s.nodeLinks(client, bound, own, cfg)...)
+}
+
+// nodeLinks builds the links of the nodes' qWDTT inbounds the client is bound
+// to. master is this panel's configuration, whose hashes stand in for a node
+// that has none of its own (a VK call hash is only the way into VK's TURN
+// relays, not tied to one server).
+func (s *QwdttService) nodeLinks(client *model.Client, bound map[uint]bool, own string, master qwdtt.Config) []QwdttClientLink {
+	db := database.GetDB()
+	var replicas []model.Inbound
+	if err := db.Model(model.Inbound{}).Where("type = ? AND node_id IS NOT NULL", qwdtt.InboundType).Order("id").Find(&replicas).Error; err != nil {
+		return nil
+	}
+	var out []QwdttClientLink
+	nodes := map[uint]*model.Node{}
+	for i := range replicas {
+		rep := &replicas[i]
+		if !bound[rep.Id] || !rep.Enable || rep.NodeId == nil {
+			continue
+		}
+		node, ok := nodes[*rep.NodeId]
+		if !ok {
+			var n model.Node
+			if err := db.Model(model.Node{}).Where("id = ?", *rep.NodeId).First(&n).Error; err != nil {
+				nodes[*rep.NodeId] = nil
+				continue
+			}
+			node = &n
+			nodes[*rep.NodeId] = node
+		}
+		if node == nil || node.SubExclude {
+			continue
+		}
+		link := qwdttReplicaLink(rep, node, own, master)
+		if link == "" {
+			continue
+		}
+		rcfg := qwdtt.DecodeOptions(rep.Options)
+		out = append(out, QwdttClientLink{Node: node.Name, Tag: rep.Tag, Link: link, PerClient: rcfg.PerClient()})
+	}
+	return out
+}
+
+// qwdttReplicaLink renders a node's qwdtt:// link from its replica. The peer
+// is what the node set as its link address, else the host of its panel URL
+// with the node's DTLS port. "" when it cannot be built (no password: a
+// per-client node and a client without one yet).
+func qwdttReplicaLink(rep *model.Inbound, node *model.Node, own string, master qwdtt.Config) string {
+	rcfg := qwdtt.DecodeOptions(rep.Options)
+	if strings.TrimSpace(rcfg.SubHost) == "" {
+		if u, err := url.Parse(node.BaseUrl); err == nil && u.Hostname() != "" {
+			rcfg = rcfg.WithPeerHost(u.Hostname())
+		}
+	}
+	pass := rcfg.Password
+	if rcfg.PerClient() {
+		pass = own
+	}
+	p := rcfg.Params(pass, "")
+	p.Hashes = qwdtt.NormalizeHashes(rcfg.VkHashes)
+	if p.Hashes == "" {
+		p.Hashes = master.EffectiveHashes()
+	}
+	p.Name = nodeLinkPrefix(node.Name) + p.Name
+	return p.URI()
+}
+
+// ClientQwdttPassword is the client's own qWDTT password ("" when none).
+func ClientQwdttPassword(client *model.Client) string {
+	if client == nil {
+		return ""
+	}
+	return qwdtt.ClientPassword(client.Config)
+}
+
+// ClientLinksByID is ClientLinks for the panel's QR dialog.
+func (s *QwdttService) ClientLinksByID(id uint) ([]QwdttClientLink, error) {
+	var c model.Client
+	if err := database.GetDB().Model(model.Client{}).Where("id = ?", id).First(&c).Error; err != nil {
+		return nil, err
+	}
+	return s.ClientLinks(&c), nil
+}
+
+// ClientSubscription is the qWDTT app's import document for one client: one
+// profile per qwdtt:// link the client is given, with its traffic.
+func (s *QwdttService) ClientSubscription(client *model.Client, links []string) (string, error) {
+	var profiles []qwdtt.SubProfile
+	for _, l := range links {
+		if p, ok := qwdtt.ParseURI(l); ok {
+			profiles = append(profiles, p.Profile())
+		}
+	}
+	if len(profiles) == 0 {
+		return "", common.NewError("no qWDTT profiles for this client")
+	}
+	name := client.Name
+	if client.Remark != "" {
+		name = client.Remark
+	}
+	doc := qwdtt.Subscription{
+		SubscriptionName: name,
+		Description:      "3S-UI",
+		TrafficUsedMb:    float64(client.Up+client.Down) / (1024 * 1024),
+		TrafficLimitMb:   float64(client.Volume) / (1024 * 1024),
+		Version:          1,
+		UpdatedAt:        time.Now().Format("2006-01-02"),
+		Profiles:         profiles,
+	}
+	b, err := json.MarshalIndent(doc, "", "  ")
+	return string(b), err
+}
+
+// ServerUsers lists the passwords the server holds (no passwords shown).
+func (s *QwdttService) ServerUsers() ([]qwdtt.ServerUser, error) {
+	cfg, err := qwdtt.Load()
+	if err != nil {
+		return nil, err
+	}
+	return qwdtt.ListServerUsers(cfg.ResolveConfigDir())
 }
 
 // Riders names the clients bound to the qWDTT inbound.

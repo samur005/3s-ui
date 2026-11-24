@@ -110,3 +110,44 @@ func (a *ApiService) CheckQwdttHashes(c *gin.Context) {
 	}
 	jsonObj(c, qwdtt.CheckHashes(cfg), nil)
 }
+
+// GetQwdttUsers lists the passwords the server holds -- the panel's
+// per-client ones and any made outside it -- with devices and counters; the
+// passwords themselves are not sent.
+func (a *ApiService) GetQwdttUsers(c *gin.Context) {
+	var svc service.QwdttService
+	users, err := svc.ServerUsers()
+	jsonObj(c, users, err)
+}
+
+// GetQwdttClient returns one client's qwdtt:// links (this panel's server and
+// every node's), for the QR dialog. ?id=<client id>.
+func (a *ApiService) GetQwdttClient(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Query("id"), 10, 64)
+	if err != nil {
+		jsonMsg(c, "", err)
+		return
+	}
+	var svc service.QwdttService
+	links, err := svc.ClientLinksByID(uint(id))
+	jsonObj(c, links, err)
+}
+
+// SaveQwdttRemote stores the remote WDTT panel hashes can be created through
+// (form fields url, username, password, token; an empty url clears it, an
+// empty password or token keeps the stored one).
+func (a *ApiService) SaveQwdttRemote(c *gin.Context) {
+	var svc service.QwdttService
+	err := svc.SaveRemote(qwdtt.RemoteSource{
+		URL:      c.Request.FormValue("url"),
+		Username: c.Request.FormValue("username"),
+		Password: c.Request.FormValue("password"),
+		Token:    c.Request.FormValue("token"),
+	})
+	if err != nil {
+		jsonMsg(c, "", err)
+		return
+	}
+	v, err := svc.View()
+	jsonMsgObj(c, "save", v, err)
+}

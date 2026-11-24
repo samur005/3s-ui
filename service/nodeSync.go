@@ -14,6 +14,7 @@ import (
 	"github.com/samur005/3s-ui/database"
 	"github.com/samur005/3s-ui/database/model"
 	"github.com/samur005/3s-ui/logger"
+	"github.com/samur005/3s-ui/qwdtt"
 	"github.com/samur005/3s-ui/util"
 	"github.com/samur005/3s-ui/util/common"
 
@@ -169,7 +170,9 @@ type remoteInbound struct {
 // newer node's type would bind clients the node then serves none of.
 func nodeInboundTakesUsers(inboundType string, users json.RawMessage) bool {
 	listed := len(users) > 0 && string(users) != "null"
-	return listed && (&InboundService{}).hasUser(inboundType)
+	// qWDTT keeps its per-client password in the client config like the
+	// sing-box protocols, so a node's qWDTT inbound is bindable too.
+	return listed && ((&InboundService{}).hasUser(inboundType) || inboundType == qwdtt.InboundType)
 }
 
 // nodeClient builds a short-lived HTTP client honouring the node's TLS mode,
@@ -1341,4 +1344,3 @@ func mustJSON(v interface{}) []byte {
 	b, _ := json.Marshal(v)
 	return b
 }
-

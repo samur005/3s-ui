@@ -110,20 +110,23 @@ var defaultValueMap = map[string]string{
 	"subAcmeEmail":       "",
 	"subUpdates":         "12",
 	"subEncode":          "true",
-	"subRemarkPrefix":    "true",
-	"subShowInfo":        "false",
-	"subURI":             "",
-	"subJsonExt":         "",
-	"subClashExt":        "",
-	"subClashNoDefGrp":   "false",
-	"subClashSprtAll":    "false",
-	"subClashUdp":        "false",
-	"subCustomHeaders":   "",
-	"globalReset":        "",
-	"globalResetLast":    "0",
-	"globalResetArmed":   "",
-	"config":             defaultConfig,
-	"version":            config.GetVersion(),
+	// qwdtt:// links in the plain link list (sub/qwdttSub.go). The qWDTT
+	// apps read ?format=qwdtt either way.
+	"qwdttSubLinks":    "true",
+	"subRemarkPrefix":  "true",
+	"subShowInfo":      "false",
+	"subURI":           "",
+	"subJsonExt":       "",
+	"subClashExt":      "",
+	"subClashNoDefGrp": "false",
+	"subClashSprtAll":  "false",
+	"subClashUdp":      "false",
+	"subCustomHeaders": "",
+	"globalReset":      "",
+	"globalResetLast":  "0",
+	"globalResetArmed": "",
+	"config":           defaultConfig,
+	"version":          config.GetVersion(),
 
 	// Notifications. notifyEvents is a comma-separated list of notify.Kind
 	// values -- the kinds themselves are documented in service/notify/event.go,
@@ -685,6 +688,10 @@ func (s *SettingService) GetSubUpdates() (int, error) {
 
 func (s *SettingService) GetSubEncode() (bool, error) {
 	return s.getBool("subEncode")
+}
+
+func (s *SettingService) GetQwdttSubLinks() (bool, error) {
+	return s.getBool("qwdttSubLinks")
 }
 
 func (s *SettingService) GetSubShowInfo() (bool, error) {

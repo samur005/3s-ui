@@ -116,6 +116,8 @@ func (s *SubHandler) subs(c *gin.Context) {
 		result, headers, err = s.ClashService.GetClash(subId)
 	case format == "happ":
 		result, headers, err = s.SubService.getSubs(subId, happLinks)
+	case format == "qwdtt":
+		result, headers, err = s.SubService.getQwdttSub(subId)
 	case !isFormat:
 		result, headers, err = s.SubService.GetSubs(subId)
 	}

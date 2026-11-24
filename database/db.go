@@ -154,6 +154,7 @@ func InitDB(dbPath string) error {
 		&model.Node{},
 		&model.Cert{},
 		&model.QwdttState{},
+		&model.QwdttUsage{},
 		&model.WgPeer{},
 		&model.LoginAttempt{},
 		&model.SyncConflict{},

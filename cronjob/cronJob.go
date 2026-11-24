@@ -78,6 +78,7 @@ func (c *CronJob) Start(loc *time.Location, statsBucketSeconds int64) error {
 	// qWDTT: supervise the server and its routing, and keep the VK call hashes alive
 	addJob("@every 10s", NewQwdttJob(), "qwdtt supervisor")
 	addJob("@every 5m", NewQwdttHashJob(), "qwdtt VK hash check")
+	addJob("@every 2m", NewQwdttNodeJob(), "qwdtt node replicas")
 	// WireGuard / AmneziaWG: devices, peers (clients bound, switched off, expired) and routing
 	addJob("@every 10s", NewWgserverJob(), "wireguard supervisor")
 	// Probe managed nodes (in-memory snapshot; no-op with zero nodes)

@@ -63,12 +63,35 @@ type Config struct {
 	// replace hashes whose call has ended. Needs VK cookies.
 	AutoVkHash bool `json:"autoVkHash"`
 
+	// UserMode decides who holds which password. "perClient" (the default for
+	// a new inbound) gives every bound panel client its own password in the
+	// server's passwords.json, so enabling, disabling, quota, expiry and the
+	// traffic counters are per client; Password stays the owner's own. "shared"
+	// hands the one Password to everyone, as before; rows stored before the key
+	// existed read as shared so their links keep working.
+	UserMode string `json:"userMode"`
+	// MaxDevices is how many devices one per-client password may bind on the
+	// server (a client's IP limit, when set, wins). 0 means DefaultMaxDevices.
+	MaxDevices int `json:"maxDevices"`
+
 	// RouteThroughCore steers wdtt0/wdttraw0 into a sing-box TUN inbound the
 	// panel adds to the core config, so routing rules and outbounds apply.
 	RouteThroughCore bool `json:"routeThroughCore"`
 	// OutboundTag, when set, forces every qWDTT client through that outbound.
 	OutboundTag string `json:"outboundTag"`
 }
+
+// User modes.
+const (
+	UserModeShared    = "shared"
+	UserModePerClient = "perClient"
+)
+
+// DefaultMaxDevices is the per-password device cap when none is set.
+const DefaultMaxDevices = 3
+
+// PerClient reports whether every client gets a password of its own.
+func (c Config) PerClient() bool { return c.UserMode == UserModePerClient }
 
 // Default returns the configuration of a fresh install.
 func Default() Config {
@@ -81,6 +104,8 @@ func Default() Config {
 		Workers:          16,
 		AutoVkHash:       true,
 		RouteThroughCore: true,
+		UserMode:         UserModePerClient,
+		MaxDevices:       DefaultMaxDevices,
 	}
 }
 
@@ -101,6 +126,12 @@ func (c Config) Merge() Config {
 	}
 	if c.Workers == 0 {
 		c.Workers = d.Workers
+	}
+	if c.UserMode == "" {
+		c.UserMode = d.UserMode
+	}
+	if c.MaxDevices == 0 {
+		c.MaxDevices = d.MaxDevices
 	}
 	return c
 }
@@ -139,6 +170,14 @@ func (c Config) Validate() error {
 	}
 	if c.Workers < 1 || c.Workers > 64 {
 		return errors.New("qwdtt: workers must be in 1..64")
+	}
+	switch c.UserMode {
+	case "", UserModeShared, UserModePerClient:
+	default:
+		return errors.New("qwdtt: userMode must be shared or perClient")
+	}
+	if c.MaxDevices < 0 || c.MaxDevices > 100 {
+		return errors.New("qwdtt: maxDevices must be in 0..100")
 	}
 	if tag := strings.TrimSpace(c.OutboundTag); strings.ContainsAny(tag, "\r\n\t") {
 		return errors.New("qwdtt: outboundTag has invalid characters")
@@ -249,45 +288,164 @@ func EnvHashOverride() string {
 	return NormalizeHashes(os.Getenv(EnvVkHash))
 }
 
-// ClientURI renders the qwdtt://config?... share link the qWDTT clients
-// import. It is one line: a second line would be parsed as part of the
-// password and the DTLS handshake would fail. Empty peer or password gives "".
+// ClientURI renders the qwdtt://config?... share link with the shared
+// password (the owner's link in per-client mode). It is one line: a second line
+// would be parsed as part of the password and the DTLS handshake would fail.
+// Empty peer or password gives "".
 func (c Config) ClientURI() string {
-	peer := strings.TrimSpace(c.SubHost)
-	pass := strings.TrimSpace(c.Password)
-	if peer == "" || pass == "" {
-		return ""
-	}
+	return c.ClientURIFor(c.Password, "")
+}
+
+// LinkParams is everything one qwdtt:// link says.
+type LinkParams struct {
+	Name     string
+	Peer     string
+	Hashes   string
+	Workers  int
+	Port     int
+	Password string
+	// DiagKey (dk), RawPort (raw) and DirectPort (direct) are what newer
+	// qWDTT apps read for the connection check and the extra listeners; older
+	// apps ignore them.
+	DiagKey    string
+	RawPort    int
+	DirectPort int
+}
+
+// Params is the link of this configuration for one password, with diagKey
+// passed in (the server keeps it in its state directory, see DiagKey).
+func (c Config) Params(password, diagKey string) LinkParams {
 	name := strings.TrimSpace(c.Remark)
 	if name == "" {
 		name = "qWDTT"
 	}
-	q := url.Values{}
-	q.Set("name", name)
-	q.Set("peer", peer)
-	if h := c.EffectiveHashes(); h != "" {
-		q.Set("hashes", h)
+	return LinkParams{
+		Name:       name,
+		Peer:       strings.TrimSpace(c.SubHost),
+		Hashes:     c.EffectiveHashes(),
+		Workers:    c.Workers,
+		Port:       c.ClientPort,
+		Password:   strings.TrimSpace(password),
+		DiagKey:    diagKey,
+		RawPort:    portOf(c.ListenRaw),
+		DirectPort: portOf(c.ListenDirect),
 	}
-	q.Set("workers", strconv.Itoa(c.Workers))
-	q.Set("port", strconv.Itoa(c.ClientPort))
-	q.Set("pass", pass)
-	return "qwdtt://config?" + q.Encode()
+}
+
+// ClientURIFor is the link for one password ("" when peer or password is
+// missing).
+func (c Config) ClientURIFor(password, diagKey string) string {
+	return c.Params(password, diagKey).URI()
+}
+
+// URI renders the link, keys in the order the qWDTT server's own links use
+// (server/bot_links.go): name, peer, hashes, workers, port, pass, dk, raw,
+// direct.
+func (p LinkParams) URI() string {
+	if strings.TrimSpace(p.Peer) == "" || strings.TrimSpace(p.Password) == "" {
+		return ""
+	}
+	type kv struct{ k, v string }
+	pairs := []kv{
+		{"name", p.Name}, {"peer", p.Peer}, {"hashes", p.Hashes},
+		{"workers", strconv.Itoa(p.Workers)}, {"port", strconv.Itoa(p.Port)},
+		{"pass", p.Password}, {"dk", p.DiagKey},
+	}
+	if p.RawPort > 0 {
+		pairs = append(pairs, kv{"raw", strconv.Itoa(p.RawPort)})
+	}
+	if p.DirectPort > 0 {
+		pairs = append(pairs, kv{"direct", strconv.Itoa(p.DirectPort)})
+	}
+	var b strings.Builder
+	b.WriteString("qwdtt://config?")
+	first := true
+	for _, e := range pairs {
+		if e.v == "" {
+			continue
+		}
+		if !first {
+			b.WriteByte('&')
+		}
+		first = false
+		b.WriteString(e.k)
+		b.WriteByte('=')
+		b.WriteString(url.QueryEscape(e.v))
+	}
+	return b.String()
+}
+
+// ParseURI reads a qwdtt://config?... link back into its parameters (the
+// subscription JSON is built from the links a client is given). ok is false
+// for anything else.
+func ParseURI(link string) (LinkParams, bool) {
+	link = strings.TrimSpace(link)
+	rest, found := strings.CutPrefix(link, "qwdtt://config?")
+	if !found {
+		rest, found = strings.CutPrefix(link, "qwdtt:config?")
+	}
+	if !found {
+		return LinkParams{}, false
+	}
+	q, err := url.ParseQuery(rest)
+	if err != nil {
+		return LinkParams{}, false
+	}
+	p := LinkParams{
+		Name: q.Get("name"), Peer: q.Get("peer"), Hashes: q.Get("hashes"),
+		Password: q.Get("pass"), DiagKey: q.Get("dk"),
+	}
+	if p.Password == "" {
+		p.Password = q.Get("password")
+	}
+	p.Workers, _ = strconv.Atoi(q.Get("workers"))
+	p.Port, _ = strconv.Atoi(q.Get("port"))
+	p.RawPort, _ = strconv.Atoi(q.Get("raw"))
+	p.DirectPort, _ = strconv.Atoi(q.Get("direct"))
+	if p.Peer == "" || p.Password == "" {
+		return LinkParams{}, false
+	}
+	return p, true
+}
+
+// portOf is the port of a host:port, 0 when there is none.
+func portOf(addr string) int {
+	if _, port, err := net.SplitHostPort(strings.TrimSpace(addr)); err == nil {
+		if p, err := strconv.Atoi(port); err == nil && p > 0 {
+			return p
+		}
+	}
+	return 0
 }
 
 // SubProfile is one profile of the qWDTT subscription JSON document.
 type SubProfile struct {
-	Name     string `json:"name"`
-	Peer     string `json:"peer"`
-	Hashes   string `json:"hashes"`
-	Workers  int    `json:"workers"`
-	Port     int    `json:"port"`
-	Password string `json:"password"`
+	Name       string `json:"name"`
+	Peer       string `json:"peer"`
+	Hashes     string `json:"hashes"`
+	Workers    int    `json:"workers"`
+	Port       int    `json:"port"`
+	Password   string `json:"password"`
+	DiagKey    string `json:"diagKey,omitempty"`
+	RawPort    int    `json:"rawPort,omitempty"`
+	DirectPort int    `json:"directPort,omitempty"`
+}
+
+// Profile is the subscription entry of one link.
+func (p LinkParams) Profile() SubProfile {
+	return SubProfile{
+		Name: p.Name, Peer: p.Peer, Hashes: p.Hashes, Workers: p.Workers,
+		Port: p.Port, Password: p.Password, DiagKey: p.DiagKey,
+		RawPort: p.RawPort, DirectPort: p.DirectPort,
+	}
 }
 
 // Subscription is the JSON document the qWDTT Android client imports.
 type Subscription struct {
 	SubscriptionName string       `json:"subscriptionName"`
 	Description      string       `json:"description,omitempty"`
+	TrafficUsedMb    float64      `json:"trafficUsedMb,omitempty"`
+	TrafficLimitMb   float64      `json:"trafficLimitMb,omitempty"`
 	Version          int          `json:"version"`
 	UpdatedAt        string       `json:"updatedAt"`
 	Profiles         []SubProfile `json:"profiles"`

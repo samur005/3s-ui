@@ -99,6 +99,9 @@ export function shuffleConfigs(configs: Config, key?: string) {
       case "shadowtls":
         configs[k].password = RandomUtil.randomShadowsocksPassword(32)
         break
+      case "qwdtt":
+        configs[k].password = RandomUtil.randomSeq(16)
+        break
       case "snell":
         configs[k].userkey = RandomUtil.randomSeq(32)
         break
@@ -198,6 +201,12 @@ export function randomConfigs(user: string): Config {
     hysteria2: {
       name: user,
       password: mixedPassword,
+    },
+    // qWDTT (VK TURN): the client's own password on the qWDTT server, written
+    // into its passwords.json while the client is enabled and in quota.
+    qwdtt: {
+      name: user,
+      password: RandomUtil.randomSeq(16),
     },
   }
 }

@@ -129,6 +129,7 @@
       </SRow>
       <ToggleRow v-model="subEncode" :label="$t('setting.subEncode')" />
       <ToggleRow v-model="subShowInfo" :label="$t('setting.subInfo')" />
+      <ToggleRow v-model="qwdttSubLinks" :label="$t('setting.qwdttSubLinks')" />
       <ToggleRow v-model="subRemarkPrefix" :label="$t('setting.subRemarkPrefix')" />
       <SRow :label="$t('setting.update')" :hint="$t('date.h')">
         <input class="input mono" type="number" min="0" v-model.number="subUpdates" />
@@ -548,6 +549,7 @@ const settings = ref({
   subUpdates: "12",
   subEncode: "true",
   subShowInfo: "false",
+  qwdttSubLinks: "true",
   subRemarkPrefix: "true",
   subURI: "",
   subJsonExt: "",
@@ -1099,6 +1101,13 @@ const subRemarkPrefix = computed({
 const subShowInfo = computed({
   get: () => { return settings.value.subShowInfo == "true" },
   set: (v: boolean) => { settings.value.subShowInfo = v ? "true" : "false" }
+})
+
+// qwdtt:// lines in the plain link list (the ?format=qwdtt document is
+// served either way).
+const qwdttSubLinks = computed({
+  get: () => { return settings.value.qwdttSubLinks != "false" },
+  set: (v: boolean) => { settings.value.qwdttSubLinks = v ? "true" : "false" }
 })
 
 const webPort = computed({
