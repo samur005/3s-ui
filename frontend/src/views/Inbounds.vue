@@ -39,7 +39,7 @@
         <div class="inb-head">
           <div class="inb-ico" :style="iconStyle(item.type)" :title="item.type" :aria-label="item.type"><Ico :name="protoIcon(item.type)" :size="19" /></div>
           <div class="inb-title">
-            <div class="inb-tag"><span class="status-dot" :class="{ on: isOnline(item.tag) }" :title="isOnline(item.tag) ? $t('ui.live') : $t('ui.idle')"></span>{{ item.tag }}</div>
+            <div class="inb-tag"><Chip :color="isOnline(item.tag) ? 'emerald' : undefined" dot style="margin-inline-end: 6px;">{{ isOnline(item.tag) ? $t('ui.live') : $t('ui.idle') }}</Chip>{{ item.tag }}</div>
             <div class="inb-type" :style="{ color: protoColor(item.type) }">
               {{ item.type }}<span class="inb-engine"> · {{ engineLabel(item) }}</span>
             </div>

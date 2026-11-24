@@ -128,6 +128,7 @@ export default {
   address: "Address",
   tls: "TLS",
   online: "Online",
+  offline: "Offline",
   delay: "Delay",
   enable: "enable",
   disable: "disable",

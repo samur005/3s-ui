@@ -128,6 +128,7 @@ export default {
   address: "Адрес",
   tls: "TLS",
   online: "Онлайн",
+  offline: "Оффлайн",
   delay: "Задержка",
   enable: "включить",
   disable: "отключить",

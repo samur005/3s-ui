@@ -86,6 +86,7 @@
                   <div style="min-width: 0;">
                     <div style="font-weight: 700; font-size: 13.5px; display: flex; align-items: center; gap: 7px; white-space: nowrap;">
                       {{ c.name }}
+                      <Chip :color="isOnline(c.name) ? 'emerald' : undefined" dot>{{ isOnline(c.name) ? $t('ui.online') : $t('ui.offline') }}</Chip>
                       <span v-if="!c.enable" class="chip off-chip">{{ $t('ui.off') }}</span>
                     </div>
                     <div style="font-size: 12px; color: var(--text-3);">{{ c.desc }}</div>
@@ -202,7 +203,7 @@
           </div>
           <div style="flex: 1; min-width: 0;">
             <div style="font-weight: 700; font-size: 13.5px; display: flex; align-items: center; gap: 7px;">
-              <span class="status-dot" :class="{ on: isOnline(c.name) }" :title="isOnline(c.name) ? $t('ui.online') : $t('ui.offline')"></span>
+              <Chip :color="isOnline(c.name) ? 'emerald' : undefined" dot style="flex: none;">{{ isOnline(c.name) ? $t('ui.online') : $t('ui.offline') }}</Chip>
               <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ c.name }}</span>
               <span v-if="!c.enable" class="chip off-chip" style="flex: none;">{{ $t('ui.off') }}</span>
             </div>
