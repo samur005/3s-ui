@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/samur005/3s-ui/core"
 	"github.com/samur005/3s-ui/database"
@@ -281,5 +282,59 @@ func TestNodeInboundRefusesOfflineNode(t *testing.T) {
 	database.GetDB().Model(model.Inbound{}).Count(&n)
 	if n != 0 {
 		t.Error("a replica was made for a refused create")
+	}
+}
+
+// An operator's change that lands while the node's reconcile is running is
+// not left to the background backoff: one more reconcile is queued for right
+// after the running one.
+func TestReconcileSoonQueuesBehindRunning(t *testing.T) {
+	setupMasterForTest(t)
+	const id = 4242
+	reconcileMu.Lock()
+	reconcileBusy[id] = true
+	reconcileMu.Unlock()
+	if err := (&NodeSyncService{}).ReconcileSoon(id); err != nil {
+		t.Fatal(err)
+	}
+	reconcileMu.Lock()
+	pending := reconcilePending[id]
+	reconcileMu.Unlock()
+	if !pending {
+		t.Fatal("change during a running reconcile was not queued")
+	}
+	(&NodeSyncService{}).releaseReconcile(id)
+	reconcileMu.Lock()
+	_, still := reconcilePending[id]
+	reconcileMu.Unlock()
+	if still {
+		t.Error("pending flag not consumed by release")
+	}
+	// The queued follow-up runs (and fails: there is no such node); wait for
+	// it so it does not outlive the test database.
+	deadline := time.Now().Add(3 * time.Second)
+	for nodeSyncFailures(id) == 0 && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+	}
+	if nodeSyncFailures(id) == 0 {
+		t.Error("no follow-up reconcile ran after the running one")
+	}
+	for {
+		reconcileMu.Lock()
+		busy := reconcileBusy[id]
+		reconcileMu.Unlock()
+		if !busy {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	// Not busy: a second call is not queued, it runs (and fails: no such node).
+	if err := (&NodeSyncService{}).ReconcileSoon(id + 1); err == nil {
+		t.Error("expected the missing node to fail the reconcile")
+	}
+	reconcileMu.Lock()
+	defer reconcileMu.Unlock()
+	if reconcilePending[id+1] {
+		t.Error("an idle node's reconcile was queued instead of run")
 	}
 }

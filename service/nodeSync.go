@@ -45,6 +45,10 @@ var (
 	reconcileMu   sync.Mutex
 	reconcileBusy = map[uint]bool{}
 	reconcileLast = map[uint]time.Time{}
+	// reconcilePending: an operator change arrived while this node's
+	// reconcile was running; releaseReconcile runs another one at once, so the
+	// change is not left to the 30 s background backoff.
+	reconcilePending = map[uint]bool{}
 	// dirtyGen increments on every dirty-mark, BEFORE the DB write. A finished
 	// reconcile clears the dirty flag only if the generation it claimed is
 	// still current, so an edit landing mid-run keeps its flag and the next
@@ -1290,9 +1294,69 @@ func (s *NodeSyncService) dirtyUnchangedSince(gen uint64) bool {
 
 func (s *NodeSyncService) releaseReconcile(nodeId uint) {
 	reconcileMu.Lock()
-	defer reconcileMu.Unlock()
 	reconcileBusy[nodeId] = false
 	reconcileLast[nodeId] = time.Now()
+	pending := reconcilePending[nodeId]
+	delete(reconcilePending, nodeId)
+	reconcileMu.Unlock()
+	if pending {
+		go func() {
+			if err := s.ReconcileSoon(nodeId); err != nil {
+				logger.Warning("nodes: follow-up reconcile failed: ", err)
+			}
+		}()
+	}
+}
+
+// ReconcileSoon is the reconcile for an operator's change (a client or
+// inbound saved in the UI, an inbound created on a node): it skips the
+// background backoff, and when a reconcile of the node is already running it
+// queues exactly one more for right after it, which then reads the change.
+func (s *NodeSyncService) ReconcileSoon(nodeId uint) error {
+	gen, ok := s.claimReconcile(nodeId, true)
+	if !ok {
+		reconcileMu.Lock()
+		if reconcileBusy[nodeId] {
+			reconcilePending[nodeId] = true
+		}
+		reconcileMu.Unlock()
+		return nil
+	}
+	defer s.releaseReconcile(nodeId)
+	return s.trackedReconcile(nodeId, gen)
+}
+
+// ReconcileDirtyOnlineSoon is ReconcileDirtyOnline for an operator's change:
+// every dirty online node is reconciled through ReconcileSoon. A node whose
+// pushes keep failing still backs off (the failure streak), so a broken node
+// is not hammered by every save.
+func (s *NodeSyncService) ReconcileDirtyOnlineSoon() {
+	var nodes []model.Node
+	if err := database.GetDB().Model(model.Node{}).Select("id").Where("enable = ? AND dirty = ?", true, true).Find(&nodes).Error; err != nil {
+		return
+	}
+	statuses := s.GetStatuses()
+	for i := range nodes {
+		// Skipped only when known not to be online. A node the heartbeat has
+		// not reached yet (just added or just allowed) is tried: a failed
+		// push only starts its backoff, a skipped one waits for the next
+		// trigger.
+		if st, ok := statuses[nodes[i].Id]; ok && st.State != "online" {
+			continue
+		}
+		id := nodes[i].Id
+		go func() {
+			var err error
+			if nodeSyncFailures(id) > 0 {
+				err = s.Reconcile(id)
+			} else {
+				err = s.ReconcileSoon(id)
+			}
+			if err != nil {
+				logger.Warning("nodes: reconcile after a change failed: ", err)
+			}
+		}()
+	}
 }
 
 // jsonEqual compares two JSON values structurally (ignoring key order / whitespace).

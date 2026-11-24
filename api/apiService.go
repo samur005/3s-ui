@@ -575,7 +575,7 @@ func (a *ApiService) Save(c *gin.Context, loginUser string, fanout bool, hostnam
 		// Fire-and-forget: network IO must not block the save's DB txn (already
 		// committed) or the HTTP response. Unrelated nodes are a cheap no-op diff.
 		a.NodeSyncService.MarkAllDirty()
-		go a.NodeSyncService.ReconcileDirtyOnline()
+		go a.NodeSyncService.ReconcileDirtyOnlineSoon()
 	}
 	resp, err := a.savedRows(result)
 	if err != nil {
@@ -1132,7 +1132,7 @@ func (a *ApiService) AdoptInbounds(c *gin.Context, loginUser string) {
 	// ReconcileNow skips the backoff; if it still loses to an in-flight run,
 	// the dirty flag set by AdoptInbounds lets the heartbeat converge instead.
 	go func() {
-		if err := a.NodeSyncService.ReconcileNow(uint(id)); err != nil {
+		if err := a.NodeSyncService.ReconcileSoon(uint(id)); err != nil {
 			logger.Warning("adopt: initial reconcile failed: ", err)
 		}
 	}()

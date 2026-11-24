@@ -261,13 +261,13 @@ func (a *ApiService) NodeInboundSave(c *gin.Context, loginUser string) {
 		var r *model.Inbound
 		r, err = svc.CreateOnNode(loginUser, id, data, c.Request.FormValue("initUsers"), requestId)
 		if r != nil {
-			row = r
+			row = replicaRow(r)
 		}
 	case "edit":
 		var r *model.Inbound
 		r, err = svc.EditOnNode(loginUser, data, requestId)
 		if r != nil {
-			row = r
+			row = replicaRow(r)
 			nodeId = *r.NodeId
 		}
 	case "del":
@@ -290,12 +290,18 @@ func (a *ApiService) NodeInboundSave(c *gin.Context, loginUser string) {
 	// loses to a running sync.
 	if nodeId > 0 {
 		go func() {
-			if err := a.NodeSyncService.ReconcileNow(nodeId); err != nil {
+			if err := a.NodeSyncService.ReconcileSoon(nodeId); err != nil {
 				logger.Warning("node inbound save: reconcile: ", err)
 			}
 		}()
 	}
 	jsonObj(c, row, nil)
+}
+
+// replicaRow is the reply to a node inbound write: the replica's identity
+// (model.Inbound's own JSON is the sing-box shape, without id or node_id).
+func replicaRow(r *model.Inbound) map[string]any {
+	return map[string]any{"id": r.Id, "node_id": *r.NodeId, "tag": r.Tag, "type": r.Type}
 }
 
 // NodeInboundForm answers the inbound form for a node target: the node's TLS

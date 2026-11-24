@@ -90,6 +90,94 @@ b,hb=call(NODE,NT,'save','POST',{'object':'inbounds','action':'new','data':json.
 ni,_=call(NODE,NT,'inbounds'); cnt=[x['tag'] for x in ni['obj']['inbounds']].count('idem')
 check('node: same X-Request-Id applied once (replayed)', a['success'] and hb.get('X-Idempotent-Replay')=='1' and cnt==1, (a.get('msg'),hb.get('X-Idempotent-Replay'),cnt))
 call(NODE,NT,'save','POST',{'object':'inbounds','action':'del','data':json.dumps('idem')})
+# ---- inbound form with a node target (create/edit/delete on the node, client attach) ----
+import base64
+def wait(fn, secs=20):
+    end=time.time()+secs
+    while time.time()<end:
+        v=fn()
+        if v: return v
+        time.sleep(1)
+    return fn()
+def mclient(name):
+    c,_=call(MASTER,MT,'clients'); return next((x for x in c['obj']['clients'] if x['name']==name), None)
+def mclient_full(cid):
+    c,_=call(MASTER,MT,'clients',q={'id':cid}); return c['obj']['clients'][0]
+def ninbound(tag):
+    ni,_=call(NODE,NT,'inbounds'); return next((x for x in (ni['obj']['inbounds'] or []) if x['tag']==tag), None)
+def mreplica(tag):
+    mi,_=call(MASTER,MT,'inbounds'); return next((x for x in (mi['obj']['inbounds'] or []) if x['tag']==tag), None)
+def nclients():
+    c,_=call(NODE,NT,'clients'); return {x['name']:x for x in (c['obj']['clients'] or [])}
+def ccfg(name): return {'vless':{'name':name,'uuid':'8b5e6d3c-3f3e-4c1a-9b1e-%012x' % (abs(hash(name)) % (1<<48))}}
+def client(name, inbounds):
+    return {'enable':True,'name':name,'config':ccfg(name),'inbounds':inbounds,'links':[],'volume':0,'expiry':0,'desc':'','group':''}
+# a local master inbound, so a client can carry master + node inbounds
+r,_=call(MASTER,MT,'save','POST',{'object':'inbounds','action':'new','data':json.dumps({'type':'vless','tag':'m-vless','listen':'::','listen_port':23443,'tls':{}})})
+check('master: local inbound for the mixed client', r['success'], r)
+mloc=mreplica('m-vless')
+r,_=call(MASTER,MT,'save','POST',{'object':'clients','action':'new','data':json.dumps(client('e2e-alice',[mloc['id']]))})
+check('master: client alice (master inbound)', r['success'], r)
+alice=mclient('e2e-alice')
+f,_=call(MASTER,MT,'nodeInboundForm',q={'nodeId':nid})
+check('target: form data for a node (its TLS list)', f['success'] and isinstance(f['obj'].get('tls'), list), f)
+tib={'id':0,'type':'vless','tag':'e2e-tgt','listen':'::','listen_port':24460,'tls':{},'users':[]}
+form={'action':'new','nodeId':nid,'data':json.dumps(tib),'initUsers':str(alice['id']),'requestId':'e2e-tgt-0001'}
+r,_=call(MASTER,MT,'nodeInboundSave','POST',form)
+check('target: create on node from the master form', r['success'] and r['obj'] and r['obj'].get('node_id')==nid, r)
+rid=(r.get('obj') or {}).get('id')
+check('target: inbound exists on the node', ninbound('e2e-tgt') is not None)
+check('target: adopted at once as a replica (no import step)', (mreplica('e2e-tgt') or {}).get('node_id')==nid, mreplica('e2e-tgt'))
+r2,_=call(MASTER,MT,'nodeInboundSave','POST',form)
+ni,_=call(NODE,NT,'inbounds'); cnt=[x['tag'] for x in ni['obj']['inbounds']].count('e2e-tgt')
+check('target: retried submit is a replay (same replica, one inbound on node)', r2['success'] and (r2.get('obj') or {}).get('id')==rid and cnt==1, (r2.get('msg'),cnt))
+r,_=call(MASTER,MT,'nodeInboundSave','POST',dict(form, data=json.dumps(dict(tib,tag='e2e-tgt2')), requestId='e2e-tgt-0002', initUsers=''))
+check('target: port taken on the node refused before writing', not r['success'] and 'already used' in r['msg'] and ninbound('e2e-tgt2') is None, r)
+nc=wait(lambda: (lambda c: c if 'e2e-alice' in c else None)(nclients()))
+na=(nc or {}).get('e2e-alice') or {}
+check('target: client pushed to the node in @cluster', na.get('group')=='@cluster', na)
+check('target: node client bound to the node inbound', ninbound('e2e-tgt') and ninbound('e2e-tgt')['id'] in (na.get('inbounds') or []), (na.get('inbounds'), ninbound('e2e-tgt')))
+def node_link(): 
+    links=json.dumps(mclient_full(alice['id']).get('links'))
+    return links if '[local-node]' in links else None
+check('target: node link in the client (with [node] prefix)', wait(node_link), mclient_full(alice['id']).get('links'))
+def sub_text():
+    try:
+        with urllib.request.urlopen('http://127.0.0.1:23096/sub/e2e-alice', timeout=10) as resp: body=resp.read()
+        try: return base64.b64decode(body+b'===').decode('utf-8','replace')
+        except Exception: return body.decode('utf-8','replace')
+    except Exception as e: return 'ERR '+str(e)
+st=sub_text()
+check('target: one subscription with master and node servers', ':23443' in st and ':24460' in st, st[:400])
+# client attach from the client form: master + node inbound in one save
+# sync=true: the immediate node fanout the web UI's client form always gets
+r,_=call(MASTER,MT,'save','POST',{'object':'clients','action':'new','sync':'true','data':json.dumps(client('e2e-bob',[mloc['id'],rid]))})
+check('target: client form with master + node inbounds saved', r['success'], r)
+nb=wait(lambda: nclients().get('e2e-bob'))
+check('target: that client reaches the node at once (@cluster)', nb and nb.get('group')=='@cluster' and ninbound('e2e-tgt')['id'] in (nb.get('inbounds') or []), (nb, mclient('e2e-bob'), call(MASTER,MT,'nodeDetail',q={'id':nid})[0]['obj'].get('status')))
+# edit the replica from the master form: applied on the node
+f,_=call(MASTER,MT,'nodeInboundForm',q={'id':rid})
+check('target: edit form loads the node inbound', f['success'] and f['obj']['inbound']['tag']=='e2e-tgt' and f['obj']['inbound']['id']==rid, f.get('msg'))
+eib=dict(f['obj']['inbound'], listen_port=24461)
+r,_=call(MASTER,MT,'nodeInboundSave','POST',{'action':'edit','data':json.dumps(eib),'requestId':'e2e-tgt-0003'})
+check('target: edit applied on the node', r['success'] and (ninbound('e2e-tgt') or {}).get('listen_port')==24461, (r.get('msg'), ninbound('e2e-tgt')))
+check('target: replica refreshed after edit', (mreplica('e2e-tgt') or {}).get('listen_port')==24461, mreplica('e2e-tgt'))
+check('target: node client keeps its binding after edit', 'e2e-alice' in nclients() and ninbound('e2e-tgt')['id'] in (nclients()['e2e-alice'].get('inbounds') or []))
+r,_=call(MASTER,MT,'nodeInboundSave','POST',{'action':'edit','data':json.dumps(dict(eib,tag='e2e-renamed')),'requestId':'e2e-tgt-0004'})
+check('target: rename of a node inbound refused', not r['success'], r)
+# delete on the node
+r,_=call(MASTER,MT,'nodeInboundSave','POST',{'action':'del','data':json.dumps('e2e-tgt'),'requestId':'e2e-tgt-0005'})
+check('target: delete on node', r['success'] and ninbound('e2e-tgt') is None and mreplica('e2e-tgt') is None, (r.get('msg'), ninbound('e2e-tgt'), mreplica('e2e-tgt')))
+check('target: client unbound from the deleted replica', rid not in (mclient('e2e-alice') or {}).get('inbounds', []), mclient('e2e-alice'))
+for nm in ('e2e-alice','e2e-bob'):
+    c=mclient(nm)
+    if c:
+        r,_=call(MASTER,MT,'save','POST',{'object':'clients','action':'del','sync':'true','data':json.dumps(c['id'])})
+        check('target: cleanup client '+nm, r['success'], r)
+call(MASTER,MT,'save','POST',{'object':'inbounds','action':'del','data':json.dumps('m-vless')})
+# the section above spends most of the per-node remote-op burst (20, refilled
+# at 2/s); let it refill so the checks below test their own guards
+time.sleep(10)
 # ---- hardening / extras ----
 import sqlite3
 raw=sqlite3.connect('master/3s-ui.db').execute('select token from nodes where id=?',(nid,)).fetchone()[0]
