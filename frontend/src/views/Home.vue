@@ -57,17 +57,10 @@
 
       <DPanel v-if="tiles.keymetrics" :title="$t('ui.keymetrics')">
         <template #right>
-          <Chip color="emerald" dot>{{ $t('ui.live') }}</Chip>
+          <Chip :color="onlineUsers > 0 ? 'emerald' : undefined" dot>{{ onlineUsers > 0 ? $t('ui.online') : $t('ui.offline') }}</Chip>
         </template>
         <div class="km-grid">
-          <MetricItem
-            icon="clients"
-            :label="$t('ui.onlineClients')"
-            :value="String(onlineUsers)"
-            accent="var(--emerald)"
-            :sub="`${data.clients.length} ${$t('objects.client')}`"
-          />
-          <MetricItem
+<MetricItem
             icon="download"
             :label="$t('stats.download')"
             :value="HumanReadable.sizeFormat(totalDown)"
@@ -102,7 +95,7 @@
     <div v-if="mainCount > 0" class="main-grid" :style="{ '--main-cols': mainCount }">
       <DPanel v-if="tiles.traffic" :title="$t('ui.traffic')" :sub="$t('ui.trafficSub')">
         <template #right>
-          <Chip color="emerald" dot>{{ $t('ui.live') }}</Chip>
+          <Chip :color="onlineUsers > 0 ? 'emerald' : undefined" dot>{{ onlineUsers > 0 ? $t('ui.online') : $t('ui.offline') }}</Chip>
         </template>
         <div style="display: flex; gap: 22px; margin-bottom: 12px; flex-wrap: wrap;">
           <Legend color="var(--brand)" :label="$t('stats.download')" :value="HumanReadable.sizeFormat(netInNow) + '/s'" />

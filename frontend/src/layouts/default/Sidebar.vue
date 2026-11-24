@@ -27,7 +27,8 @@
           <span v-if="isActive(n.path)" class="nav-rail" />
           <Ico :name="n.icon" :size="18" />
           <span class="nav-label">{{ $t(n.title) }}</span>
-          <span v-if="n.count !== undefined && n.count() > 0" class="nav-count">{{ n.count() }}</span>
+          <span v-if="n.badge" class="nav-count" v-html="n.badge()"></span>
+          <span v-else-if="n.count !== undefined && n.count() > 0" class="nav-count">{{ n.count() }}</span>
         </button>
       </template>
     </nav>
@@ -64,13 +65,13 @@ const router = useRouter()
 
 onMounted(() => { VersionStore().init() })
 
-type NavItem = { title: string; icon: string; path: string; count?: () => number }
+type NavItem = { title: string; icon: string; path: string; count?: () => number; badge?: () => string }
 type NavSep = { sep: string }
 
 const nav: (NavItem | NavSep)[] = [
   { title: 'ui.nav.home', icon: 'home', path: '/' },
-  { title: 'ui.nav.inbounds', icon: 'inbound', path: '/inbounds', count: () => data.inbounds.length },
-  { title: 'ui.nav.clients', icon: 'clients', path: '/clients', count: () => data.clients.length },
+  { title: 'ui.nav.inbounds', icon: 'inbound', path: '/inbounds', badge: () => `${data.inbounds.length}/<span style="color:var(--emerald)">${(data.onlines.inbound??[]).length}</span>` },
+  { title: 'ui.nav.clients', icon: 'clients', path: '/clients', badge: () => `${data.clients.length}/<span style="color:var(--emerald)">${(data.onlines.user??[]).length}</span>` },
   { title: 'ui.nav.outbounds', icon: 'outbound', path: '/outbounds' },
   { title: 'ui.nav.endpoints', icon: 'endpoint', path: '/endpoints' },
   { title: 'ui.nav.services', icon: 'services', path: '/services' },

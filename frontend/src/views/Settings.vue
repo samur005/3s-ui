@@ -94,7 +94,9 @@
         <input class="input mono" type="number" min="0" v-model.number="trafficAge" />
       </SRow>
       <SRow :label="$t('setting.timeLoc')">
-        <input class="input mono" v-model="settings.timeLocation" />
+        <Select v-model="settings.timeLocation">
+          <option v-for="tz in timezones" :key="tz" :value="tz">{{ tz }}</option>
+        </Select>
       </SRow>
       <SRow class="sg-span" :label="$t('setting.apiClientCA')" :hint="$t('setting.apiClientCAHint')">
         <textarea class="input mono" rows="3" spellcheck="false" dir="ltr" v-model="settings.apiClientCA"
@@ -155,10 +157,13 @@
                      :label="$t('subHdr.' + f.key)" :desc="f.header" />
           <SRow v-else :class="f.kind === 'area' ? 'sg-span' : ''" :label="$t('subHdr.' + f.key)" :hint="f.header">
             <Select v-if="f.kind === 'select'" v-model="(settings as any)[f.key]">
-              <option v-for="o in f.options" :key="o" :value="o">{{ o === '' ? '—' : $t('subHdr.opt.' + o) }}</option>
+              <option v-for="o in f.options" :key="o" :value="o">{{ o === '' ? '—' : o }}</option>
             </Select>
-            <textarea v-else-if="f.kind === 'area'" class="input mono" rows="3" spellcheck="false" dir="ltr"
-                      v-model="(settings as any)[f.key]" :placeholder="f.placeholder"></textarea>
+            <template v-else-if="f.kind === 'area'">
+              <textarea class="input mono" rows="3" spellcheck="false" dir="ltr"
+                        v-model="(settings as any)[f.key]" :placeholder="f.placeholder"></textarea>
+              <Btn v-if="f.key === 'subHappPerAppList'" sm style="margin-top: 6px;" @click="fillWhiteList">Белый список</Btn>
+            </template>
             <input v-else class="input mono" dir="ltr" v-model="(settings as any)[f.key]" :placeholder="f.placeholder" />
           </SRow>
         </template>
@@ -483,26 +488,36 @@ const subHeaderSections: { title: string, fields: SubHdrField[] }[] = [
     { key: 'subHappFallbackUrl', kind: 'text', header: 'Fallback-Url', placeholder: 'https://', comment: 'Резервный URL подписки (Fallback-Url)' },
     { key: 'subHappSubInfoText', kind: 'text', header: 'Sub-Info-Text', comment: 'Текст инфо-баннера внизу карточки. Пример: Подписка: {{USERNAME}} | Осталось дней: 101' },
     { key: 'subHappSubInfoColor', kind: 'select', header: 'Sub-Info-Color', options: ['blue', 'green', 'red'], comment: 'Цвет инфо-баннера: blue / green / red' },
-    { key: 'subHappSubInfoButtonText', kind: 'text', header: 'Sub-Info-Button-Text', comment: 'Текст кнопки на инфо-баннере' },
+    { key: 'subHappSubInfoButtonText', kind: 'select', header: 'Sub-Info-Button-Text', options: ['', 'Продлить', 'Поддержка', 'Сайт', 'Telegram', 'Купить'], comment: 'Текст кнопки на инфо-баннере' },
     { key: 'subHappSubInfoButtonLink', kind: 'text', header: 'Sub-Info-Button-Link', placeholder: 'https://', comment: 'Ссылка кнопки инфо-баннера' },
     { key: 'subHappSubExpire', kind: 'bool', header: 'Sub-Expire', comment: 'Показывать баннер об окончании подписки' },
     { key: 'subHappSubExpireButtonLink', kind: 'text', header: 'Sub-Expire-Button-Link', placeholder: 'https://', comment: 'Ссылка кнопки баннера окончания' },
     { key: 'subHappNotificationExpire', kind: 'bool', header: 'Notification-Subs-Expire', comment: 'Уведомления об окончании подписки' },
     { key: 'subHappNoLimit', kind: 'bool', header: 'No-Limit-Enabled', comment: 'Режим без лимита трафика' },
     { key: 'subHappAlwaysHwid', kind: 'bool', header: 'Subscription-Always-Hwid-Enable', comment: 'Всегда требовать отправку HWID' },
-    { key: 'subHappTunMode', kind: 'text', header: 'Tun-Mode', comment: 'Режим TUN (Tun-Mode)' },
-    { key: 'subHappTunType', kind: 'text', header: 'Tun-Type', placeholder: 'system / gvisor', comment: 'Стек TUN: system / gvisor' },
+    { key: 'subHappTunMode', kind: 'select', header: 'Tun-Mode', options: ['', 'system', 'gvisor', 'mixed'], comment: 'Режим TUN (Tun-Mode)' },
+    { key: 'subHappTunType', kind: 'select', header: 'Tun-Type', options: ['', 'system', 'gvisor', 'mixed'], comment: 'Стек TUN: system / gvisor / mixed' },
     { key: 'subHappExcludeRoutes', kind: 'text', header: 'Exclude-Routes', placeholder: '10.0.0.0/8,192.168.0.0/16', comment: 'Маршруты, которые идут мимо TUN (через запятую)' },
     { key: 'subHappExcludeApns', kind: 'bool', header: 'Exclude-Apns-Enable', comment: 'Исключить Apple Push (APNs) из туннеля' },
-    { key: 'subHappColorProfile', kind: 'text', header: 'Color-Profile', comment: 'Цветовой профиль интерфейса' },
+    { key: 'subHappColorProfile', kind: 'select', header: 'Color-Profile', options: ['', 'default', 'dark', 'light', 'blue', 'green', 'purple'], comment: 'Цветовой профиль интерфейса' },
     { key: 'subHappPingType', kind: 'text', header: 'Ping-Type', placeholder: 'proxy / tcp / icmp', comment: 'Тип пинга: proxy / tcp / icmp' },
     { key: 'subHappAutoConnect', kind: 'bool', header: 'Subscription-Autoconnect', comment: 'Автоподключение при открытии приложения' },
     { key: 'subHappAutoConnectType', kind: 'select', header: 'Subscription-Autoconnect-Type', options: ['lowestdelay', 'lastused'], comment: 'Какой сервер выбирать при автоподключении' },
     { key: 'subHappPerAppMode', kind: 'select', header: 'Per-App-Proxy-Mode', options: ['off', 'on', 'bypass'], comment: 'Прокси только для выбранных приложений (или bypass)' },
-    { key: 'subHappPerAppList', kind: 'area', header: 'Per-App-Proxy-List', placeholder: 'com.example.app', comment: 'Список приложений (по одному в строке или через запятую)' },
+    { key: 'subHappPerAppList', kind: 'area', header: 'Per-App-Proxy-List', placeholder: 'com.example.app', comment: 'Список приложений. Нажмите «Белый список» чтобы вставить типовые: банки, госуслуги, маркетплейсы' },
     { key: 'subHappLocalProxyAuth', kind: 'select', header: 'Socks-Auth-Mode / Http-Auth-Mode', options: ['', 'auto', 'on', 'off'], comment: 'Авторизация локального SOCKS/HTTP прокси' },
   ] },
 ]
+
+const timezones = [
+  'Europe/Moscow', 'Europe/Kaliningrad', 'Europe/Samara', 'Asia/Yekaterinburg',
+  'Asia/Omsk', 'Asia/Krasnoyarsk', 'Asia/Irkutsk', 'Asia/Yakutsk',
+  'Asia/Vladivostok', 'Asia/Magadan', 'Asia/Kamchatka',
+  'Europe/Kyiv', 'Europe/Minsk', 'Asia/Almaty', 'Asia/Tashkent',
+  'Europe/Berlin', 'Europe/London', 'Europe/Paris', 'America/New_York',
+  'America/Los_Angeles', 'Asia/Shanghai', 'Asia/Tokyo', 'UTC',
+]
+
 const loading = ref(false)
 // 保存时要跟当前值逐字段比对,判断反代配置需不需要重新生成(见 save)
 const oldSettings = ref<Record<string, any>>({})
