@@ -50,8 +50,8 @@
         </Btn>
       </template>
       <Btn sm @click="addBulkVisible = true"><Ico name="upload" :size="15" /> {{ $t('ui.addBulk') }}</Btn>
-      <Btn variant="primary" sm @click="openDrawer(0)"><Ico name="plus" :size="16" /> {{ $t('ui.addClient') }}</Btn>
       <ViewToggle v-model="viewMode" />
+      <Btn variant="primary" sm @click="openDrawer(0)"><Ico name="plus" :size="16" /> {{ $t('ui.addClient') }}</Btn>
     </div>
 
     <!-- ===================== table (desktop) ===================== -->

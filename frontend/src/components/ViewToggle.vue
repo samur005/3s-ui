@@ -7,7 +7,8 @@
       :title="$t('ui.viewCards')"
       @click="$emit('update:modelValue', 'cards')"
     >
-      <Ico name="basics" :size="15" />
+      <Ico name="basics" :size="14" />
+      <span class="vt-label">{{ $t('ui.viewCards') }}</span>
     </button>
     <button
       type="button"
@@ -16,7 +17,8 @@
       :title="$t('ui.viewList')"
       @click="$emit('update:modelValue', 'list')"
     >
-      <Ico name="list" :size="15" />
+      <Ico name="list" :size="14" />
+      <span class="vt-label">{{ $t('ui.viewList') }}</span>
     </button>
   </div>
 </template>
@@ -38,13 +40,17 @@ defineEmits<{ 'update:modelValue': [v: 'cards' | 'list'] }>()
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 28px;
+  gap: 5px;
+  height: 30px;
+  padding: 0 10px;
   border: 0;
   background: transparent;
   color: var(--text-3);
   cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 500;
 }
+.vt-label { white-space: nowrap; }
 .vt-btn.on {
   background: var(--bg-3);
   color: var(--text-1);

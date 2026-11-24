@@ -27,10 +27,10 @@
     <div class="toolbar">
       <Segmented v-model="filter" :options="filterOptions" />
       <div class="grow" />
+      <ViewToggle v-model="viewMode" />
       <Btn variant="primary" sm @click="openDrawer(0)">
         <Ico name="plus" :size="16" /> {{ $t('ui.addInbound') }}
       </Btn>
-          <ViewToggle v-model="viewMode" />
     </div>
 
     <!-- ===================== cards ===================== -->
