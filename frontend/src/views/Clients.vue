@@ -301,6 +301,9 @@
 </template>
 
 <script lang="ts" setup>
+import { useViewMode } from '@/composables/useViewMode'
+import ViewToggle from '@/components/ViewToggle.vue'
+const { mode: viewMode } = useViewMode('clients')
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Data from '@/store/modules/data'

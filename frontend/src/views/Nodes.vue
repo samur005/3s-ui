@@ -125,8 +125,8 @@
         <thead><tr><th>name</th><th>address</th><th></th></tr></thead>
         <tbody>
           <tr v-for="item in shown" :key="item.id" class="clickable">
-            <td class="mono">{{ item.name || item.tag || item.name }}</td>
-            <td>{{ item.address || item.type || item.address }}</td>
+            <td class="mono">{{ item.name }}</td>
+            <td>{{ (item as any).address || (item as any).host || "" }}</td>
             <td style="text-align:right;"><IconBtn name="edit" /></td>
           </tr>
         </tbody>

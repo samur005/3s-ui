@@ -44,8 +44,8 @@
         <thead><tr><th>tag</th><th>type</th><th></th></tr></thead>
         <tbody>
           <tr v-for="item in services" :key="item.id" class="clickable">
-            <td class="mono">{{ item.tag || item.tag || item.name }}</td>
-            <td>{{ item.type || item.type || item.address }}</td>
+            <td class="mono">{{ item.tag }}</td>
+            <td>{{ item.type }}</td>
             <td style="text-align:right;"><IconBtn name="edit" /></td>
           </tr>
         </tbody>

@@ -136,6 +136,10 @@ var (
 )
 
 func sampleDbRates(now time.Time) map[string]ClientRate {
+	db := database.GetDB()
+	if db == nil {
+		return nil
+	}
 	dbRateMu.Lock()
 	defer dbRateMu.Unlock()
 
@@ -145,7 +149,7 @@ func sampleDbRates(now time.Time) map[string]ClientRate {
 		Down int64
 	}
 	var rows []row
-	if err := database.GetDB().Model(model.Client{}).
+	if err := db.Model(model.Client{}).
 		Select("name", "up", "down").
 		Where("deleted_at = 0 AND (up > 0 OR down > 0)").
 		Scan(&rows).Error; err != nil {
