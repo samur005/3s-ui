@@ -1,6 +1,9 @@
 <template>
   <Modal :open="open" :title="$t('actions.del')" :width="380" @close="$emit('close')">
-    <div style="padding: 18px; font-size: 13.5px;">{{ $t('confirm') }}</div>
+    <div style="padding: 18px; font-size: 13.5px;">
+      {{ $t('confirm') }}
+      <slot />
+    </div>
     <template #footer>
       <Btn @click="$emit('close')">{{ $t('no') }}</Btn>
       <Btn style="color: var(--rose);" :loading="loading" @click="$emit('confirm')">
