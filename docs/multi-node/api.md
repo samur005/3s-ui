@@ -19,8 +19,18 @@ Every answer is `{"success": bool, "msg": string, "obj": any}`.
 | POST | `nodeTokenRotate` | `id` | — |
 | GET | `nodeQueue` | `id` (optional), `limit` | queued operations (no payloads) |
 | POST | `nodeQueueCancel` / `nodeQueueRetry` | `id` (queue row) | — |
+| POST | `nodeInboundSave` | `action` (`new`/`edit`/`del`), `nodeId` (`new`), `data` (inbound JSON; the tag as a JSON string for `del`), `initUsers` (`new`: comma-separated client ids), `requestId` (optional, ≤ 64; a retried submit with the same id is a replay) | `{id, node_id, tag, type}` of the replica (`new`/`edit`) |
+| GET | `nodeInboundForm` | `nodeId`, or `id` (a replica) | `{nodeId, tls[], inbound?}`: the node's TLS configs and, for `id`, the node's own inbound under the replica id |
 | GET | `clientHwids` | `id` (client) | registered devices (hash shortened) |
 | POST | `clientHwidsDel` | `id` (client), `device` (row id, empty/0 = all) | — |
+
+`nodeInboundSave` is the master inbound form's node target: `new` checks the
+tag on the master and the port on the node (`portCheck`), writes the inbound
+through `save.inbounds`, adopts it as a replica, binds `initUsers` and
+reconciles at once; `edit` writes a replica's edit to its node inbound (tag
+changes refused) and refreshes the replica; `del` deletes the inbound on the
+node, then the replica. A node that is disabled, offline or unsupported is
+refused with the reason; nothing is queued.
 
 `nodeRemote` also takes `queue=true`: if the node is unreachable the write is
 queued and the answer is `{queued: true, queueId}`.

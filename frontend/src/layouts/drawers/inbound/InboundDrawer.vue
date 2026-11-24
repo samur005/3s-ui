@@ -26,6 +26,15 @@
           <option value="vless-kcp">VLESS + KCP</option>
         </Select>
       </Field>
+      <Field v-if="isNew && targetNodes.length > 0" :label="$t('node.target')" :hint="target > 0 ? $t('node.targetHint') : undefined">
+        <Select v-model="target" data-testid="inbound-target">
+          <option :value="0">{{ $t('node.targetLocal') }}</option>
+          <option v-for="n in targetNodes" :key="n.id" :value="n.id" :disabled="!n.enable">
+            {{ n.name }}{{ n.state === 'online' ? '' : ' (' + $t('node.targetOffline') + ')' }}
+          </option>
+        </Select>
+      </Field>
+      <MHint v-if="isReplica" style="margin-bottom: 14px;">{{ $t('node.editOnNodeHint', { node: targetName }) }}</MHint>
       <Field :label="$t('ui.protocolType')">
         <Select
           class="mono"
@@ -45,7 +54,7 @@
         </Select>
       </Field>
       <Field :label="$t('objects.tag')">
-        <input class="input mono" required v-model="inbound.tag" />
+        <input class="input mono" required v-model="inbound.tag" :disabled="isReplica" />
       </Field>
         <hr class="form-divider" />
         <div v-if="!isNew && !inbound.node_id" class="access-head" style="margin-top: 10px;">
@@ -101,7 +110,7 @@
              object this form edits; switching that on would overwrite it. -->
         <Transport v-if="Object.hasOwn(inbound, 'transport') && inbound.type != inTypes.Mieru" :data="inbound" />
         <Users v-if="hasUser" :clients="clients" :data="initUsers" />
-        <InTLS v-if="hasTls" :inbound="inbound" :tls-configs="tlsConfigs" />
+        <InTLS v-if="hasTls" :inbound="inbound" :tls-configs="target > 0 ? nodeTls : tlsConfigs" />
         <Multiplex v-if="muxAvailable" direction="in" :data="inbound" />
 
         <!-- 入站自身的开关和流量上限 (#289)。抽屉只编辑本机入站,节点副本不进来 -->
@@ -322,6 +331,33 @@ const originalPort = ref<number | undefined>(undefined)
 const initUsers = ref<InitUsers>({ model: 'none', values: [] })
 
 const isNew = computed(() => props.id == 0)
+
+// ---------- target: this panel or a node ----------
+// 0 = this panel. A node target writes the inbound on that node (its own
+// validators and port check) and adopts it here at once as a replica; an
+// existing replica is edited on its node the same way.
+const target = ref(0)
+const nodeTls = ref<any[]>([])
+// One id per opened form: a retried submit is a replay on the node and here.
+const requestId = ref('')
+const isReplica = computed(() => !isNew.value && !!inbound.value.node_id)
+const targetNodes = computed(() => (Data().nodes ?? []).map((n: any) => ({
+  id: n.id, name: n.name, enable: !!n.enable,
+  state: Data().nodesStatus?.[n.id]?.state ?? 'pending',
+})))
+const targetName = computed(() => (Data().nodes ?? []).find((n: any) => n.id == target.value)?.name ?? '#' + target.value)
+const loadNodeTls = async (nodeId: number) => {
+  nodeTls.value = []
+  if (!nodeId) return
+  const msg = await HttpUtils.get('api/nodeInboundForm', { nodeId })
+  if (msg.success && target.value == nodeId) nodeTls.value = msg.obj?.tls ?? []
+}
+watch(target, (v, old) => {
+  if (!isNew.value || v == old) return
+  // tls_id points into the TLS table of where the inbound runs.
+  if (inbound.value.tls_id) inbound.value.tls_id = 0
+  loadNodeTls(v)
+})
 const selectedTemplate = ref('')
 
 const applyTemplate = () => {
@@ -392,8 +428,24 @@ const hasUser = computed((): boolean => {
 
 const loadData = async (id: number) => {
   loading.value = true
-  const inboundArray = await Data().loadInbounds([id])
-  inbound.value = inboundArray[0]
+  const row = (Data().inbounds ?? []).find((i: any) => i.id == id)
+  if (row?.node_id) {
+    // A replica is edited as its node has it: the node's own fields and tls_id.
+    const msg = await HttpUtils.get('api/nodeInboundForm', { id })
+    if (!msg.success || !msg.obj?.inbound) {
+      loading.value = false
+      emit('close')
+      return
+    }
+    target.value = msg.obj.nodeId
+    nodeTls.value = msg.obj.tls ?? []
+    inbound.value = msg.obj.inbound
+  } else {
+    target.value = 0
+    nodeTls.value = []
+    const inboundArray = await Data().loadInbounds([id])
+    inbound.value = inboundArray[0]
+  }
   if (HasInData.includes(inbound.value.type) && inbound.value.out_json == null) {
     inbound.value.out_json = {}
   }
@@ -404,6 +456,11 @@ const loadData = async (id: number) => {
 }
 
 const updateData = (id: number) => {
+  requestId.value = RandomUtil.randomSeq(24)
+  if (id == 0) {
+    target.value = 0
+    nodeTls.value = []
+  }
   if (id > 0) {
     loadData(id)
   } else {
@@ -561,6 +618,22 @@ const saveChanges = async () => {
   // Remapped on the payload, not on the form: a save that fails leaves the
   // rows as shown, still keyed to originalPort for the next attempt.
   const data = { ...inbound.value, addrs: followListenPort(inbound.value.addrs, originalPort.value, inbound.value.listen_port) }
+  if (target.value > 0) {
+    const msg = await HttpUtils.post('api/nodeInboundSave', {
+      action: isNew.value ? 'new' : 'edit',
+      nodeId: target.value,
+      data: JSON.stringify(data, null, 2),
+      initUsers: clientIds.length ? clientIds.join(',') : undefined,
+      requestId: requestId.value,
+    })
+    if (msg.success) {
+      push.success({ title: t('success'), duration: 5000, message: t(isNew.value ? 'node.createdOnNode' : 'node.savedOnNode', { node: targetName.value }) })
+      await Data().loadData(true)
+      emit('close')
+    }
+    loading.value = false
+    return
+  }
   const success = await Data().save('inbounds', props.id == 0 ? 'new' : 'edit', data, clientIds)
   if (success) emit('close')
   loading.value = false

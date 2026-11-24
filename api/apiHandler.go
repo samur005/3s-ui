@@ -127,6 +127,8 @@ func (a *APIHandler) postHandler(c *gin.Context) {
 		a.ApiService.TestNode(c)
 	case "nodeRemote":
 		a.ApiService.NodeRemote(c, loginUser)
+	case "nodeInboundSave":
+		a.ApiService.NodeInboundSave(c, loginUser)
 	case "nodeBulk":
 		a.ApiService.NodeBulk(c, loginUser)
 	case "nodeReconnect":
@@ -212,6 +214,8 @@ func (a *APIHandler) getHandler(c *gin.Context) {
 		a.ApiService.GetNodeInbounds(c)
 	case "nodeDetail":
 		a.ApiService.NodeDetail(c)
+	case "nodeInboundForm":
+		a.ApiService.NodeInboundForm(c, loginUser)
 	case "nodeOps":
 		a.ApiService.NodeOps(c)
 	case "nodeQueue":

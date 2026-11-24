@@ -58,6 +58,10 @@ type RemoteRequest struct {
 	// RequestId reuses a request id (queued retries), so the node's
 	// idempotency turns a write whose answer was lost into a replay.
 	RequestId string `json:"-"`
+	// allowAdopted lets a delete through for an inbound this master has
+	// adopted: set only by NodeInboundService.DeleteOnNode, which removes the
+	// replica itself right after.
+	allowAdopted bool
 }
 
 type remoteOp struct {
@@ -450,7 +454,7 @@ func (s *NodeRemoteService) buildParams(node *model.Node, client *http.Client, r
 		if err := validJSON(req.Data); err != nil {
 			return nil, nil, err
 		}
-		if err := s.checkSavePayload(node, client, object, req.Action, req.Data, caps); err != nil {
+		if err := s.checkSavePayload(node, client, object, req.Action, req.Data, caps, req.allowAdopted); err != nil {
 			return nil, nil, err
 		}
 		form.Set("object", object)
@@ -494,13 +498,13 @@ func (s *NodeRemoteService) buildParams(node *model.Node, client *http.Client, r
 // checkSavePayload types a save against the node: the protocol must be one
 // the node actually runs, and an adopted inbound may not be deleted or renamed
 // out from under the master's replica.
-func (s *NodeRemoteService) checkSavePayload(node *model.Node, client *http.Client, object, action string, data json.RawMessage, caps *NodeCapabilities) error {
+func (s *NodeRemoteService) checkSavePayload(node *model.Node, client *http.Client, object, action string, data json.RawMessage, caps *NodeCapabilities, allowAdopted bool) error {
 	if action == "del" {
 		var tag string
 		if err := json.Unmarshal(data, &tag); err != nil || tag == "" {
 			return refused("del takes the tag as a JSON string")
 		}
-		if object == "inbounds" && s.isAdopted(node.Id, tag) {
+		if object == "inbounds" && !allowAdopted && s.isAdopted(node.Id, tag) {
 			return refused("inbound %q is adopted by this master -- remove the replica on the Inbounds page first", tag)
 		}
 		return nil

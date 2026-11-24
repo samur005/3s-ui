@@ -498,11 +498,12 @@ func (s *ClientService) Save(tx *gorm.DB, act string, data json.RawMessage, host
 
 // tombstoneOrDeleteClients soft-deletes enrolled (sync_uid) clients so peers
 // see a tombstone; unenrolled rows are removed as before.
+//
+// The panel sync id is read only for an enrolled row: it is minted through its
+// own connection on first use, which from inside this write transaction waits
+// on the transaction itself ("database is locked" after busy_timeout). An
+// enrolled row means it was minted already.
 func tombstoneOrDeleteClients(tx *gorm.DB, ids []uint) error {
-	pid, err := bisync.PanelSyncID()
-	if err != nil {
-		return err
-	}
 	for _, id := range ids {
 		var c model.Client
 		if err := tx.Where("id = ?", id).First(&c).Error; err != nil {
@@ -513,6 +514,10 @@ func tombstoneOrDeleteClients(tx *gorm.DB, ids []uint) error {
 				return err
 			}
 			continue
+		}
+		pid, err := bisync.PanelSyncID()
+		if err != nil {
+			return err
 		}
 		n := bisync.Tombstone(bisync.Record{UID: c.SyncUID, Rev: c.SyncRev, Base: c.SyncBase, Origin: c.SyncOrigin}, pid)
 		if err := tx.Model(&c).Updates(map[string]any{

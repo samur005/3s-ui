@@ -11,6 +11,7 @@ import (
 	"github.com/samur005/3s-ui/logger"
 	"github.com/samur005/3s-ui/qwdtt"
 	"github.com/samur005/3s-ui/service"
+	"github.com/samur005/3s-ui/service/bisync"
 	"github.com/samur005/3s-ui/service/notify"
 	"github.com/samur005/3s-ui/service/tgbot"
 	"github.com/samur005/3s-ui/sub"
@@ -59,6 +60,14 @@ func (a *APP) Init() error {
 
 	// Init Setting
 	a.SettingService.GetAllSetting()
+
+	// Mint the panel's sync id now, outside any transaction. Minted lazily it
+	// was written through its own connection from inside a write transaction
+	// (a client delete), which then waited on that very transaction until
+	// busy_timeout and failed with "database is locked".
+	if _, err := bisync.PanelSyncID(); err != nil {
+		logger.Warning("panel sync id: ", err)
+	}
 
 	// 升级上来的实例:把手填在设置里的证书路径归档成一条可管理的证书记录。
 	// 幂等,且不改设置本身,所以每次启动跑一遍是安全的。

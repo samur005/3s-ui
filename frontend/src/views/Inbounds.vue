@@ -14,7 +14,13 @@
   />
 
   <!-- delete confirmation -->
-  <DeleteConfirm :open="del.visible" :loading="deleting" @close="del.visible = false" @confirm="confirmDelete" />
+  <DeleteConfirm :open="del.visible" :loading="deleting" @close="del.visible = false" @confirm="confirmDelete">
+    <!-- A replica: remove only the copy here, or the inbound on its node too. -->
+    <div v-if="del.node" style="margin-top: 14px;">
+      <SwitchLabel v-model="del.onNode" :label="$t('node.deleteOnNode', { node: del.node })" />
+      <MHint style="margin-top: 6px;">{{ del.onNode ? $t('node.deleteOnNodeHint') : $t('node.deAdoptHint') }}</MHint>
+    </div>
+  </DeleteConfirm>
 
   <div class="page-stack fade-up">
     <!-- ===================== toolbar ===================== -->
@@ -78,13 +84,11 @@
         </div>
         <div class="inb-actions">
           <CardBtn
-            v-if="nodeNameOf(item)"
-            icon="eye"
-            :label="$t('ui.view')"
-            :title="$t('node.manageOnNode')"
-            disabled
+            icon="edit"
+            :label="$t('ui.edit')"
+            :title="nodeNameOf(item) ? $t('node.editOnNode', { node: nodeNameOf(item) }) : $t('actions.edit')"
+            @click="openDrawer(item.id)"
           />
-          <CardBtn v-else icon="edit" :label="$t('ui.edit')" :title="$t('actions.edit')" @click="openDrawer(item.id)" />
           <CardBtn v-if="!nodeNameOf(item) && !isExternal(item)" icon="clone" :label="$t('ui.clone')" border :title="$t('actions.clone')" @click="clone(item.id)" />
           <CardBtn
             v-if="dataStore.enableTraffic && !isExternal(item)"
@@ -94,7 +98,7 @@
             :title="$t('stats.graphTitle')"
             @click="showStats(item.tag)"
           />
-          <CardBtn icon="trash" border danger :title="nodeNameOf(item) ? $t('node.deAdopt') : $t('actions.del')" @click="askDelete(item.tag)" />
+          <CardBtn icon="trash" border danger :title="nodeNameOf(item) ? $t('node.deAdopt') : $t('actions.del')" @click="askDelete(item.tag, nodeNameOf(item))" />
         </div>
       </div>
     </div>
@@ -116,6 +120,9 @@ import Chip from '@/components/ui/Chip.vue'
 import DeleteConfirm from '@/components/ui/DeleteConfirm.vue'
 import Segmented from '@/components/ui/Segmented.vue'
 import CardBtn from '@/components/ui/CardBtn.vue'
+import SwitchLabel from '@/components/ui/SwitchLabel.vue'
+import MHint from '@/components/ui/MHint.vue'
+import HttpUtils from '@/plugins/httputil'
 import Toggle from '@/components/ui/Toggle.vue'
 import BarMini from '@/components/charts/BarMini.vue'
 import InboundDrawer from '@/layouts/drawers/inbound/InboundDrawer.vue'
@@ -301,15 +308,24 @@ const clone = async (id: number) => {
 }
 
 // ---------------- delete (with confirm) ----------------
-const del = ref({ visible: false, tag: '' })
+// A replica's delete either removes only the copy here ("Remove replica",
+// the inbound keeps running on its node) or deletes it on its node as well.
+const del = ref({ visible: false, tag: '', node: '', onNode: true })
 const deleting = ref(false)
-const askDelete = (tag: string) => {
-  del.value = { visible: true, tag }
+const askDelete = (tag: string, node = '') => {
+  del.value = { visible: true, tag, node, onNode: true }
 }
 const confirmDelete = async () => {
   if (del.value.tag === '') return
   deleting.value = true
-  const success = await Data().save('inbounds', 'del', del.value.tag)
+  let success = false
+  if (del.value.node && del.value.onNode) {
+    const msg = await HttpUtils.post('api/nodeInboundSave', { action: 'del', data: JSON.stringify(del.value.tag) })
+    success = msg.success
+    if (success) await Data().loadData(true)
+  } else {
+    success = await Data().save('inbounds', 'del', del.value.tag)
+  }
   if (success) del.value.visible = false
   deleting.value = false
 }

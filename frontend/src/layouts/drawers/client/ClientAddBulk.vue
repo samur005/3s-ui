@@ -71,26 +71,7 @@
     <ResetCycleFields v-if="bulkData.autoReset" :data="bulkData" style="--suffix-box-width: 70px;" />
 
     <Field :label="$t('client.inboundTags')">
-      <div style="display: flex; flex-direction: column; gap: 8px;">
-        <div style="display: flex;">
-          <Btn sm variant="subtle" style="margin-inline-start: auto;" @click="setAllInbounds">{{ $t('all') }}</Btn>
-        </div>
-        <label
-          v-for="it in inboundItems"
-          :key="it.id"
-          class="inb-item"
-          :class="{ on: bulkData.clientInbounds.includes(it.id) }"
-          @click.prevent="toggleInbound(it.id)"
-        >
-          <span class="inb-dot" :class="{ online: it.online }" />
-          <div style="flex: 1; min-width: 0;">
-            <div style="font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ it.tag }}</div>
-            <div class="mono" style="font-size: 11.5px; color: var(--text-3);">{{ it.type }} · :{{ it.port }}</div>
-          </div>
-          <span v-if="it.off" class="chip" style="flex: none; height: 18px; font-size: 10.5px; padding: 0 6px;" :title="$t('in.offHint')">{{ $t('ui.off') }}</span>
-          <Check :checked="bulkData.clientInbounds.includes(it.id)" />
-        </label>
-      </div>
+      <InboundsSelect v-model="bulkData.clientInbounds" :items="inboundItems" />
     </Field>
   </MDrawer>
 </template>
@@ -104,10 +85,10 @@ import RandomUtil from '@/plugins/randomUtil'
 import { Client, createClient, randomConfigs } from '@/types/clients'
 import MDrawer from '@/components/ui/MDrawer.vue'
 import Field from '@/components/ui/Field.vue'
+import InboundsSelect from '@/components/ui/InboundsSelect.vue'
 import Btn from '@/components/ui/Btn.vue'
 import Ico from '@/components/ui/Ico.vue'
 import Chip from '@/components/ui/Chip.vue'
-import Check from '@/components/ui/Check.vue'
 import SwitchLabel from '@/components/ui/SwitchLabel.vue'
 import DateTimeInput from '@/components/ui/DateTimeInput.vue'
 import ResetCycleFields from './ResetCycleFields.vue'
@@ -178,6 +159,7 @@ const inboundItems = computed(() => props.inboundTags.map((it) => {
     port: inb?.listen_port ?? '',
     online: Data().onlines?.inbound ? Data().onlines.inbound.includes(it.title) : false,
     off: inb?.enable === false,
+    node: inb?.node_id ? Data().nodes?.find((n: any) => n.id == inb.node_id)?.name : undefined,
   }
 }))
 
@@ -188,13 +170,6 @@ const addText = (fk: 'name' | 'desc') => {
   textInput.value[fk] = ''
 }
 
-const toggleInbound = (id: number) => {
-  const list = bulkData.value.clientInbounds
-  bulkData.value.clientInbounds = list.includes(id) ? list.filter((i) => i !== id) : [...list, id].sort()
-}
-const setAllInbounds = () => {
-  bulkData.value.clientInbounds = props.inboundTags.map((i) => i.value).sort()
-}
 
 const resetData = () => {
   count.value = 1

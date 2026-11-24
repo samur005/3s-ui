@@ -128,6 +128,8 @@ func (a *APIv2Handler) post(c *gin.Context, username string) {
 	// node management (master side), for automation over apiv2
 	case "nodeRemote":
 		a.ApiService.NodeRemote(c, username)
+	case "nodeInboundSave":
+		a.ApiService.NodeInboundSave(c, username)
 	case "nodeBulk":
 		a.ApiService.NodeBulk(c, username)
 	case "nodeReconnect":
@@ -205,6 +207,8 @@ func (a *APIv2Handler) getHandler(c *gin.Context) {
 	// node management (master side)
 	case "nodeDetail":
 		a.ApiService.NodeDetail(c)
+	case "nodeInboundForm":
+		a.ApiService.NodeInboundForm(c, a.findUsername(c))
 	case "nodeOps":
 		a.ApiService.NodeOps(c)
 	case "nodeQueue":
