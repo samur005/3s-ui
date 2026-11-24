@@ -390,23 +390,23 @@ install_base() {
     echo -e "${yellow}$(t installing_base)${plain}"
     case "${release}" in
     centos | almalinux | rocky | oracle)
-        yum -y update && yum install -y -q wget curl tar iproute
+        yum -y update && yum install -y -q wget curl tar iproute iptables nftables
         ;;
     fedora | rhel)
-        dnf -y update && dnf install -y -q wget curl tar iproute
+        dnf -y update && dnf install -y -q wget curl tar iproute iptables nftables
         ;;
     arch | manjaro | parch)
-        pacman -Syu && pacman -Syu --noconfirm wget curl tar iproute2
+        pacman -Syu && pacman -Syu --noconfirm wget curl tar iproute2 iptables nftables
         ;;
     opensuse-tumbleweed)
-        zypper refresh && zypper -q install -y wget curl tar iproute2
+        zypper refresh && zypper -q install -y wget curl tar iproute2 iptables nftables
         ;;
     alpine)
         # OpenRC drives the service; bash is what the 3s-ui menu script needs.
-        apk update && apk add --no-cache wget curl tar bash openrc iproute2
+        apk update && apk add --no-cache wget curl tar bash openrc iproute2 iptables nftables
         ;;
     *)
-        apt-get update && apt-get install -y -q wget curl tar iproute2
+        apt-get update && apt-get install -y -q wget curl tar iproute2 iptables nftables
         ;;
     esac
 }
