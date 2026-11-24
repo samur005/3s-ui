@@ -500,7 +500,7 @@ const subHeaderSections: { title: string, fields: SubHdrField[] }[] = [
     { key: 'subHappExcludeRoutes', kind: 'text', header: 'Exclude-Routes', placeholder: '10.0.0.0/8,192.168.0.0/16', comment: 'Маршруты, которые идут мимо TUN (через запятую)' },
     { key: 'subHappExcludeApns', kind: 'bool', header: 'Exclude-Apns-Enable', comment: 'Исключить Apple Push (APNs) из туннеля' },
     { key: 'subHappColorProfile', kind: 'select', header: 'Color-Profile', options: [{v:'',l:'—'},{v:'default',l:'По умолчанию'},{v:'dark',l:'Тёмный'},{v:'light',l:'Светлый'},{v:'blue',l:'Синий'},{v:'green',l:'Зелёный'},{v:'purple',l:'Фиолетовый'}], comment: 'Цветовой профиль интерфейса' },
-    { key: 'subHappPingType', kind: 'text', header: 'Ping-Type', placeholder: 'proxy / tcp / icmp', comment: 'Тип пинга: proxy / tcp / icmp' },
+    { key: 'subHappPingType', kind: 'select', header: 'Ping-Type', options: [{v:'',l:'—'},{v:'proxy',l:'Через прокси'},{v:'tcp',l:'TCP'},{v:'icmp',l:'ICMP'}], comment: 'Тип пинга' },
     { key: 'subHappAutoConnect', kind: 'bool', header: 'Subscription-Autoconnect', comment: 'Автоподключение при открытии приложения' },
     { key: 'subHappAutoConnectType', kind: 'select', header: 'Subscription-Autoconnect-Type', options: [{v:'lowestdelay',l:'Минимальная задержка'},{v:'lastused',l:'Последний использованный'}], comment: 'Какой сервер выбирать при автоподключении' },
     { key: 'subHappPerAppMode', kind: 'select', header: 'Per-App-Proxy-Mode', options: [{v:'off',l:'Выкл'},{v:'on',l:'Только выбранные'},{v:'bypass',l:'В обход выбранных'}], comment: 'Прокси только для выбранных приложений' },
