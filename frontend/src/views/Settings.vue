@@ -521,6 +521,25 @@ const timezones = [
 const loading = ref(false)
 // 保存时要跟当前值逐字段比对,判断反代配置需不需要重新生成(见 save)
 const oldSettings = ref<Record<string, any>>({})
+
+
+const whiteListApps = `ru.sberbankmobile
+com.google.android.apps.walletnfcrel
+ru.alfabank.mobile.android
+ru.tinkoff.android
+com.wildberries.ru
+ru.ozon.app.android
+com.avito.android
+ru.yandex.taxi
+ru.yandex.music
+com.vkontakte.android
+ru.mail.mailapp
+ru.gosuslugi
+com.whatsapp
+org.telegram.messenger
+com.instagram.android
+com.zhiliaoapp.musically`
+const fillWhiteList = () => { (settings.value as any).subHappPerAppList = whiteListApps }
 const jsonEditor = ref(false)
 const clashEditor = ref(false)
 
