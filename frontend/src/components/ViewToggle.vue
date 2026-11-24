@@ -54,6 +54,8 @@ defineEmits<{ 'update:modelValue': [v: 'cards' | 'list'] }>()
 .vt-btn.on {
   background: var(--bg-3);
   color: var(--text-1);
+  box-shadow: inset 0 0 0 2px var(--brand);
+  font-weight: 600;
 }
 .vt-btn:hover { color: var(--text-1); }
 </style>
