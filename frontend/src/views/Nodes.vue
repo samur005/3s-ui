@@ -27,7 +27,8 @@
     <template #footer>
       <Btn @click="bulkConfirm = false">{{ $t('no') }}</Btn>
       <Btn variant="primary" :loading="bulkRunning" @click="runBulk">{{ $t('yes') }}</Btn>
-    </template>
+      </div>
+</template>
   </Modal>
 
   <!-- delete confirmation -->

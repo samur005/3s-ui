@@ -34,7 +34,8 @@
         <template #actions>
           <CardBtn icon="edit" :title="$t('actions.edit')" @click="openDrawer(item.id)" />
           <CardBtn icon="trash" border danger :title="$t('actions.del')" @click="askDelete(item.id)" />
-        </template>
+          </div>
+</template>
       </EntityCard>
     </div>
 

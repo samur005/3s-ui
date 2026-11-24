@@ -49,7 +49,8 @@
           <StatusDot :online="onlines.includes(item.tag)" />
           <Chip v-if="onlines.includes(item.tag)" color="emerald" dot>{{ $t('online') }}</Chip>
           <Chip v-else>{{ $t('ui.none') }}</Chip>
-        </template>
+          </div>
+</template>
         <template #actions>
           <CardBtn icon="edit" :title="$t('actions.edit')" @click="openDrawer(item.id)" />
           <CardBtn
