@@ -49,8 +49,8 @@
           <Chip v-if="!isEnabled(item) && isDepleted(item)" color="rose">{{ $t('in.depleted') }}</Chip>
           <Chip v-else-if="!isEnabled(item)">{{ $t('ui.off') }}</Chip>
           <template v-else-if="!nodeNameOf(item)">
-            <Chip v-if="isOnline(item.tag)" color="emerald" dot>{{ $t('ui.live') }}</Chip>
-            <Chip v-else>{{ $t('ui.idle') }}</Chip>
+            <Chip v-if="isOnline(item.tag)" color="emerald" dot>{{ $t('ui.online') }}</Chip>
+            <Chip v-else>{{ $t('ui.offline') }}</Chip>
           </template>
           <!-- A replica is switched on its node, where it runs. -->
           <Toggle
@@ -86,15 +86,13 @@
         <div class="inb-actions">
           <CardBtn
             icon="edit"
-            :label="$t('ui.edit')"
             :title="nodeNameOf(item) ? $t('node.editOnNode', { node: nodeNameOf(item) }) : $t('actions.edit')"
             @click="openDrawer(item.id)"
           />
-          <CardBtn v-if="!nodeNameOf(item) && !isExternal(item)" icon="clone" :label="$t('ui.clone')" border :title="$t('actions.clone')" @click="clone(item.id)" />
+          <CardBtn v-if="!nodeNameOf(item) && !isExternal(item)" icon="clone" border :title="$t('actions.clone')" @click="clone(item.id)" />
           <CardBtn
             v-if="dataStore.enableTraffic && !isExternal(item)"
             icon="chart"
-            :label="$t('ui.stats')"
             border
             :title="$t('stats.graphTitle')"
             @click="showStats(item.tag)"
