@@ -276,7 +276,7 @@ func (a *ApiService) NodeInboundSave(c *gin.Context, loginUser string) {
 			jsonMsg(c, "", common.NewError("del takes the tag as a JSON string"))
 			return
 		}
-		err = svc.DeleteOnNode(loginUser, tag, requestId)
+		nodeId, err = svc.DeleteOnNode(loginUser, tag, requestId)
 	default:
 		jsonMsg(c, "", common.NewError("action must be new, edit or del"))
 		return

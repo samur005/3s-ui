@@ -320,24 +320,24 @@ func (s *NodeInboundService) EditOnNode(actor string, data json.RawMessage, requ
 
 // DeleteOnNode deletes a replica's inbound on its node, then the replica (the
 // same removal "Remove replica" does, which unbinds the master's clients).
-func (s *NodeInboundService) DeleteOnNode(actor string, tag string, requestId string) error {
+func (s *NodeInboundService) DeleteOnNode(actor string, tag string, requestId string) (uint, error) {
 	var r model.Inbound
 	if err := database.GetDB().Model(model.Inbound{}).Where("tag = ? AND node_id IS NOT NULL", tag).First(&r).Error; err != nil {
 		if database.IsNotFound(err) {
-			return common.NewErrorf("no node inbound %q on this panel", tag)
+			return 0, common.NewErrorf("no node inbound %q on this panel", tag)
 		}
-		return err
+		return 0, err
 	}
 	payload, _ := json.Marshal(tag)
 	if _, err := (&NodeRemoteService{}).Execute(actor, RemoteRequest{
 		NodeId: *r.NodeId, Op: "save.inbounds", Object: "inbounds", Action: "del",
 		Data: payload, RequestId: requestId, allowAdopted: true,
 	}); err != nil {
-		return err
+		return 0, err
 	}
 	if _, err := (&ConfigService{}).Save("inbounds", "del", payload, "", actor, ""); err != nil {
 		logger.Warning("node inbound ", tag, " deleted on its node, replica removal failed: ", err)
-		return common.NewErrorf("deleted on the node, but removing the replica failed: %v -- use Remove replica", err)
+		return *r.NodeId, common.NewErrorf("deleted on the node, but removing the replica failed: %v -- use Remove replica", err)
 	}
-	return nil
+	return *r.NodeId, nil
 }
