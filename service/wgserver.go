@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/samur005/3s-ui/database"
 	"github.com/samur005/3s-ui/database/model"
@@ -257,4 +258,53 @@ func (s *WgService) CreditTraffic() {
 			}
 		}
 	}
+}
+
+// OnlineClients returns names of clients whose WireGuard/AmneziaWG peer
+// completed a handshake in the last 3 minutes. Used so the panel's online
+// indicator lights up for external-protocol clients the core never sees.
+func (s *WgService) OnlineClients() []string {
+	db := database.GetDB()
+	if db == nil {
+		return nil
+	}
+	inbounds, err := wgserver.LoadInbounds(db)
+	if err != nil || len(inbounds) == 0 {
+		return nil
+	}
+	var names []string
+	seen := map[string]bool{}
+	now := time.Now().Unix()
+	for _, in := range inbounds {
+		stats := wgserver.Get().Stats(in.ID)
+		if len(stats) == 0 {
+			continue
+		}
+		var peers []model.WgPeer
+		if err := db.Where("inbound_id = ?", in.ID).Find(&peers).Error; err != nil {
+			continue
+		}
+		byKey := map[string]uint{}
+		for _, p := range peers {
+			byKey[p.PublicKey] = p.ClientId
+		}
+		for _, ps := range stats {
+			if ps.LastHandshake == 0 || now-ps.LastHandshake > 180 {
+				continue
+			}
+			cid, ok := byKey[ps.PublicKey]
+			if !ok {
+				continue
+			}
+			var c model.Client
+			if err := db.Select("name").Where("id = ?", cid).First(&c).Error; err != nil {
+				continue
+			}
+			if !seen[c.Name] {
+				seen[c.Name] = true
+				names = append(names, c.Name)
+			}
+		}
+	}
+	return names
 }

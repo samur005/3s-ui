@@ -713,8 +713,8 @@ td.actions-td { padding-inline-end: 10px; }
 
 .status-dot {
   display: inline-block;
-  width: 7px;
-  height: 7px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
   background: var(--text-3);
   flex: none;

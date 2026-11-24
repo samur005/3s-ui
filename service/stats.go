@@ -794,6 +794,19 @@ func (s *StatsService) GetClusterOnlines() (onlines, error) {
 	if err != nil {
 		return onlines{}, err
 	}
+	// WireGuard/AmneziaWG clients never appear in the core online list.
+	for _, name := range (&WgService{}).OnlineClients() {
+		found := false
+		for _, u := range result.User {
+			if u == name {
+				found = true
+				break
+			}
+		}
+		if !found {
+			result.User = append(result.User, name)
+		}
+	}
 
 	nodeStatusMu.RLock()
 	var nodeUsers []string
