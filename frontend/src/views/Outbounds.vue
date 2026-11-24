@@ -76,14 +76,11 @@
         </template>
       </EntityCard>
     </div>
-
-    
+  </div>
 </template>
 
 <script lang="ts" setup>
 import StatusDot from '@/components/StatusDot.vue'
-import { useViewMode } from '@/composables/useViewMode'
-const { mode: viewMode } = useViewMode('outbounds')
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Data from '@/store/modules/data'

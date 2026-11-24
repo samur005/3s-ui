@@ -33,17 +33,13 @@
         <template #actions>
           <CardBtn icon="edit" :title="$t('actions.edit')" @click="openDrawer(item.id)" />
           <CardBtn icon="trash" border danger :title="$t('actions.del')" @click="askDelete(item.id)" />
-          </div>
-</template>
+        </template>
       </EntityCard>
     </div>
-
-    
+  </div>
 </template>
 
 <script lang="ts" setup>
-import { useViewMode } from '@/composables/useViewMode'
-const { mode: viewMode } = useViewMode('services')
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Data from '@/store/modules/data'
