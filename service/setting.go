@@ -117,6 +117,7 @@ var defaultValueMap = map[string]string{
 	"subShowInfo":      "false",
 	"subURI":           "",
 	"subJsonExt":       "",
+	"subIncludeAuto":    "true",
 	"subClashExt":      "",
 	"subClashNoDefGrp": "false",
 	"subClashSprtAll":  "false",
@@ -978,6 +979,10 @@ func (s *SettingService) Save(tx *gorm.DB, data json.RawMessage) error {
 
 func (s *SettingService) GetSubJsonExt() (string, error) {
 	return s.getString("subJsonExt")
+}
+
+func (s *SettingService) GetSubIncludeAuto() (bool, error) {
+	return s.getBool("subIncludeAuto")
 }
 
 func (s *SettingService) GetSubClashExt() (string, error) {

@@ -637,22 +637,35 @@ func (j *JsonService) addDefaultOutbounds(outbounds *[]map[string]interface{}, o
 		return
 	}
 
-	outbound := []map[string]interface{}{
-		{
-			"outbounds": append([]string{"auto", "direct"}, *outTags...),
-			"tag":       "proxy",
-			"type":      "selector",
-		},
-		{
-			"tag":  "auto",
-			"type": "urltest",
-			// Deref: a *[]string would marshal to null when the slice is nil.
-			"outbounds": *outTags,
-			"url":       "http://www.gstatic.com/generate_204",
-			"interval":  "10m",
-			"tolerance": 50,
-		},
-		direct,
+	includeAuto, _ := j.SettingService.GetSubIncludeAuto()
+	var outbound []map[string]interface{}
+	if includeAuto {
+		outbound = []map[string]interface{}{
+			{
+				"outbounds": append([]string{"auto", "direct"}, *outTags...),
+				"tag":       "proxy",
+				"type":      "selector",
+			},
+			{
+				"tag":  "auto",
+				"type": "urltest",
+				// Deref: a *[]string would marshal to null when the slice is nil.
+				"outbounds": *outTags,
+				"url":       "http://www.gstatic.com/generate_204",
+				"interval":  "10m",
+				"tolerance": 50,
+			},
+			direct,
+		}
+	} else {
+		outbound = []map[string]interface{}{
+			{
+				"outbounds": append([]string{"direct"}, *outTags...),
+				"tag":       "proxy",
+				"type":      "selector",
+			},
+			direct,
+		}
 	}
 	*outbounds = append(outbound, *outbounds...)
 }

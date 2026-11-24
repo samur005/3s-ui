@@ -175,6 +175,9 @@
     <SettingsGroup v-else-if="tab === 'jsonSub'">
       <div style="font-size: 12.5px; color: var(--text-3); padding: 12px 0 14px;">{{ $t('ui.jsonExtDesc') }}</div>
 
+      <ToggleRow v-model="includeAuto" label="Автовыбор сервера (urltest)"
+                 desc="Добавляет в подписку исходящий auto — клиент сам подключается к серверу с наименьшим пингом" />
+
       <div class="field-grid">
         <ChipSelect v-model="ruleToDirect" :options="geoList" :label="$t('setting.toDirect')" :placeholder="$t('ui.selectHint')" />
         <ChipSelect v-model="ruleToBlock" :options="geoList" :label="$t('setting.toBlock')" :placeholder="$t('ui.selectHint')" />
@@ -518,6 +521,10 @@ const timezones = [
   'America/Los_Angeles', 'Asia/Shanghai', 'Asia/Tokyo', 'UTC',
 ]
 
+const includeAuto = computed({
+  get: () => (settings.value as any).subIncludeAuto !== "false",
+  set: (v: boolean) => { (settings.value as any).subIncludeAuto = v ? "true" : "false" },
+})
 const loading = ref(false)
 // 保存时要跟当前值逐字段比对,判断反代配置需不需要重新生成(见 save)
 const oldSettings = ref<Record<string, any>>({})
@@ -575,6 +582,7 @@ const settings = ref({
   subRemarkPrefix: "true",
   subURI: "",
   subJsonExt: "",
+  subIncludeAuto: "true",
   subClashExt: "",
   subClashNoDefGrp: "false",
   subClashSprtAll: "false",
