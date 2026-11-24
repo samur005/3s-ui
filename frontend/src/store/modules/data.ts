@@ -18,6 +18,7 @@ const Data = defineStore('Data', {
     clientsSeq: 0,
     reloadItems: localStorage.getItem("reloadItems")?.split(',')?? <string[]>[],
     subURI: "",
+    subForceJson: false,
     os: "",
     enableTraffic: false,
     onlines: {inbound: <string[]>[], outbound: <string[]>[], user: <string[]>[]},
@@ -155,6 +156,7 @@ const Data = defineStore('Data', {
         : Math.floor((new Date()).getTime()/1000)
       if (typeof data.cseq === 'number') this.cseq = data.cseq
       if (data.subURI) this.subURI = data.subURI
+      if (data.subForceJson !== undefined) this.subForceJson = data.subForceJson
       if (data.os) this.os = data.os
       // Not `if (data.enableTraffic)`: that latch only ever set the flag to
       // true, so turning traffic history off left every graph button and the

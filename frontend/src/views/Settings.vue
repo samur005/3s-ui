@@ -177,6 +177,8 @@
 
       <ToggleRow v-model="includeAuto" label="Автовыбор сервера (urltest)"
                  desc="Добавляет в подписку исходящий auto — клиент сам подключается к серверу с наименьшим пингом" />
+      <ToggleRow v-model="forceJson" label="Формат JSON в ссылке"
+                 desc="Дописывает ?format=json к ссылке подписки, чтобы клиент сразу получал sing-box конфиг с автовыбором" />
 
       <div class="field-grid">
         <ChipSelect v-model="ruleToDirect" :options="geoList" :label="$t('setting.toDirect')" :placeholder="$t('ui.selectHint')" />
@@ -525,6 +527,10 @@ const includeAuto = computed({
   get: () => (settings.value as any).subIncludeAuto !== "false",
   set: (v: boolean) => { (settings.value as any).subIncludeAuto = v ? "true" : "false" },
 })
+const forceJson = computed({
+  get: () => (settings.value as any).subForceJson === "true",
+  set: (v: boolean) => { (settings.value as any).subForceJson = v ? "true" : "false" },
+})
 const loading = ref(false)
 // 保存时要跟当前值逐字段比对,判断反代配置需不需要重新生成(见 save)
 const oldSettings = ref<Record<string, any>>({})
@@ -583,6 +589,7 @@ const settings = ref({
   subURI: "",
   subJsonExt: "",
   subIncludeAuto: "true",
+  subForceJson: "false",
   subClashExt: "",
   subClashNoDefGrp: "false",
   subClashSprtAll: "false",

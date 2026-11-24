@@ -260,6 +260,9 @@ func (s *PanelDataService) configHalf(hostname string) (map[string]interface{}, 
 	data["services"] = services
 	data["nodes"] = nodes
 	data["subURI"] = subURI
+	if forceJson, err := s.SettingService.GetSubForceJson(); err == nil {
+		data["subForceJson"] = forceJson
+	}
 	data["enableTraffic"] = trafficAge > 0
 	data["os"] = runtime.GOOS
 

@@ -118,6 +118,7 @@ var defaultValueMap = map[string]string{
 	"subURI":           "",
 	"subJsonExt":       "",
 	"subIncludeAuto":    "true",
+	"subForceJson":      "false",
 	"subClashExt":      "",
 	"subClashNoDefGrp": "false",
 	"subClashSprtAll":  "false",
@@ -983,6 +984,10 @@ func (s *SettingService) GetSubJsonExt() (string, error) {
 
 func (s *SettingService) GetSubIncludeAuto() (bool, error) {
 	return s.getBool("subIncludeAuto")
+}
+
+func (s *SettingService) GetSubForceJson() (bool, error) {
+	return s.getBool("subForceJson")
 }
 
 func (s *SettingService) GetSubClashExt() (string, error) {
