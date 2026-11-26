@@ -429,3 +429,7 @@ func (s *QwdttService) SubscriptionJSON() (string, error) {
 	b, err := json.MarshalIndent(sub, "", "  ")
 	return string(b), err
 }
+
+func (s *QwdttService) GetCookies() (string, error) {
+	return qwdtt.LoadCookies()
+}
