@@ -186,6 +186,18 @@ func ClearCookies() error {
 	return saveRow(db, row)
 }
 
+// LoadCookies returns the stored VK cookies JSON.
+func LoadCookies() (string, error) {
+	storeMu.Lock()
+	defer storeMu.Unlock()
+	db := database.GetDB()
+	row, err := loadRow(db)
+	if err != nil {
+		return "", err
+	}
+	return row.VkCookies, nil
+}
+
 // HasCookies reports whether cookies are stored. The values themselves never
 // leave the backend.
 func HasCookies() bool {
