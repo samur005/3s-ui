@@ -11,6 +11,11 @@
     :node-name="importModal.nodeName"
     @close="importModal.visible = false"
   />
+  <EnrollSyncModal
+    :visible="enrollModal.visible"
+    :node-id="enrollModal.nodeId"
+    @close="enrollModal.visible = false"
+  />
 
   <!-- delete confirmation -->
   <DeleteConfirm :open="del.visible" :loading="deleting" @close="del.visible = false" @confirm="confirmDelete" />
@@ -52,6 +57,7 @@
             :disabled="reconciling === item.id"
             @click="reconcile(item)"
           />
+          <CardBtn icon="users" border :title="$t('node.syncEnroll') || 'Enroll'" @click="openEnroll(item)" />
           <CardBtn icon="trash" border danger :title="$t('actions.del')" @click="askDelete(item.id)" />
         </template>
       </EntityCard>
@@ -170,6 +176,7 @@ const openDrawer = (id: number) => {
 
 // ---------------- import inbounds ----------------
 const importModal = ref({ visible: false, nodeId: 0, nodeName: '' })
+const enrollModal = ref({ visible: false, nodeId: 0 })
 const openImport = (n: Node) => {
   importModal.value = { visible: true, nodeId: n.id, nodeName: n.name }
 }
