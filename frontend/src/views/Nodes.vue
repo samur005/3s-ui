@@ -184,6 +184,7 @@ const openDrawer = (id: number) => {
 // ---------------- import inbounds ----------------
 const importModal = ref({ visible: false, nodeId: 0, nodeName: '' })
 const enrollModal = ref({ visible: false, nodeId: 0 })
+const ver = useVersionStore()
 const openImport = (n: Node) => {
   importModal.value = { visible: true, nodeId: n.id, nodeName: n.name }
 }
