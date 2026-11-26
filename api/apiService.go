@@ -1374,3 +1374,13 @@ func (a *ApiService) SyncCatalogApply(c *gin.Context) {
 	}
 	jsonMsg(c, "syncCatalogApply", nil)
 }
+
+func (a *ApiService) NodeUpdate(c *gin.Context) {
+	id, err := strconv.ParseUint(c.PostForm("id"), 10, 64)
+	if err != nil {
+		jsonMsg(c, "nodeUpdate", common.NewError("invalid id"))
+		return
+	}
+	err = a.NodeSyncService.UpdateNode(uint(id))
+	jsonMsg(c, "nodeUpdate", err)
+}
