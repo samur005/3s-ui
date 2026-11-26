@@ -1408,3 +1408,14 @@ func mustJSON(v interface{}) []byte {
 	b, _ := json.Marshal(v)
 	return b
 }
+
+func (s *NodeSyncService) UpdateNode(nodeId uint) error {
+	node, err := s.getNodeById(nodeId)
+	if err != nil {
+		return err
+	}
+	client := nodePushClient(node)
+	defer closeIdle(client)
+	_, err = s.nodePost(node, client, "update", nil)
+	return err
+}
