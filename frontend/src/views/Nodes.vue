@@ -58,6 +58,13 @@
             @click="reconcile(item)"
           />
           <CardBtn icon="users" border :title="$t('node.syncEnroll') || 'Enroll'" @click="openEnroll(item)" />
+          <CardBtn
+            v-if="hasUpdate(item)"
+            icon="download"
+            border
+            :title="$t('ui.newVersion') || 'Update available'"
+            @click="updateNode(item)"
+          />
           <CardBtn icon="trash" border danger :title="$t('actions.del')" @click="askDelete(item.id)" />
         </template>
       </EntityCard>
