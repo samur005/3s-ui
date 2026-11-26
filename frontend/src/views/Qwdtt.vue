@@ -332,11 +332,8 @@ const loadUsers = async () => {
 
 const loadCookies = async () => {
   const msg = await HttpUtils.get('api/qwdttCookiesGet')
-  console.log('qwdttCookiesGet response:', msg)
   if (msg.success && msg.obj?.cookies) {
     cookiesText.value = msg.obj.cookies
-  } else {
-    console.warn('cookies not loaded:', msg)
   }
 }
 
@@ -376,7 +373,6 @@ const saveCookies = async () => {
   const msg = await HttpUtils.post('api/qwdttCookies', { cookies: cookiesText.value })
   cookieBusy.value = false
   if (msg.success) {
-    cookiesText.value = ''
     cookiesOk.value = null
     apply(msg.obj)
     await checkCookies()
