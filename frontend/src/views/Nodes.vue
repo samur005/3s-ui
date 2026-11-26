@@ -76,6 +76,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Data from '@/store/modules/data'
+import { useVersionStore } from '@/store/modules/version'
 import { intlLocale } from '@/locales'
 import { Node, NodeStatus } from '@/types/node'
 import Btn from '@/components/ui/Btn.vue'
@@ -87,6 +88,7 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import EntityCard, { EntityRow } from '@/components/ui/EntityCard.vue'
 import NodeDrawer from '@/layouts/drawers/node/NodeDrawer.vue'
 import NodeImportModal from '@/layouts/drawers/node/NodeImportModal.vue'
+import EnrollSyncModal from '@/layouts/drawers/node/EnrollSyncModal.vue'
 import HttpUtils from '@/plugins/httputil'
 
 const { t } = useI18n({ useScope: 'global' })
