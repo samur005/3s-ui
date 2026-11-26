@@ -57,6 +57,8 @@ func (a *APIHandler) postHandler(c *gin.Context) {
 		a.ApiService.AdoptInbounds(c, loginUser)
 	case "reconcileNode":
 		a.ApiService.ReconcileNode(c)
+	case "nodeUpdate":
+		a.ApiService.NodeUpdate(c)
 	case "listSyncConflicts":
 		a.ApiService.ListSyncConflicts(c)
 	case "resolveSyncConflict":
