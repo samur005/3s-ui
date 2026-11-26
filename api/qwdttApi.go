@@ -151,3 +151,13 @@ func (a *ApiService) SaveQwdttRemote(c *gin.Context) {
 	v, err := svc.View()
 	jsonMsgObj(c, "save", v, err)
 }
+
+func (a *ApiService) GetQwdttCookies(c *gin.Context) {
+	var svc service.QwdttService
+	cookies, err := svc.GetCookies()
+	if err != nil {
+		jsonMsg(c, "", err)
+		return
+	}
+	jsonObj(c, map[string]string{"cookies": cookies}, nil)
+}
