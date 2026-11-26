@@ -84,7 +84,10 @@
         <Chip v-else-if="cookiesOk === false" color="rose" :title="cookiesErr">{{ $t('qwdtt.cookiesInvalid') }}</Chip>
       </div>
       <textarea class="input mono" rows="5" v-model="cookiesText" spellcheck="false" autocomplete="off"
-                :placeholder="$t('qwdtt.cookiesPlaceholder')" />
+                :placeholder="$t('qwdtt.cookiesPlaceholder')" style="font-size: 12px;" />
+      <div style="margin-top: 6px; font-size: 12px; color: var(--text-3);">
+        Сохранённые cookies отображаются выше. Можно скопировать.
+      </div>
       <div class="btn-row">
         <Btn variant="primary" sm :loading="cookieBusy" :disabled="!cookiesText.trim()" @click="saveCookies">
           <Ico name="check" :size="15" /> {{ $t('qwdtt.cookiesSave') }}
@@ -327,9 +330,17 @@ const loadUsers = async () => {
   if (msg.success) users.value = msg.obj ?? []
 }
 
+const loadCookies = async () => {
+  const msg = await HttpUtils.get('api/qwdttCookiesGet')
+  if (msg.success && msg.obj?.cookies) {
+    cookiesText.value = msg.obj.cookies
+  }
+}
+
 const load = async () => {
   const msg = await HttpUtils.get('api/qwdtt')
   if (msg.success) apply(msg.obj)
+  await loadCookies()
 }
 
 const restart = async () => {
