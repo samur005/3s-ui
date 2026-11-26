@@ -332,8 +332,11 @@ const loadUsers = async () => {
 
 const loadCookies = async () => {
   const msg = await HttpUtils.get('api/qwdttCookiesGet')
+  console.log('qwdttCookiesGet response:', msg)
   if (msg.success && msg.obj?.cookies) {
     cookiesText.value = msg.obj.cookies
+  } else {
+    console.warn('cookies not loaded:', msg)
   }
 }
 
