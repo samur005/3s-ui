@@ -76,7 +76,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Data from '@/store/modules/data'
-import { useVersionStore } from '@/store/modules/version'
+import useVersionStore from '@/store/modules/version'
 import { intlLocale } from '@/locales'
 import { Node, NodeStatus } from '@/types/node'
 import Btn from '@/components/ui/Btn.vue'
