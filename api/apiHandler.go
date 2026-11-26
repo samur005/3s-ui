@@ -153,6 +153,8 @@ func (a *APIHandler) postHandler(c *gin.Context) {
 		a.ApiService.SaveQwdttCookies(c)
 	case "qwdttCookiesClear":
 		a.ApiService.ClearQwdttCookies(c)
+	case "qwdttCookiesGet":
+		a.ApiService.GetQwdttCookies(c)
 	case "qwdttCookiesCheck":
 		a.ApiService.CheckQwdttCookies(c)
 	case "qwdttGenerate":
