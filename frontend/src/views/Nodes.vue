@@ -57,7 +57,7 @@
             :disabled="reconciling === item.id"
             @click="reconcile(item)"
           />
-          <CardBtn icon="users" border :title="$t('node.syncEnroll') || 'Enroll'" @click="openEnroll(item)" />
+          <CardBtn icon="clients" border :title="$t('node.syncEnroll') || 'Enroll'" @click="openEnroll(item)" />
           <CardBtn
             v-if="hasUpdate(item)"
             icon="download"
