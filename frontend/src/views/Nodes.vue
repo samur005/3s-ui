@@ -190,6 +190,25 @@ const openImport = (n: Node) => {
 
 // ---------------- reconcile ----------------
 const reconciling = ref(0)
+const enrollModal = ref({ visible: false, nodeId: 0 })
+const ver = useVersionStore()
+
+function openEnroll(item: Node) {
+  enrollModal.value = { visible: true, nodeId: item.id }
+}
+
+function hasUpdate(n: Node): boolean {
+  const st = statusOf(n)
+  if (!st?.appVersion || !ver.appVersion) return false
+  return st.appVersion !== ver.appVersion && st.appVersion < ver.appVersion
+}
+
+async function updateNode(n: Node) {
+  const msg = await HttpUtils.post('api/nodeUpdate', { id: n.id })
+  if (msg.success) {
+    await dataStore.load()
+  }
+}
 const reconcile = async (n: Node) => {
   reconciling.value = n.id
   const msg = await HttpUtils.post('api/reconcileNode', { id: n.id })
