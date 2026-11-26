@@ -3,6 +3,7 @@ module github.com/samur005/3s-ui
 go 1.27.3
 
 require (
+	github.com/amnezia-vpn/amneziawg-go/v3 v3.1.20260828
 	github.com/anytls/sing-anytls v0.0.13
 	github.com/caddyserver/certmagic v0.25.6
 	github.com/coder/websocket v1.8.15
@@ -11,8 +12,9 @@ require (
 	github.com/gin-contrib/sessions v1.1.4
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-chi/chi/v5 v5.5.0
-	github.com/go-telegram/bot v1.28.0
+	github.com/go-telegram/bot v1.30.0
 	github.com/gofrs/uuid/v5 v5.5.1
+	github.com/google/uuid v1.6.0
 	github.com/op/go-logging v0.0.0-20160315200505-970db520ece7
 	github.com/pires/go-proxyproto v0.16.0
 	github.com/refraction-networking/utls v1.8.2
@@ -28,10 +30,11 @@ require (
 	github.com/skip2/go-qrcode v0.0.0-20200617195104-da1b6568686e
 	go.uber.org/zap v1.28.0
 	golang.org/x/crypto v0.59.0
-	golang.org/x/net v0.62.0
+	golang.org/x/net v0.63.0
+	golang.org/x/sys v0.50.0
 	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20241231184526-a9ab2273dd10
-	google.golang.org/grpc v1.81.1
-	google.golang.org/protobuf v1.36.11
+	google.golang.org/grpc v1.85.0
+	google.golang.org/protobuf v1.36.12
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.31.2
@@ -43,7 +46,6 @@ require (
 	github.com/ajg/form v1.5.1 // indirect
 	github.com/akutz/memconn v0.1.0 // indirect
 	github.com/alexbrainman/sspi v0.0.0-20231016080023-1a75b4708caa // indirect
-	github.com/amnezia-vpn/amneziawg-go/v3 v3.1.20260828 // indirect
 	github.com/anchore/go-lzo v0.1.0 // indirect
 	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/anmitsu/go-shlex v0.0.0-20200514113438-38f4b401e2be // indirect
@@ -88,7 +90,6 @@ require (
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/gopacket v1.1.19 // indirect
 	github.com/google/nftables v0.2.1-0.20240414091927-5e242ec57806 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/context v1.1.2 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
 	github.com/gorilla/sessions v1.4.0 // indirect
@@ -218,13 +219,12 @@ require (
 	golang.org/x/mod v0.42.0 // indirect
 	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sync v0.25.0 // indirect
-	golang.org/x/sys v0.50.0 // indirect
 	golang.org/x/term v0.48.0 // indirect
 	golang.org/x/text v0.44.0 // indirect
 	golang.org/x/time v0.15.0 // indirect
 	golang.zx2c4.com/wintun v0.0.0-20230126152724-0fa3db229ce2 // indirect
 	golang.zx2c4.com/wireguard/windows v0.5.3 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260226221140-a57be14db171 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260817212433-ac3dfec99bb1 // indirect
 	lukechampine.com/blake3 v1.3.0 // indirect
 	zombiezen.com/go/capnproto2 v2.18.2+incompatible // indirect
 )
