@@ -161,3 +161,26 @@ func (a *ApiService) GetQwdttCookies(c *gin.Context) {
 	}
 	jsonObj(c, map[string]string{"cookies": cookies}, nil)
 }
+
+
+func (a *ApiService) EndQwdttCall(c *gin.Context) {
+	hash := c.PostForm("hash")
+	if err := qwdtt.EndCallByHash(hash); err != nil {
+		jsonMsg(c, "", err)
+		return
+	}
+	var svc service.QwdttService
+	v, err := svc.View()
+	jsonMsgObj(c, "", v, err)
+}
+
+func (a *ApiService) DeleteQwdttHash(c *gin.Context) {
+	hash := c.PostForm("hash")
+	if err := qwdtt.RemoveHash(hash); err != nil {
+		jsonMsg(c, "", err)
+		return
+	}
+	var svc service.QwdttService
+	v, err := svc.View()
+	jsonMsgObj(c, "", v, err)
+}
