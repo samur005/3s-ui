@@ -44,12 +44,12 @@
         <span>{{ $t('qwdtt.hashEnv') }}</span>
       </div>
 
-      <div v-if="hashList.length" class="hash-list">
+      <div v-if="hashList.length && !hashChecks.length" class="hash-list">
         <div v-for="h in hashList" :key="h" class="hash-row" style="flex-direction: column; align-items: flex-start; gap: 6px;">
           <span class="mono hash-name">{{ h }}</span>
           <div style="display: flex; gap: 6px;">
-            <Btn sm :loading="hashBusy[h]" @click="endCall(h)">{{ $t('qwdtt.endCall') || 'Завершить звонок' }}</Btn>
-            <Btn sm style="color: var(--rose);" :loading="hashBusy[h]" @click="deleteHash(h)">{{ $t('qwdtt.deleteHash') || 'Удалить хеш' }}</Btn>
+            <Btn sm :loading="hashBusy[h]" @click="endCall(h)">{{ $t('qwdtt.endCall') }}</Btn>
+            <Btn sm style="color: var(--rose);" :loading="hashBusy[h]" @click="deleteHash(h)">{{ $t('qwdtt.deleteHash') }}</Btn>
           </div>
         </div>
       </div>
@@ -65,8 +65,8 @@
             <Chip v-if="h.generated">{{ $t('qwdtt.generatedByPanel') }}</Chip>
           </div>
           <div style="display: flex; gap: 6px;">
-            <Btn sm :loading="hashBusy[h.hash]" @click="endCall(h.hash)">{{ $t('qwdtt.endCall') || 'Завершить звонок' }}</Btn>
-            <Btn sm style="color: var(--rose);" :loading="hashBusy[h.hash]" @click="deleteHash(h.hash)">{{ $t('qwdtt.deleteHash') || 'Удалить хеш' }}</Btn>
+            <Btn sm :loading="hashBusy[h.hash]" @click="endCall(h.hash)">{{ $t('qwdtt.endCall') }}</Btn>
+            <Btn sm style="color: var(--rose);" :loading="hashBusy[h.hash]" @click="deleteHash(h.hash)">{{ $t('qwdtt.deleteHash') }}</Btn>
           </div>
         </div>
       </div>
