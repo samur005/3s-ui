@@ -646,3 +646,58 @@ func EnsureHashesNow() (bool, error) {
 // CanGenerate reports whether the panel has a way to create hashes: its own
 // VK cookies or a remote WDTT panel.
 func CanGenerate() bool { return HasCookies() || HasRemote() }
+
+
+// EndCallByHash ends the VK call that owns the given hash, if this panel created it.
+func EndCallByHash(hash string) error {
+	hash = StripHash(hash)
+	if hash == "" {
+		return errors.New("empty hash")
+	}
+	calls, err := loadCalls()
+	if err != nil {
+		return err
+	}
+	var found *CreatedCall
+	var rest []CreatedCall
+	for i := range calls {
+		if calls[i].Hash == hash && !calls[i].Remote {
+			found = &calls[i]
+		} else {
+			rest = append(rest, calls[i])
+		}
+	}
+	if found == nil {
+		return errors.New("call not found or not owned by this panel")
+	}
+	cookies, err := LoadCookies()
+	if err != nil || cookies == "" {
+		return errors.New("no cookies")
+	}
+	if err := finishCall(cookies, found.CallID); err != nil {
+		return err
+	}
+	return saveCalls(rest)
+}
+
+// RemoveHash removes a hash from the qWDTT config.
+func RemoveHash(hash string) error {
+	hash = StripHash(hash)
+	if hash == "" {
+		return errors.New("empty hash")
+	}
+	cfg, err := Load()
+	if err != nil {
+		return err
+	}
+	parts := ParseHashes(cfg.VkHashes)
+	var kept []string
+	for _, h := range parts {
+		if h != hash {
+			kept = append(kept, h)
+		}
+	}
+	cfg.VkHashes = strings.Join(kept, ",")
+	_, err = Save(cfg)
+	return err
+}
