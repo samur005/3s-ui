@@ -45,17 +45,29 @@
       </div>
 
       <div v-if="hashList.length" class="hash-list">
-        <div v-for="h in hashList" :key="h" class="hash-row"><span class="mono hash-name">{{ h }}</span></div>
+        <div v-for="h in hashList" :key="h" class="hash-row" style="flex-direction: column; align-items: flex-start; gap: 6px;">
+          <span class="mono hash-name">{{ h }}</span>
+          <div style="display: flex; gap: 6px;">
+            <Btn sm :loading="hashBusy[h]" @click="endCall(h)">{{ $t('qwdtt.endCall') || 'Завершить звонок' }}</Btn>
+            <Btn sm style="color: var(--rose);" :loading="hashBusy[h]" @click="deleteHash(h)">{{ $t('qwdtt.deleteHash') || 'Удалить хеш' }}</Btn>
+          </div>
+        </div>
       </div>
       <div v-else class="fieldnote"><span>{{ $t('qwdtt.noHashes') }}</span></div>
 
       <div v-if="hashChecks.length" class="hash-list">
-        <div v-for="h in hashChecks" :key="h.hash" class="hash-row">
-          <span class="mono hash-name">{{ h.hash }}</span>
-          <Chip v-if="h.alive === true" color="emerald" dot>{{ $t('qwdtt.alive') }}</Chip>
-          <Chip v-else-if="h.alive === false" color="rose" dot>{{ $t('qwdtt.dead') }}</Chip>
-          <Chip v-else color="amber" :title="h.error">{{ $t('qwdtt.unknown') }}</Chip>
-          <Chip v-if="h.generated">{{ $t('qwdtt.generatedByPanel') }}</Chip>
+        <div v-for="h in hashChecks" :key="h.hash" class="hash-row" style="flex-direction: column; align-items: flex-start; gap: 6px;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span class="mono hash-name">{{ h.hash }}</span>
+            <Chip v-if="h.alive === true" color="emerald" dot>{{ $t('qwdtt.alive') }}</Chip>
+            <Chip v-else-if="h.alive === false" color="rose" dot>{{ $t('qwdtt.dead') }}</Chip>
+            <Chip v-else color="amber" :title="h.error">{{ $t('qwdtt.unknown') }}</Chip>
+            <Chip v-if="h.generated">{{ $t('qwdtt.generatedByPanel') }}</Chip>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <Btn sm :loading="hashBusy[h.hash]" @click="endCall(h.hash)">{{ $t('qwdtt.endCall') || 'Завершить звонок' }}</Btn>
+            <Btn sm style="color: var(--rose);" :loading="hashBusy[h.hash]" @click="deleteHash(h.hash)">{{ $t('qwdtt.deleteHash') || 'Удалить хеш' }}</Btn>
+          </div>
         </div>
       </div>
 
@@ -252,6 +264,7 @@ const status = ref<QwdttStatus>({
 const link = ref('')
 const resolvedHost = ref('')
 const hashChecks = ref<HashCheck[]>([])
+const hashBusy = ref<Record<string, boolean>>({})
 const logs = ref<string[]>([])
 const subscriptionDoc = ref('')
 const cookiesText = ref('')
@@ -358,6 +371,26 @@ const generate = async (replace: boolean) => {
     apply(msg.obj)
     hashChecks.value = []
     await checkHashes()
+  }
+}
+
+const endCall = async (hash: string) => {
+  hashBusy.value[hash] = true
+  const msg = await HttpUtils.post('api/qwdttEndCall', { hash })
+  hashBusy.value[hash] = false
+  if (msg.success) {
+    apply(msg.obj)
+    hashChecks.value = []
+  }
+}
+
+const deleteHash = async (hash: string) => {
+  hashBusy.value[hash] = true
+  const msg = await HttpUtils.post('api/qwdttDeleteHash', { hash })
+  hashBusy.value[hash] = false
+  if (msg.success) {
+    apply(msg.obj)
+    hashChecks.value = []
   }
 }
 
