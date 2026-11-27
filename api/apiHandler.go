@@ -163,6 +163,10 @@ func (a *APIHandler) postHandler(c *gin.Context) {
 		a.ApiService.GenerateQwdttHash(c)
 	case "qwdttHashesCheck":
 		a.ApiService.CheckQwdttHashes(c)
+	case "qwdttEndCall":
+		a.ApiService.EndQwdttCall(c)
+	case "qwdttDeleteHash":
+		a.ApiService.DeleteQwdttHash(c)
 	case "qwdttRemote":
 		a.ApiService.SaveQwdttRemote(c)
 	default:
