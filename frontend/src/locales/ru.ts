@@ -362,6 +362,8 @@ export default {
     generate: "Создать хеш",
     generateReplace: "Создать и заменить старейший",
     checkHashes: "Проверить хеши",
+    endCall: "Завершить звонок",
+    deleteHash: "Удалить хеш",
     needCookies: "Для создания нужны cookies VK или удалённая панель WDTT (ниже).",
     alive: "Звонок идёт",
     dead: "Звонок завершён",
