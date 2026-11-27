@@ -363,6 +363,8 @@ export default {
     generate: "Generate hash",
     generateReplace: "Generate and replace oldest",
     checkHashes: "Check hashes",
+    endCall: "End call",
+    deleteHash: "Delete hash",
     needCookies: "Generating needs VK cookies or a remote WDTT panel (below).",
     alive: "Call is live",
     dead: "Call ended",
