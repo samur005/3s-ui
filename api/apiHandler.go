@@ -258,6 +258,8 @@ func (a *APIHandler) getHandler(c *gin.Context) {
 		a.ApiService.GetQwdttSubscription(c)
 	case "qwdttUsers":
 		a.ApiService.GetQwdttUsers(c)
+	case "qwdttCookiesGet":
+		a.ApiService.GetQwdttCookies(c)
 	case "qwdttClient":
 		a.ApiService.GetQwdttClient(c)
 	default:
